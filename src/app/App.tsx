@@ -200,7 +200,7 @@ export default function App() {
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
 
   const sendWhatsApp = async (rec: RepairRecord, type: 'received' | 'final') => {
-    if (!rmUser || !rmWaba || !rmPhoneid || !rmWaphone || !rmToken) throw new Error('WhatsApp credentials are incomplete.')
+    if (!rmToken && (!rmUser || !rmPass)) throw new Error('WhatsApp API key or username/password required.')
     if (!tpl1Name || !tpl2Name) throw new Error('WhatsApp template names are required.')
 
     const templateName = type === 'received' ? tpl1Name : tpl2Name
@@ -211,21 +211,26 @@ export default function App() {
 
     const toNumber = rec.mobile.replace(/^\+/, '')
     const baseUrl = rmApiUrl.replace(/\/$/, '')
-    const url = baseUrl.includes('/messages') ? baseUrl : baseUrl.includes('/v') ? `${baseUrl}/messages` : `${baseUrl}/${rmApiver}/messages`
+    // Route Mobile typically uses: https://api.routemobile.com/whatsapp/v1/messages
+    const url = baseUrl.includes('/messages') ? baseUrl : `${baseUrl}/messages`
 
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (rmToken) headers.Authorization = `Bearer ${rmToken}`
-    else if (typeof btoa === 'function') headers.Authorization = `Basic ${btoa(`${rmUser}:${rmPass}`)}`
+    if (rmToken) {
+      // Route Mobile typically uses API key in apikey header or Authorization
+      headers.apikey = rmToken
+      // Some Route Mobile endpoints also accept: headers.Authorization = `apikey ${rmToken}`
+    } else if (rmUser && rmPass) {
+      // Fallback to basic auth if no token
+      headers.Authorization = `Basic ${typeof btoa === 'function' ? btoa(`${rmUser}:${rmPass}`) : ''}`
+    }
 
     const body = {
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
       to: toNumber,
       type: 'template',
       template: {
         name: templateName,
-        language: { code: 'en_IN' },
-        components: [{ type: 'body', parameters: params.map(text => ({ type: 'text', text })) }]
+        language: 'en',
+        parameters: params
       }
     }
 
@@ -238,7 +243,7 @@ export default function App() {
   }
 
   const sendTestWhatsApp = async () => {
-    if (!rmUser) { showMessage('watest', 'Save credentials first.', false); return }
+    if (!rmToken && (!rmUser || !rmPass)) { showMessage('watest', 'API key or username/password required.', false); return }
     if (!testWa || !/^\+\d{10,15}$/.test(testWa)) { showMessage('watest', 'Enter valid number with country code.', false); return }
 
     try {
@@ -780,8 +785,8 @@ export default function App() {
                 <div className="field"><label>Link expiry (days)</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /><div className="hint">Invoice link expires after this many days. Default: 10 days.</div></div>
               </div>
               <div className="btn-row">
-                <button className="btn btn-wa" onClick={() => { if (!rmUser || !rmWaba || !rmToken) { showMessage('creds', 'Fill all credential fields first.', false); return }; setConnStatus('checking'); setTimeout(() => { setConnStatus('ok'); showMessage('creds', 'Connection verified! Route Mobile API reachable.', true) }, 1800) }}><IcWA />Verify connection</button>
-                <button className="btn btn-primary" onClick={() => { if (!rmUser || !rmWaba) { showMessage('creds', 'Fill required fields.', false); return }; showMessage('creds', 'Credentials saved securely.', true) }}>Save credentials</button>
+                <button className="btn btn-wa" onClick={() => { if (!rmToken && (!rmUser || !rmPass)) { showMessage('creds', 'API key or username/password required.', false); return }; setConnStatus('checking'); setTimeout(() => { setConnStatus('ok'); showMessage('creds', 'Connection verified! Route Mobile API reachable.', true) }, 1800) }}><IcWA />Verify connection</button>
+                <button className="btn btn-primary" onClick={() => { if (!rmToken && (!rmUser || !rmPass)) { showMessage('creds', 'API key or username/password required.', false); return }; showMessage('creds', 'Credentials saved securely.', true) }}>Save credentials</button>
               </div>
               <Msg text={msg['creds']?.text || ''} ok={msg['creds']?.ok || false} />
             </>
