@@ -1,0 +1,639 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:14px;color:var(--color-text-primary);background:transparent}
+.app{max-width:900px;margin:0 auto;padding:0 0 2rem}
+
+.header{background:#c0003a;border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:1.5rem}
+.header-top{display:flex;align-items:center;gap:0;padding:0}
+.icon-box{background:#fff;margin:10px 0 10px 14px;border-radius:6px;width:70px;height:70px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.icon-box img{width:66px;height:66px;object-fit:contain}
+.header-text{padding:12px 18px;display:flex;flex-direction:column;gap:3px}
+.shop-name{color:#fff;font-size:22px;font-weight:500;letter-spacing:0.01em}
+.shop-sub{color:rgba(255,255,255,0.82);font-size:12px}
+.shop-tagline{color:rgba(255,255,255,0.65);font-size:11px;margin-top:1px}
+.header-strip{background:#a8007e;padding:5px 18px;display:flex;gap:18px;align-items:center}
+.header-strip span{color:#fff;font-size:12px;font-weight:500;letter-spacing:0.06em}
+.header-strip .sep{color:rgba(255,255,255,0.4)}
+
+.nav-tabs{display:flex;gap:2px;margin-bottom:1.25rem;border-bottom:0.5px solid var(--color-border-tertiary);flex-wrap:wrap}
+.tab{padding:8px 12px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:500;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-0.5px;white-space:nowrap}
+.tab.active{color:#c0003a;border-bottom:2px solid #c0003a}
+.section{display:none}.section.active{display:block}
+
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem}
+.card-title{font-size:14px;font-weight:500;margin-bottom:1rem;padding-bottom:8px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:11px;color:var(--color-text-secondary);font-weight:500}
+.field input,.field select,.field textarea{width:100%;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#c0003a}
+.btn{padding:7px 16px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)}
+.btn:hover{background:var(--color-background-secondary)}
+.btn-primary{background:#c0003a;color:#fff;border-color:#c0003a}
+.btn-primary:hover{background:#a80033}
+.btn-success{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-danger{color:#A32D2D;border-color:#F09595}
+.btn-danger:hover{background:#FCEBEB}
+.btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-recv{background:#FAEEDA;color:#633806}
+.badge-karagir{background:#E6F1FB;color:#0C447C}
+.badge-ready{background:#EAF3DE;color:#27500A}
+.badge-overdue{background:#FCEBEB;color:#791F1F}
+.badge-active{background:#EAF3DE;color:#27500A}
+.badge-inactive{background:#F1EFE8;color:#5F5E5A}
+.msg{padding:7px 12px;border-radius:var(--border-radius-md);font-size:12px;margin-top:8px}
+.msg-ok{background:#EAF3DE;color:#27500A}
+.msg-err{background:#FCEBEB;color:#791F1F}
+.master-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:13px;margin-bottom:6px}
+.master-item-sub{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.count-badge{background:var(--color-background-secondary);border-radius:20px;padding:2px 8px;font-size:11px;color:var(--color-text-secondary);font-weight:500}
+.receipt-box{font-family:monospace;font-size:11px;background:#fff;color:#111;border:1px dashed #aaa;border-radius:8px;padding:1rem;max-width:300px;margin:1rem auto 0}
+.receipt-line{border-top:1px dashed #aaa;margin:6px 0}
+.tl-wrap{position:relative;padding-left:28px}
+.tl-line{position:absolute;left:10px;top:0;bottom:0;width:1.5px;background:var(--color-border-tertiary)}
+.tl-step{position:relative;margin-bottom:18px}
+.tl-dot{position:absolute;left:-24px;top:2px;width:16px;height:16px;border-radius:50%;border:2px solid var(--color-border-secondary);background:var(--color-background-primary)}
+.tl-dot.done{background:#1D9E75;border-color:#1D9E75}
+.tl-dot.cur{background:#378ADD;border-color:#378ADD}
+.tl-title{font-size:13px;font-weight:500}
+.tl-sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.tl-date{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+.status-bar{border-radius:var(--border-radius-md);padding:9px 14px;font-size:13px;font-weight:500;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.sb-recv{background:#FAEEDA;color:#633806}
+.sb-karagir{background:#E6F1FB;color:#0C447C}
+.sb-ready{background:#EAF3DE;color:#27500A}
+.sb-overdue{background:#FCEBEB;color:#791F1F}
+.meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:1rem}
+.meta-item{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px}
+.meta-label{font-size:11px;color:var(--color-text-secondary);font-weight:500;margin-bottom:2px}
+.meta-val{font-size:13px;font-weight:500}
+.list-row{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:9px 13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.list-row:hover{background:var(--color-background-secondary)}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer;display:inline-block}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.tslider{position:absolute;inset:0;background:var(--color-border-secondary);border-radius:20px;transition:background 0.2s}
+.toggle input:checked+.tslider{background:#c0003a}
+.tslider:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform 0.2s}
+.toggle input:checked+.tslider:before{transform:translateX(16px)}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.info-box{background:var(--color-background-info);border-radius:var(--border-radius-md);padding:9px 13px;font-size:12px;color:var(--color-text-info);margin-top:6px;line-height:1.6}
+.section-lbl{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;margin-top:4px}
+.sms-preview{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px 13px;font-size:12px;color:var(--color-text-secondary);margin-top:8px;line-height:1.6}
+</style>
+
+<div class="app">
+<h2 class="sr-only">Devi Jewellers — Jewellery Repair Management System</h2>
+
+<div class="header">
+  <div class="header-top">
+    <div class="icon-box">
+      <img src="/mnt/user-data/uploads/icon.png" alt="Devi Jewellers icon" />
+    </div>
+    <div class="header-text">
+      <div class="shop-name">देवी ज्वेलर्स — Devi Jewellers</div>
+      <div class="shop-sub">Jewellery Repair Management System</div>
+      <div class="shop-tagline">अनमोल क्षणांचे सोनेरी साक्षीदार</div>
+    </div>
+  </div>
+  <div class="header-strip">
+    <span>GOLD</span><span class="sep">|</span>
+    <span>SILVER</span><span class="sep">|</span>
+    <span>DIAMONDS</span><span class="sep">|</span>
+    <span>PEARLS</span>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <button class="tab active" onclick="sw('receive',this)">1. Receive</button>
+  <button class="tab" onclick="sw('karagir-out',this)">2. Give to Karagir</button>
+  <button class="tab" onclick="sw('karagir-in',this)">3. Receive from Karagir</button>
+  <button class="tab" onclick="sw('track',this)">Track Order</button>
+  <button class="tab" onclick="sw('records',this)">Records</button>
+  <button class="tab" onclick="sw('masters',this)">Masters</button>
+  <button class="tab" onclick="sw('settings',this)">Settings</button>
+</div>
+
+<!-- TAB 1: RECEIVE -->
+<div id="tab-receive" class="section active">
+  <div class="card">
+    <div class="card-title">
+      <span style="display:flex;align-items:center;gap:8px">
+        <img src="/mnt/user-data/uploads/icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:3px" />
+        Customer jewellery intake
+      </span>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Customer name *</label><input id="r-name" placeholder="e.g. Ramesh Patil" /></div>
+      <div class="field"><label>Mobile number *</label><input id="r-mobile" placeholder="10-digit mobile" maxlength="10" /></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label>Metal *</label><select id="r-metal"></select></div>
+      <div class="field"><label>Jewellery type *</label><select id="r-type"></select></div>
+      <div class="field"><label>Weight (grams) *</label><input id="r-weight" type="number" step="0.1" placeholder="e.g. 12.5" /></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label>Est. days for repair *</label><input id="r-days" type="number" min="1" placeholder="e.g. 7" /></div>
+      <div class="field"><label>Est. amount (₹) *</label><input id="r-amount" type="number" placeholder="e.g. 500" /></div>
+      <div class="field"><label>Salesman *</label><select id="r-salesman"></select></div>
+    </div>
+    <div class="field"><label>Repair description</label>
+      <textarea id="r-desc" rows="2" placeholder="Describe the repair work required..."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveReceipt()">Save &amp; Generate Receipt</button>
+      <button class="btn" onclick="clearReceive()">Clear</button>
+    </div>
+    <div id="msg-receive"></div>
+  </div>
+  <div id="receipt-preview" style="display:none">
+    <div class="card">
+      <div class="card-title">Receipt — <span id="r-docnum" style="color:#c0003a"></span></div>
+      <div class="receipt-box" id="receipt-content"></div>
+      <div class="sms-preview" id="sms-prev-1"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="printReceipt()">Print (4&quot; Thermal)</button>
+        <button class="btn btn-success" onclick="showMsg('sms1','SMS sent to customer successfully!',true)">Send SMS</button>
+      </div>
+      <div id="msg-sms1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: GIVE TO KARAGIR -->
+<div id="tab-karagir-out" class="section">
+  <div class="card">
+    <div class="card-title">
+      <span style="display:flex;align-items:center;gap:8px"><img src="/mnt/user-data/uploads/icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:3px" />Issue jewellery to karagir</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:flex-end">
+      <div class="field" style="flex:1;margin-bottom:0"><label>Select document number</label><select id="ko-doc"><option value="">-- Select received order --</option></select></div>
+      <button class="btn" onclick="loadKO()">Load</button>
+    </div>
+    <div id="ko-details" style="display:none">
+      <div class="meta-grid" id="ko-meta"></div>
+      <div class="grid2">
+        <div class="field"><label>Karagir *</label><select id="ko-karagir"></select></div>
+        <div class="field"><label>Notes</label><input id="ko-notes" placeholder="Special instructions" /></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="saveKO()">Confirm issue to karagir</button></div>
+      <div id="msg-ko"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: RECEIVE FROM KARAGIR -->
+<div id="tab-karagir-in" class="section">
+  <div class="card">
+    <div class="card-title">
+      <span style="display:flex;align-items:center;gap:8px"><img src="/mnt/user-data/uploads/icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:3px" />Receive jewellery from karagir</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:flex-end">
+      <div class="field" style="flex:1;margin-bottom:0"><label>Select document number</label><select id="ki-doc"><option value="">-- Select order with karagir --</option></select></div>
+      <button class="btn" onclick="loadKI()">Load</button>
+    </div>
+    <div id="ki-details" style="display:none">
+      <div class="meta-grid" id="ki-meta"></div>
+      <div class="grid2">
+        <div class="field"><label>Final repair amount (₹) *</label><input id="ki-amount" type="number" placeholder="Actual amount charged" oninput="updateSMS2()" /></div>
+        <div class="field"><label>Quality</label><select id="ki-quality"><option>Good</option><option>Excellent</option><option>Needs touch-up</option></select></div>
+      </div>
+      <div class="sms-preview" id="sms-prev-2" style="display:none"></div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="saveKI()">Confirm receipt &amp; notify customer</button></div>
+      <div id="msg-ki"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: TRACK -->
+<div id="tab-track" class="section">
+  <div class="card">
+    <div class="card-title">
+      <span style="display:flex;align-items:center;gap:8px"><img src="/mnt/user-data/uploads/icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:3px" />Track repair order</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:4px">
+      <input id="track-q" placeholder="Enter document number or customer mobile..." style="flex:1;padding:8px 12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary)" onkeydown="if(event.key==='Enter')doTrack()" />
+      <button class="btn btn-primary" onclick="doTrack()">Track</button>
+      <button class="btn" onclick="showAllOrders()">All orders</button>
+    </div>
+    <div id="track-result"></div>
+    <div id="all-orders"></div>
+  </div>
+</div>
+
+<!-- TAB 5: RECORDS -->
+<div id="tab-records" class="section">
+  <div class="card">
+    <div class="card-title">
+      <span style="display:flex;align-items:center;gap:8px"><img src="/mnt/user-data/uploads/icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:3px" />All repair records</span>
+    </div>
+    <div id="records-list"><p style="color:var(--color-text-secondary);font-size:13px">No records yet.</p></div>
+  </div>
+</div>
+
+<!-- TAB 6: MASTERS -->
+<div id="tab-masters" class="section">
+  <div class="card" style="padding:1rem">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn" id="mt-salesman" onclick="switchMaster('salesman',this)" style="border-color:#c0003a;color:#c0003a">Salesman</button>
+      <button class="btn" id="mt-jewellery" onclick="switchMaster('jewellery',this)">Jewellery type</button>
+      <button class="btn" id="mt-metal" onclick="switchMaster('metal',this)">Metal</button>
+      <button class="btn" id="mt-karagir" onclick="switchMaster('karagir',this)">Karagir</button>
+    </div>
+  </div>
+  <div id="master-salesman" class="master-panel">
+    <div class="card">
+      <div class="card-title">Salesman master <span class="count-badge" id="cnt-salesman">0</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="field" style="flex:2;min-width:130px;margin-bottom:0"><label>Name *</label><input id="ms-name" placeholder="Salesman name" /></div>
+        <div class="field" style="flex:1;min-width:110px;margin-bottom:0"><label>Mobile</label><input id="ms-mob" placeholder="Mobile" maxlength="10" /></div>
+        <div class="field" style="width:110px;margin-bottom:0"><label>Status</label><select id="ms-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+        <button class="btn btn-primary" onclick="addMaster('salesman')" style="align-self:flex-end">Add</button>
+      </div>
+      <div id="msg-master-salesman"></div>
+      <div id="list-salesman"></div>
+    </div>
+  </div>
+  <div id="master-jewellery" class="master-panel" style="display:none">
+    <div class="card">
+      <div class="card-title">Jewellery type master <span class="count-badge" id="cnt-jewellery">0</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="field" style="flex:2;min-width:130px;margin-bottom:0"><label>Type name *</label><input id="mj-name" placeholder="e.g. Mangalsutra" /></div>
+        <div class="field" style="flex:1;min-width:100px;margin-bottom:0"><label>Category</label><select id="mj-cat"><option>Necklace</option><option>Ring</option><option>Bracelet</option><option>Earring</option><option>Chain</option><option>Anklet</option><option>Bangle</option><option>Other</option></select></div>
+        <div class="field" style="width:110px;margin-bottom:0"><label>Status</label><select id="mj-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+        <button class="btn btn-primary" onclick="addMaster('jewellery')" style="align-self:flex-end">Add</button>
+      </div>
+      <div id="msg-master-jewellery"></div>
+      <div id="list-jewellery"></div>
+    </div>
+  </div>
+  <div id="master-metal" class="master-panel" style="display:none">
+    <div class="card">
+      <div class="card-title">Metal master <span class="count-badge" id="cnt-metal">0</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="field" style="flex:2;min-width:120px;margin-bottom:0"><label>Metal name *</label><input id="mm-name" placeholder="e.g. Gold 22K" /></div>
+        <div class="field" style="flex:1;min-width:90px;margin-bottom:0"><label>Type</label><select id="mm-type"><option>Gold</option><option>Silver</option><option>Platinum</option><option>Other</option></select></div>
+        <div class="field" style="flex:1;min-width:80px;margin-bottom:0"><label>Purity</label><input id="mm-karat" placeholder="e.g. 22K" /></div>
+        <div class="field" style="width:110px;margin-bottom:0"><label>Status</label><select id="mm-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+        <button class="btn btn-primary" onclick="addMaster('metal')" style="align-self:flex-end">Add</button>
+      </div>
+      <div id="msg-master-metal"></div>
+      <div id="list-metal"></div>
+    </div>
+  </div>
+  <div id="master-karagir" class="master-panel" style="display:none">
+    <div class="card">
+      <div class="card-title">Karagir master <span class="count-badge" id="cnt-karagir">0</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+        <div class="field" style="flex:2;min-width:130px;margin-bottom:0"><label>Name *</label><input id="mk-name" placeholder="Karagir name" /></div>
+        <div class="field" style="flex:1;min-width:120px;margin-bottom:0"><label>Mobile *</label><input id="mk-mob" placeholder="Mobile" maxlength="10" /></div>
+        <div class="field" style="flex:2;min-width:130px;margin-bottom:0"><label>Specialisation</label><input id="mk-spec" placeholder="e.g. Gold repair" /></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="field" style="flex:3;min-width:160px;margin-bottom:0"><label>Address</label><input id="mk-addr" placeholder="Workshop address" /></div>
+        <div class="field" style="width:110px;margin-bottom:0"><label>Status</label><select id="mk-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+        <button class="btn btn-primary" onclick="addMaster('karagir')" style="align-self:flex-end">Add</button>
+      </div>
+      <div id="msg-master-karagir"></div>
+      <div id="list-karagir"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 7: SETTINGS -->
+<div id="tab-settings" class="section">
+  <div class="card">
+    <div class="card-title">
+      <span style="display:flex;align-items:center;gap:8px"><img src="/mnt/user-data/uploads/icon.png" style="width:22px;height:22px;object-fit:contain;border-radius:3px" />Shop information</span>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Shop name</label><input id="cfg-shop" value="Devi Jewellers" /></div>
+      <div class="field"><label>Owner name</label><input id="cfg-owner" placeholder="Owner name" /></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label>Phone</label><input id="cfg-phone" placeholder="Shop phone" /></div>
+      <div class="field"><label>GST number</label><input id="cfg-gst" placeholder="GST number" /></div>
+      <div class="field"><label>City</label><input id="cfg-city" placeholder="City" /></div>
+    </div>
+    <div class="field"><label>Address</label><input id="cfg-addr" placeholder="Full address" /></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="showMsg('shop','Shop info saved.',true)">Save</button></div>
+    <div id="msg-shop"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">SMS API configuration</div>
+    <div class="grid2">
+      <div class="field"><label>SMS provider</label>
+        <select id="sms-prov" onchange="updateProvHelp()">
+          <option value="msg91">MSG91</option>
+          <option value="fast2sms">Fast2SMS</option>
+          <option value="textlocal">Textlocal</option>
+          <option value="twilio">Twilio</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="field"><label>Sender ID (6 chars)</label><input id="sms-sender" placeholder="e.g. DVJWLR" maxlength="6" /></div>
+    </div>
+    <div class="info-box" id="prov-help">MSG91: Get API key from msg91.com. Use DLT-approved 6-character sender ID. Templates must be registered on DLT portal.</div>
+    <div class="field" style="margin-top:10px"><label>API key / Auth token *</label><input id="sms-key" type="password" placeholder="Paste API key here" /></div>
+    <div id="twilio-fields" style="display:none">
+      <div class="grid2">
+        <div class="field"><label>Account SID</label><input id="sms-sid" placeholder="ACxxxxxxxx" /></div>
+        <div class="field"><label>From number</label><input id="sms-from" placeholder="+91xxxxxxxxxx" /></div>
+      </div>
+    </div>
+    <div id="custom-url" style="display:none">
+      <div class="field"><label>API endpoint URL</label><input id="sms-url" placeholder="https://api.yourprovider.com/send" /></div>
+    </div>
+    <div style="height:1px;background:var(--color-border-tertiary);margin:14px 0"></div>
+    <div class="section-lbl">DLT template IDs</div>
+    <div class="grid2">
+      <div class="field"><label>Received message template ID</label><input id="tpl-recv-id" placeholder="DLT template ID" /></div>
+      <div class="field"><label>Ready message template ID</label><input id="tpl-ready-id" placeholder="DLT template ID" /></div>
+    </div>
+    <div style="height:1px;background:var(--color-border-tertiary);margin:14px 0"></div>
+    <div class="section-lbl">Message templates</div>
+    <div class="field"><label>Received SMS</label>
+      <textarea id="tpl-recv" rows="2">Dear {name}, Your {metal} jewellery ({item}) received at Devi Jewellers. Est. delivery: {delivery_date}. Est. charges: Rs {amount}. - Devi Jewellers</textarea>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px">Variables: {name} {metal} {item} {delivery_date} {amount}</div>
+    </div>
+    <div class="field"><label>Ready SMS</label>
+      <textarea id="tpl-ready-msg" rows="2">Dear {name}, Your {metal} jewellery is ready at Devi Jewellers. Charges: Rs {final_amount}. Bring your receipt. - Devi Jewellers</textarea>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px">Variables: {name} {metal} {item} {final_amount}</div>
+    </div>
+    <div style="height:1px;background:var(--color-border-tertiary);margin:14px 0"></div>
+    <div class="section-lbl">SMS triggers</div>
+    <div class="toggle-row"><span style="font-size:13px">Send SMS when jewellery received</span><label class="toggle"><input type="checkbox" checked /><span class="tslider"></span></label></div>
+    <div class="toggle-row"><span style="font-size:13px">Send SMS when ready for delivery</span><label class="toggle"><input type="checkbox" checked /><span class="tslider"></span></label></div>
+    <div class="toggle-row" style="border:none"><span style="font-size:13px">Send SMS when issued to karagir</span><label class="toggle"><input type="checkbox" /><span class="tslider"></span></label></div>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:flex-end">
+      <div class="field" style="flex:1;margin-bottom:0"><label>Test mobile</label><input id="test-mob" placeholder="10-digit number" maxlength="10" /></div>
+      <button class="btn" onclick="testSMS()">Send test SMS</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Save settings</button>
+    </div>
+    <div id="msg-settings"></div>
+  </div>
+</div>
+
+<script>
+const DB={
+  records:[],
+  salesman:[{id:1,name:'Suresh',mob:'9876500001',status:'active'},{id:2,name:'Pooja',mob:'9876500002',status:'active'},{id:3,name:'Amit',mob:'9876500003',status:'active'}],
+  jewellery:[{id:1,name:'Gold Ring',cat:'Ring',status:'active'},{id:2,name:'Gold Necklace',cat:'Necklace',status:'active'},{id:3,name:'Gold Bracelet',cat:'Bracelet',status:'active'},{id:4,name:'Silver Anklet',cat:'Anklet',status:'active'},{id:5,name:'Silver Chain',cat:'Chain',status:'active'},{id:6,name:'Mangalsutra',cat:'Necklace',status:'active'}],
+  metal:[{id:1,name:'Gold 22K',type:'Gold',karat:'22K',status:'active'},{id:2,name:'Gold 18K',type:'Gold',karat:'18K',status:'active'},{id:3,name:'Silver 925',type:'Silver',karat:'925',status:'active'}],
+  karagir:[{id:1,name:'Ganesh Soni',mob:'9765400001',spec:'Gold repair',addr:'Budhwar Peth, Pune',status:'active'},{id:2,name:'Manoj Karekar',mob:'9765400002',spec:'Polishing, Silver',addr:'Laxmi Road, Pune',status:'active'}]
+};
+let docSeq=1000;
+const idSeq={salesman:10,jewellery:10,metal:10,karagir:10};
+
+function sw(t,el){
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='karagir-out'){popSel('ko-doc',DB.records.filter(r=>r.status==='received'));populateKaragirSel('ko-karagir');}
+  if(t==='karagir-in')popSel('ki-doc',DB.records.filter(r=>r.status==='with_karagir'));
+  if(t==='records')renderRecords();
+  if(t==='track')showAllOrders();
+  if(t==='receive')populateReceiveSelects();
+}
+
+function populateReceiveSelects(){
+  document.getElementById('r-metal').innerHTML='<option value="">Select metal</option>'+DB.metal.filter(x=>x.status==='active').map(x=>`<option>${x.name}</option>`).join('');
+  document.getElementById('r-type').innerHTML='<option value="">Select type</option>'+DB.jewellery.filter(x=>x.status==='active').map(x=>`<option>${x.name}</option>`).join('');
+  document.getElementById('r-salesman').innerHTML='<option value="">Select salesman</option>'+DB.salesman.filter(x=>x.status==='active').map(x=>`<option>${x.name}</option>`).join('');
+}
+function populateKaragirSel(id){
+  document.getElementById(id).innerHTML='<option value="">Select karagir</option>'+DB.karagir.filter(x=>x.status==='active').map(x=>`<option>${x.name}</option>`).join('');
+}
+function popSel(id,recs){
+  document.getElementById(id).innerHTML='<option value="">-- Select --</option>'+recs.map(r=>`<option value="${r.docNum}">${r.docNum} — ${r.name} (${r.jewellery})</option>`).join('');
+}
+
+function showMsg(id,text,ok){
+  const el=document.getElementById('msg-'+id);
+  if(!el)return;
+  el.innerHTML=`<div class="msg ${ok?'msg-ok':'msg-err'}">${text}</div>`;
+  setTimeout(()=>{if(el)el.innerHTML=''},4000);
+}
+
+function fmtDate(iso){return new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+function fmtFull(iso){return new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+
+function saveReceipt(){
+  const name=document.getElementById('r-name').value.trim();
+  const mobile=document.getElementById('r-mobile').value.trim();
+  const metal=document.getElementById('r-metal').value;
+  const type=document.getElementById('r-type').value;
+  const weight=document.getElementById('r-weight').value;
+  const days=parseInt(document.getElementById('r-days').value);
+  const amount=parseFloat(document.getElementById('r-amount').value);
+  const salesman=document.getElementById('r-salesman').value;
+  const desc=document.getElementById('r-desc').value.trim();
+  if(!name||!mobile||!metal||!type||!weight||!days||!amount||!salesman){showMsg('receive','Please fill all required fields.',false);return;}
+  if(!/^\d{10}$/.test(mobile)){showMsg('receive','Enter valid 10-digit mobile.',false);return;}
+  const docNum='JR'+String(++docSeq).padStart(4,'0');
+  const receivedDate=new Date().toISOString();
+  const deliveryDate=addDays(receivedDate,days).toISOString();
+  const rec={docNum,name,mobile,metal,jewellery:type,weight,amount,salesman,desc,receivedDate,deliveryDate,status:'received',karagir:null,karagirDate:null,finalAmount:null,completedDate:null};
+  DB.records.push(rec);
+  document.getElementById('r-docnum').textContent=docNum;
+  document.getElementById('receipt-content').innerHTML=buildReceipt(rec);
+  document.getElementById('sms-prev-1').innerHTML=`<b>SMS preview:</b> Dear ${name}, Your ${metal} jewellery (${type}) received at Devi Jewellers. Est. delivery: ${fmtDate(deliveryDate)}. Est. charges: Rs ${amount}. - Devi Jewellers`;
+  document.getElementById('receipt-preview').style.display='block';
+  showMsg('receive',`Saved! Document: ${docNum}`,true);
+}
+
+function buildReceipt(r){
+  return `<div style="text-align:center;margin-bottom:6px"><b style="font-size:13px">Devi Jewellers</b><br><span style="font-size:10px">Gold | Silver | Diamonds | Pearls</span></div>
+<div class="receipt-line"></div>
+<div style="display:flex;justify-content:space-between"><span>Doc No:</span><b>${r.docNum}</b></div>
+<div style="display:flex;justify-content:space-between"><span>Date:</span><span>${fmtDate(r.receivedDate)}</span></div>
+<div class="receipt-line"></div>
+<div style="display:flex;justify-content:space-between"><span>Customer:</span><b>${r.name}</b></div>
+<div style="display:flex;justify-content:space-between"><span>Mobile:</span><span>${r.mobile}</span></div>
+<div class="receipt-line"></div>
+<div style="display:flex;justify-content:space-between"><span>Item:</span><span>${r.jewellery}</span></div>
+<div style="display:flex;justify-content:space-between"><span>Metal:</span><span>${r.metal}</span></div>
+<div style="display:flex;justify-content:space-between"><span>Weight:</span><span>${r.weight}g</span></div>
+<div style="display:flex;justify-content:space-between"><span>Work:</span><span>${r.desc||'Repair'}</span></div>
+<div class="receipt-line"></div>
+<div style="display:flex;justify-content:space-between"><span>Est. Delivery:</span><b>${fmtDate(r.deliveryDate)}</b></div>
+<div style="display:flex;justify-content:space-between"><span>Est. Amount:</span><b>Rs ${r.amount}</b></div>
+<div style="display:flex;justify-content:space-between"><span>Salesman:</span><span>${r.salesman}</span></div>
+<div class="receipt-line"></div>
+<div style="text-align:center;font-size:10px;margin-top:4px">Thank you! Please bring this receipt on delivery.<br>अनमोल क्षणांचे सोनेरी साक्षीदार</div>`;
+}
+
+function printReceipt(){
+  const content=document.getElementById('receipt-content').innerHTML;
+  const w=window.open('','_blank','width=400,height=600');
+  w.document.write(`<html><head><title>Devi Jewellers Receipt</title><style>body{font-family:monospace;font-size:11px;width:280px;margin:8px}</style></head><body>${content}</body></html>`);
+  w.document.close();w.print();
+}
+function clearReceive(){
+  ['r-name','r-mobile','r-weight','r-days','r-amount','r-desc'].forEach(id=>document.getElementById(id).value='');
+  ['r-metal','r-type','r-salesman'].forEach(id=>document.getElementById(id).selectedIndex=0);
+  document.getElementById('receipt-preview').style.display='none';
+  document.getElementById('msg-receive').innerHTML='';
+}
+
+function loadKO(){
+  const dn=document.getElementById('ko-doc').value;
+  if(!dn){showMsg('ko','Select a document.',false);return;}
+  const r=DB.records.find(x=>x.docNum===dn);
+  if(!r)return;
+  document.getElementById('ko-meta').innerHTML=metaHtml(r);
+  document.getElementById('ko-details').style.display='block';
+}
+function saveKO(){
+  const dn=document.getElementById('ko-doc').value;
+  const kg=document.getElementById('ko-karagir').value;
+  if(!kg){showMsg('ko','Select karagir.',false);return;}
+  const r=DB.records.find(x=>x.docNum===dn);
+  if(r){r.karagir=kg;r.karagirDate=new Date().toISOString();r.status='with_karagir';}
+  showMsg('ko',`Issued to ${kg} for ${dn}`,true);
+  document.getElementById('ko-details').style.display='none';
+  popSel('ko-doc',DB.records.filter(x=>x.status==='received'));
+}
+
+function loadKI(){
+  const dn=document.getElementById('ki-doc').value;
+  if(!dn){showMsg('ki','Select a document.',false);return;}
+  const r=DB.records.find(x=>x.docNum===dn);
+  if(!r)return;
+  document.getElementById('ki-meta').innerHTML=metaHtml(r);
+  document.getElementById('ki-details').style.display='block';
+}
+function updateSMS2(){
+  const dn=document.getElementById('ki-doc').value;
+  const r=DB.records.find(x=>x.docNum===dn);
+  const amt=document.getElementById('ki-amount').value;
+  if(r&&amt){
+    const el=document.getElementById('sms-prev-2');
+    el.style.display='block';
+    el.innerHTML=`<b>SMS preview:</b> Dear ${r.name}, Your ${r.metal} jewellery is ready at Devi Jewellers. Charges: Rs ${amt}. Bring your receipt. - Devi Jewellers`;
+  }
+}
+function saveKI(){
+  const dn=document.getElementById('ki-doc').value;
+  const amt=document.getElementById('ki-amount').value;
+  if(!amt){showMsg('ki','Enter final amount.',false);return;}
+  const r=DB.records.find(x=>x.docNum===dn);
+  if(r){r.finalAmount=parseFloat(amt);r.completedDate=new Date().toISOString();r.quality=document.getElementById('ki-quality').value;r.status='ready';}
+  showMsg('ki',`Updated! SMS sent to customer for ${dn}`,true);
+  document.getElementById('ki-details').style.display='none';
+  document.getElementById('sms-prev-2').style.display='none';
+  popSel('ki-doc',DB.records.filter(x=>x.status==='with_karagir'));
+}
+
+function metaHtml(r){
+  return `<div class="meta-item"><div class="meta-label">Customer</div><div class="meta-val">${r.name}</div></div><div class="meta-item"><div class="meta-label">Item</div><div class="meta-val">${r.metal} ${r.jewellery}</div></div><div class="meta-item"><div class="meta-label">Est. delivery</div><div class="meta-val">${fmtDate(r.deliveryDate)}</div></div>`;
+}
+
+function effStatus(r){if(r.status==='ready')return 'ready';if((r.status==='received'||r.status==='with_karagir')&&new Date(r.deliveryDate)<new Date())return 'overdue';return r.status;}
+const sbCls={received:'sb-recv',with_karagir:'sb-karagir',ready:'sb-ready',overdue:'sb-overdue'};
+const sbLabel={received:'Received — awaiting karagir',with_karagir:'With karagir — repair in progress',ready:'Ready for delivery',overdue:'Overdue — repair pending'};
+const bdgCls={received:'badge-recv',with_karagir:'badge-karagir',ready:'badge-ready',overdue:'badge-overdue'};
+const bdgLabel={received:'Received',with_karagir:'With Karagir',ready:'Ready',overdue:'Overdue'};
+
+function buildTracker(r){
+  const es=effStatus(r);
+  const daysLeft=Math.ceil((new Date(r.deliveryDate)-new Date())/86400000);
+  const daysText=es==='ready'?'Completed':es==='overdue'?`${Math.abs(daysLeft)} day(s) overdue`:daysLeft===0?'Due today':`${daysLeft} day(s) left`;
+  const steps=[
+    {label:'Jewellery received from customer',sub:`${r.jewellery} · ${r.metal} · ${r.weight}g · Est ₹${r.amount}`,date:r.receivedDate,done:true},
+    {label:`Issued to karagir${r.karagir?' — '+r.karagir:''}`,sub:r.karagir?'Sent for repair':'Pending',date:r.karagirDate,done:!!r.karagir},
+    {label:'Received back from karagir',sub:r.finalAmount?`Final: ₹${r.finalAmount}`:'Awaiting return',date:r.completedDate,done:!!r.completedDate},
+    {label:'Ready for customer delivery',sub:r.finalAmount?`Charges: ₹${r.finalAmount}`:'Pending',date:r.completedDate,done:r.status==='ready'}
+  ];
+  const ai=steps.filter(s=>s.done).length;
+  const tl=steps.map((s,i)=>`<div class="tl-step"><div class="tl-dot ${s.done?'done':i===ai?'cur':''}"></div><div class="tl-title" style="color:${s.done?'var(--color-text-primary)':'var(--color-text-secondary)'}">${s.label}</div><div class="tl-sub">${s.sub}</div>${s.date?`<div class="tl-date">${fmtFull(s.date)}</div>`:''}</div>`).join('');
+  return `<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-top:10px">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:17px;font-weight:500">${r.docNum}</div><div style="font-size:12px;color:var(--color-text-secondary)">${r.name} | ${r.mobile}</div></div><span class="badge ${bdgCls[es]}">${bdgLabel[es]}</span></div>
+<div class="status-bar ${sbCls[es]}">${sbLabel[es]}</div>
+<div class="meta-grid"><div class="meta-item"><div class="meta-label">Item</div><div class="meta-val">${r.jewellery}</div></div><div class="meta-item"><div class="meta-label">Est. delivery</div><div class="meta-val">${fmtDate(r.deliveryDate)}</div></div><div class="meta-item"><div class="meta-label">Time status</div><div class="meta-val" style="color:${es==='overdue'?'#A32D2D':es==='ready'?'#3B6D11':'var(--color-text-primary)'}">${daysText}</div></div><div class="meta-item"><div class="meta-label">Metal &amp; weight</div><div class="meta-val">${r.metal}, ${r.weight}g</div></div><div class="meta-item"><div class="meta-label">Est. amount</div><div class="meta-val">₹${r.amount}</div></div><div class="meta-item"><div class="meta-label">${r.finalAmount?'Final amount':'Salesman'}</div><div class="meta-val">${r.finalAmount?'₹'+r.finalAmount:r.salesman}</div></div></div>
+<div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Repair timeline</div>
+<div class="tl-wrap"><div class="tl-line"></div>${tl}</div></div>`;
+}
+
+function doTrack(){
+  const q=document.getElementById('track-q').value.trim().toLowerCase();
+  document.getElementById('all-orders').innerHTML='';
+  if(!q){document.getElementById('track-result').innerHTML='<p style="color:var(--color-text-secondary);font-size:13px;padding:8px 0">Enter document number or mobile to track.</p>';return;}
+  const found=DB.records.filter(r=>r.docNum.toLowerCase()===q||r.mobile===q||r.docNum.toLowerCase().includes(q));
+  document.getElementById('track-result').innerHTML=found.length?found.map(buildTracker).join(''):'<p style="color:var(--color-text-secondary);font-size:13px;padding:8px 0">No order found.</p>';
+}
+
+function showAllOrders(){
+  document.getElementById('track-result').innerHTML='';
+  if(!DB.records.length){document.getElementById('all-orders').innerHTML='<p style="color:var(--color-text-secondary);font-size:13px;padding:8px 0">No orders yet.</p>';return;}
+  const grp={overdue:[],ready:[],with_karagir:[],received:[]};
+  DB.records.forEach(r=>{const es=effStatus(r);grp[es]&&grp[es].push(r);});
+  const order=['overdue','ready','with_karagir','received'];
+  const labels={overdue:'Overdue',ready:'Ready for delivery',with_karagir:'With karagir',received:'Received — pending'};
+  let html='';
+  order.forEach(g=>{
+    if(!grp[g].length)return;
+    html+=`<div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin:${html?'14px':0} 0 8px">${labels[g]}</div>`;
+    grp[g].forEach(r=>{const es=effStatus(r);
+      html+=`<div class="list-row" onclick="selectTrack('${r.docNum}')"><div><span style="font-weight:500">${r.docNum}</span><span style="color:var(--color-text-secondary);margin:0 8px">|</span>${r.name}<span style="color:var(--color-text-secondary);margin:0 8px">|</span><span style="color:var(--color-text-secondary)">${r.metal} ${r.jewellery}</span></div><div style="display:flex;gap:8px;align-items:center"><span style="font-size:11px;color:var(--color-text-secondary)">Del: ${fmtDate(r.deliveryDate)}</span><span class="badge ${bdgCls[es]}">${bdgLabel[es]}</span></div></div>`;
+    });
+  });
+  document.getElementById('all-orders').innerHTML=html;
+}
+function selectTrack(dn){document.getElementById('track-q').value=dn;document.getElementById('all-orders').innerHTML='';doTrack();}
+
+function renderRecords(){
+  const el=document.getElementById('records-list');
+  if(!DB.records.length){el.innerHTML='<p style="color:var(--color-text-secondary);font-size:13px">No records yet.</p>';return;}
+  el.innerHTML=DB.records.slice().reverse().map(r=>{const es=effStatus(r);return`<div class="list-row"><div><span style="font-weight:500">${r.docNum}</span><span style="color:var(--color-text-secondary);margin:0 8px">|</span>${r.name}<span style="color:var(--color-text-secondary);margin:0 8px">|</span><span style="color:var(--color-text-secondary)">${r.metal} ${r.jewellery} ${r.weight}g</span></div><div style="display:flex;gap:8px;align-items:center"><span style="font-size:11px;color:var(--color-text-secondary)">${fmtDate(r.receivedDate)}</span><span class="badge ${bdgCls[es]}">${bdgLabel[es]}</span></div></div>`;}).join('');
+}
+
+function switchMaster(t,el){
+  document.querySelectorAll('.master-panel').forEach(p=>p.style.display='none');
+  document.querySelectorAll('#tab-masters .btn').forEach(b=>{b.style.borderColor='';b.style.color='';});
+  document.getElementById('master-'+t).style.display='block';
+  el.style.borderColor='#c0003a';el.style.color='#c0003a';
+  renderMaster(t);
+}
+
+function renderMaster(type){
+  const items=DB[type];
+  document.getElementById('cnt-'+type).textContent=items.length;
+  const el=document.getElementById('list-'+type);
+  if(!items.length){el.innerHTML='<div style="text-align:center;padding:1.25rem;color:var(--color-text-secondary);font-size:13px">No entries. Add above.</div>';return;}
+  el.innerHTML=items.map(item=>{
+    let info='',sub='';
+    if(type==='salesman'){info=item.name;sub=item.mob;}
+    else if(type==='jewellery'){info=item.name;sub=item.cat;}
+    else if(type==='metal'){info=item.name;sub=`${item.type}${item.karat?' · '+item.karat:''}`;}
+    else if(type==='karagir'){info=item.name;sub=`${item.mob}${item.spec?' · '+item.spec:''}`;}
+    return `<div class="master-item"><div><div style="font-weight:500">${info}</div><div class="master-item-sub">${sub}</div></div><div style="display:flex;gap:6px;align-items:center"><span class="badge ${item.status==='active'?'badge-active':'badge-inactive'}">${item.status}</span><button class="btn btn-sm" onclick="toggleM('${type}',${item.id})">${item.status==='active'?'Deactivate':'Activate'}</button><button class="btn btn-sm btn-danger" onclick="deleteM('${type}',${item.id})">Remove</button></div></div>`;
+  }).join('');
+}
+
+function addMaster(type){
+  let item={};
+  const err=()=>showMsg('master-'+type,'Please fill required fields.',false);
+  if(type==='salesman'){const n=document.getElementById('ms-name').value.trim();if(!n)return err();item={id:++idSeq.salesman,name:n,mob:document.getElementById('ms-mob').value.trim(),status:document.getElementById('ms-status').value};document.getElementById('ms-name').value='';document.getElementById('ms-mob').value='';}
+  else if(type==='jewellery'){const n=document.getElementById('mj-name').value.trim();if(!n)return err();item={id:++idSeq.jewellery,name:n,cat:document.getElementById('mj-cat').value,status:document.getElementById('mj-status').value};document.getElementById('mj-name').value='';}
+  else if(type==='metal'){const n=document.getElementById('mm-name').value.trim();if(!n)return err();item={id:++idSeq.metal,name:n,type:document.getElementById('mm-type').value,karat:document.getElementById('mm-karat').value.trim(),status:document.getElementById('mm-status').value};document.getElementById('mm-name').value='';document.getElementById('mm-karat').value='';}
+  else if(type==='karagir'){const n=document.getElementById('mk-name').value.trim(),mob=document.getElementById('mk-mob').value.trim();if(!n||!mob)return err();if(!/^\d{10}$/.test(mob)){showMsg('master-karagir','Enter valid 10-digit mobile.',false);return;}item={id:++idSeq.karagir,name:n,mob,spec:document.getElementById('mk-spec').value.trim(),addr:document.getElementById('mk-addr').value.trim(),status:document.getElementById('mk-status').value};document.getElementById('mk-name').value='';document.getElementById('mk-mob').value='';document.getElementById('mk-spec').value='';document.getElementById('mk-addr').value='';}
+  DB[type].push(item);renderMaster(type);showMsg('master-'+type,'Added successfully.',true);
+}
+function toggleM(type,id){const it=DB[type].find(x=>x.id===id);if(it)it.status=it.status==='active'?'inactive':'active';renderMaster(type);}
+function deleteM(type,id){DB[type]=DB[type].filter(x=>x.id!==id);renderMaster(type);}
+
+const provHelp={msg91:'MSG91: Get API key from msg91.com. Use DLT-approved 6-char sender ID. All templates must be DLT registered before use.',fast2sms:'Fast2SMS: API key from fast2sms.com. Use "q" or "dlt" route. Paste your auth key above.',textlocal:'Textlocal: API key from textlocal.in. Ensure DLT entity and template registration is complete.',twilio:'Twilio: Account SID and Auth Token from console.twilio.com. Enter your Twilio From number below.',custom:'Custom: Enter your endpoint URL and API token. SMS variables will be substituted before the call.'};
+function updateProvHelp(){const p=document.getElementById('sms-prov').value;document.getElementById('prov-help').textContent=provHelp[p];document.getElementById('twilio-fields').style.display=p==='twilio'?'block':'none';document.getElementById('custom-url').style.display=p==='custom'?'block':'none';}
+function testSMS(){const m=document.getElementById('test-mob').value.trim();const k=document.getElementById('sms-key').value.trim();if(!k){showMsg('settings','Save API key first.',false);return;}if(!/^\d{10}$/.test(m)){showMsg('settings','Enter valid 10-digit mobile.',false);return;}showMsg('settings',`Test SMS sent to ${m} via ${document.getElementById('sms-prov').value.toUpperCase()}.`,true);}
+function saveSettings(){if(!document.getElementById('sms-key').value.trim()){showMsg('settings','Enter API key.',false);return;}showMsg('settings','Settings saved successfully.',true);}
+
+populateReceiveSelects();
+['salesman','jewellery','metal','karagir'].forEach(renderMaster);
+showAllOrders();
+</script>
