@@ -1,8 +1,20 @@
 import { neon } from '@neondatabase/serverless'
 
-const sql = neon(process.env.DATABASE_URL!)
+let sql: any = null
 
-export { sql }
+// Lazy initialization of database connection
+function getSql() {
+  if (!sql) {
+    const databaseUrl = process.env.DATABASE_URL
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL environment variable is not set')
+    }
+    sql = neon(databaseUrl)
+  }
+  return sql
+}
+
+export { getSql as sql }
 
 // Database schema types
 export interface RepairRecord {

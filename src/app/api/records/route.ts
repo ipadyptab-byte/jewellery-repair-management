@@ -3,10 +3,9 @@ import { sql } from '@/lib/db';
 
 export async function GET() {
   try {
-    const records = await sql`
-      SELECT * FROM repair_records
-      ORDER BY created_at DESC
-    `;
+    const records = await sql()
+      `SELECT * FROM repair_records
+       ORDER BY created_at DESC`;
     return NextResponse.json(records);
   } catch (error) {
     console.error('Error fetching records:', error);
@@ -29,16 +28,15 @@ export async function POST(request: NextRequest) {
       images
     } = body;
 
-    const [record] = await sql`
-      INSERT INTO repair_records (
+    const [record] = await sql()
+      `INSERT INTO repair_records (
         customer_name, phone_number, item_type, description,
         estimated_cost, status, master_id, notes, images
       ) VALUES (
         ${customerName}, ${phoneNumber}, ${itemType}, ${description},
         ${estimatedCost}, ${status}, ${masterId}, ${notes}, ${JSON.stringify(images || [])}
       )
-      RETURNING *
-    `;
+      RETURNING *`;
 
     return NextResponse.json(record);
   } catch (error) {
@@ -77,8 +75,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Record ID is required' }, { status: 400 });
     }
 
-    const [record] = await sql`
-      UPDATE repair_records SET
+    const [record] = await sql()
+      `UPDATE repair_records SET
         customer_name = ${customerName},
         phone_number = ${phoneNumber},
         item_type = ${itemType},
@@ -100,8 +98,7 @@ export async function PUT(request: NextRequest) {
         salesman = ${salesman},
         updated_at = NOW()
       WHERE id = ${id}
-      RETURNING *
-    `;
+      RETURNING *`;
 
     if (!record) {
       return NextResponse.json({ error: 'Record not found' }, { status: 404 });

@@ -3,10 +3,9 @@ import { sql } from '@/lib/db';
 
 export async function GET() {
   try {
-    const settings = await sql`
-      SELECT * FROM settings
-      LIMIT 1
-    `;
+    const settings = await sql()
+      `SELECT * FROM settings
+       LIMIT 1`;
 
     if (settings.length === 0) {
       // Return default settings if none exist
@@ -54,13 +53,13 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Check if settings already exist
-    const existing = await sql`SELECT id FROM settings LIMIT 1`;
+    const existing = await sql()`SELECT id FROM settings LIMIT 1`;
 
     let result;
     if (existing.length > 0) {
       // Update existing settings
-      [result] = await sql`
-        UPDATE settings SET
+      [result] = await sql()
+        `UPDATE settings SET
           business_name = ${businessName},
           whatsapp_api_key = ${whatsappApiKey},
           whatsapp_api_url = ${whatsappApiUrl},
@@ -70,12 +69,11 @@ export async function POST(request: NextRequest) {
           contact_info = ${JSON.stringify(contactInfo)},
           notifications = ${JSON.stringify(notifications)}
         WHERE id = ${existing[0].id}
-        RETURNING *
-      `;
+        RETURNING *`;
     } else {
       // Insert new settings
-      [result] = await sql`
-        INSERT INTO settings (
+      [result] = await sql()
+        `INSERT INTO settings (
           business_name, whatsapp_api_key, whatsapp_api_url,
           currency, tax_rate, logo_url, contact_info, notifications
         ) VALUES (
@@ -83,8 +81,7 @@ export async function POST(request: NextRequest) {
           ${currency}, ${taxRate}, ${logoUrl},
           ${JSON.stringify(contactInfo)}, ${JSON.stringify(notifications)}
         )
-        RETURNING *
-      `;
+        RETURNING *`;
     }
 
     return NextResponse.json(result);
