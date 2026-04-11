@@ -281,6 +281,130 @@ export default function App() {
   const [mmName, setMmName] = useState(''); const [mmType, setMmType] = useState('Gold'); const [mmKarat, setMmKarat] = useState(''); const [mmStatus, setMmStatus] = useState('active')
   const [mkName, setMkName] = useState(''); const [mkMob, setMkMob] = useState(''); const [mkSpec, setMkSpec] = useState(''); const [mkAddr, setMkAddr] = useState(''); const [mkStatus, setMkStatus] = useState('active')
 
+  // Load data from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedRecords = localStorage.getItem('devi-jewellers-records')
+      if (savedRecords) setRecords(JSON.parse(savedRecords))
+
+      const savedDocSeq = localStorage.getItem('devi-jewellers-docSeq')
+      if (savedDocSeq) setDocSeq(parseInt(savedDocSeq))
+
+      const savedSalesmen = localStorage.getItem('devi-jewellers-salesmen')
+      if (savedSalesmen) setSalesmen(JSON.parse(savedSalesmen))
+
+      const savedJewelleries = localStorage.getItem('devi-jewellers-jewelleries')
+      if (savedJewelleries) setJewelleries(JSON.parse(savedJewelleries))
+
+      const savedMetals = localStorage.getItem('devi-jewellers-metals')
+      if (savedMetals) setMetals(JSON.parse(savedMetals))
+
+      const savedKaragirs = localStorage.getItem('devi-jewellers-karagirs')
+      if (savedKaragirs) setKaragirs(JSON.parse(savedKaragirs))
+
+      // Settings
+      const savedCfgShop = localStorage.getItem('devi-jewellers-cfgShop')
+      if (savedCfgShop) setCfgShop(savedCfgShop)
+
+      const savedCfgOwner = localStorage.getItem('devi-jewellers-cfgOwner')
+      if (savedCfgOwner) setCfgOwner(savedCfgOwner)
+
+      const savedCfgPhone = localStorage.getItem('devi-jewellers-cfgPhone')
+      if (savedCfgPhone) setCfgPhone(savedCfgPhone)
+
+      const savedCfgGst = localStorage.getItem('devi-jewellers-cfgGst')
+      if (savedCfgGst) setCfgGst(savedCfgGst)
+
+      const savedCfgCity = localStorage.getItem('devi-jewellers-cfgCity')
+      if (savedCfgCity) setCfgCity(savedCfgCity)
+
+      const savedCfgAddr = localStorage.getItem('devi-jewellers-cfgAddr')
+      if (savedCfgAddr) setCfgAddr(savedCfgAddr)
+
+      // WhatsApp settings
+      const savedRmUser = localStorage.getItem('devi-jewellers-rmUser')
+      if (savedRmUser) setRmUser(savedRmUser)
+
+      const savedRmPass = localStorage.getItem('devi-jewellers-rmPass')
+      if (savedRmPass) setRmPass(savedRmPass)
+
+      const savedRmWaba = localStorage.getItem('devi-jewellers-rmWaba')
+      if (savedRmWaba) setRmWaba(savedRmWaba)
+
+      const savedRmPhoneid = localStorage.getItem('devi-jewellers-rmPhoneid')
+      if (savedRmPhoneid) setRmPhoneid(savedRmPhoneid)
+
+      const savedRmWaphone = localStorage.getItem('devi-jewellers-rmWaphone')
+      if (savedRmWaphone) setRmWaphone(savedRmWaphone)
+
+      const savedRmToken = localStorage.getItem('devi-jewellers-rmToken')
+      if (savedRmToken) setRmToken(savedRmToken)
+
+      const savedRmApiUrl = localStorage.getItem('devi-jewellers-rmApiUrl')
+      if (savedRmApiUrl) setRmApiUrl(savedRmApiUrl)
+
+      const savedRmApiver = localStorage.getItem('devi-jewellers-rmApiver')
+      if (savedRmApiver) setRmApiver(savedRmApiver)
+
+      const savedCfgLinkBase = localStorage.getItem('devi-jewellers-cfgLinkBase')
+      if (savedCfgLinkBase) setCfgLinkBase(savedCfgLinkBase)
+
+      const savedCfgExpiry = localStorage.getItem('devi-jewellers-cfgExpiry')
+      if (savedCfgExpiry) setCfgExpiry(parseInt(savedCfgExpiry))
+
+      const savedTpl1Name = localStorage.getItem('devi-jewellers-tpl1Name')
+      if (savedTpl1Name) setTpl1Name(savedTpl1Name)
+
+      const savedTpl2Name = localStorage.getItem('devi-jewellers-tpl2Name')
+      if (savedTpl2Name) setTpl2Name(savedTpl2Name)
+
+      const savedTrRecv = localStorage.getItem('devi-jewellers-trRecv')
+      if (savedTrRecv) setTrRecv(savedTrRecv === 'true')
+
+      const savedTrReady = localStorage.getItem('devi-jewellers-trReady')
+      if (savedTrReady) setTrReady(savedTrReady === 'true')
+
+      const savedTrKaragir = localStorage.getItem('devi-jewellers-trKaragir')
+      if (savedTrKaragir) setTrKaragir(savedTrKaragir === 'true')
+
+    } catch (error) {
+      console.error('Error loading data from localStorage:', error)
+    }
+  }, [])
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => { localStorage.setItem('devi-jewellers-records', JSON.stringify(records)) }, [records])
+  useEffect(() => { localStorage.setItem('devi-jewellers-docSeq', docSeq.toString()) }, [docSeq])
+  useEffect(() => { localStorage.setItem('devi-jewellers-salesmen', JSON.stringify(salesmen)) }, [salesmen])
+  useEffect(() => { localStorage.setItem('devi-jewellers-jewelleries', JSON.stringify(jewelleries)) }, [jewelleries])
+  useEffect(() => { localStorage.setItem('devi-jewellers-metals', JSON.stringify(metals)) }, [metals])
+  useEffect(() => { localStorage.setItem('devi-jewellers-karagirs', JSON.stringify(karagirs)) }, [karagirs])
+
+  // Settings persistence
+  useEffect(() => { localStorage.setItem('devi-jewellers-cfgShop', cfgShop) }, [cfgShop])
+  useEffect(() => { localStorage.setItem('devi-jewellers-cfgOwner', cfgOwner) }, [cfgOwner])
+  useEffect(() => { localStorage.setItem('devi-jewellers-cfgPhone', cfgPhone) }, [cfgPhone])
+  useEffect(() => { localStorage.setItem('devi-jewellers-cfgGst', cfgGst) }, [cfgGst])
+  useEffect(() => { localStorage.setItem('devi-jewellers-cfgCity', cfgCity) }, [cfgCity])
+  useEffect(() => { localStorage.setItem('devi-jewellers-cfgAddr', cfgAddr) }, [cfgAddr])
+
+  // WhatsApp settings persistence
+  useEffect(() => { localStorage.setItem('devi-jewellers-rmUser', rmUser) }, [rmUser])
+  useEffect(() => { localStorage.setItem('devi-jewellers-rmPass', rmPass) }, [rmPass])
+  useEffect(() => { localStorage.setItem('devi-jewellers-rmWaba', rmWaba) }, [rmWaba])
+  useEffect(() => { localStorage.setItem('devi-jewellers-rmPhoneid', rmPhoneid) }, [rmPhoneid])
+  useEffect(() => { localStorage.setItem('devi-jewellers-rmWaphone', rmWaphone) }, [rmWaphone])
+  useEffect(() => { localStorage.setItem('devi-jewellers-rmToken', rmToken) }, [rmToken])
+  useEffect(() => { localStorage.setItem('devi-jewellers-rmApiUrl', rmApiUrl) }, [rmApiUrl])
+  useEffect(() => { localStorage.setItem('devi-jewellers-rmApiver', rmApiver) }, [rmApiver])
+  useEffect(() => { localStorage.setItem('devi-jewellers-cfgLinkBase', cfgLinkBase) }, [cfgLinkBase])
+  useEffect(() => { localStorage.setItem('devi-jewellers-cfgExpiry', cfgExpiry.toString()) }, [cfgExpiry])
+  useEffect(() => { localStorage.setItem('devi-jewellers-tpl1Name', tpl1Name) }, [tpl1Name])
+  useEffect(() => { localStorage.setItem('devi-jewellers-tpl2Name', tpl2Name) }, [tpl2Name])
+  useEffect(() => { localStorage.setItem('devi-jewellers-trRecv', trRecv.toString()) }, [trRecv])
+  useEffect(() => { localStorage.setItem('devi-jewellers-trReady', trReady.toString()) }, [trReady])
+  useEffect(() => { localStorage.setItem('devi-jewellers-trKaragir', trKaragir.toString()) }, [trKaragir])
+
   const showMessage = useCallback((id: string, text: string, ok: boolean) => {
     setMsg(m => ({ ...m, [id]: { text, ok } }))
     setTimeout(() => setMsg(m => { const n = { ...m }; delete n[id]; return n }), 4500)
