@@ -48,6 +48,65 @@ npm run dev
 # Open http://localhost:3000
 ```
 
+## Database Setup (Neon PostgreSQL)
+
+1. Create a Neon database and copy the connection string.
+2. Set the environment variable in Vercel as `DATABASE_URL_repair` with that connection string.
+3. In the Neon console, open the SQL editor and run the SQL in `schema.sql`.
+
+If your database is missing tables, run the following SQL:
+
+```sql
+CREATE TABLE IF NOT EXISTS repair_records (
+  id SERIAL PRIMARY KEY,
+  doc_num VARCHAR(20) UNIQUE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  mobile VARCHAR(15) NOT NULL,
+  metal VARCHAR(100) NOT NULL,
+  jewellery VARCHAR(255) NOT NULL,
+  weight VARCHAR(20) NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  salesman VARCHAR(255) NOT NULL,
+  description TEXT,
+  received_date TIMESTAMP NOT NULL,
+  delivery_date TIMESTAMP NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'received',
+  karagir VARCHAR(255),
+  karagir_date TIMESTAMP,
+  final_amount DECIMAL(10,2),
+  completed_date TIMESTAMP,
+  quality VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS masters (
+  id SERIAL PRIMARY KEY,
+  type VARCHAR(50) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'active',
+  mobile VARCHAR(15),
+  category VARCHAR(100),
+  metal_type VARCHAR(50),
+  karat VARCHAR(20),
+  speciality VARCHAR(255),
+  address TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(type, name)
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  id SERIAL PRIMARY KEY,
+  key VARCHAR(100) UNIQUE NOT NULL,
+  value TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+Then deploy or redeploy the app.
+
 ## WhatsApp API Setup
 1. Get Route Mobile account at routemobile.com
 2. Set up WhatsApp Business Account in Meta Business Manager

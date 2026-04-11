@@ -9,7 +9,8 @@ export async function GET() {
     return NextResponse.json(records);
   } catch (error) {
     console.error('Error fetching records:', error);
-    return NextResponse.json({ error: 'Failed to fetch records' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to fetch records';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -55,10 +56,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(record);
   } catch (error) {
     console.error('Error creating record:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message, error.stack);
-    }
-    return NextResponse.json({ error: 'Failed to create record' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to create record';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -123,6 +122,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(record);
   } catch (error) {
     console.error('Error updating record:', error);
-    return NextResponse.json({ error: 'Failed to update record' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to update record';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
