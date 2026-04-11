@@ -136,7 +136,7 @@ const convertMasterToDB = (master: Master) => ({
 });
 
 /* ─── Helpers ─── */
-const fmtDate = (iso: string | Date) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+const fmtDate = (iso?: string | Date) => new Date(iso || new Date()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 const fmtFull = (iso: string | Date) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 const addDays = (d: string | Date, n: number) => { const r = new Date(d); r.setDate(r.getDate() + n); return r }
 const randTok = (n: number) => Array.from({ length: n }, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]).join('')
