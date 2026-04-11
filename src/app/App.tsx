@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
 /* ─── Types ─── */
-interface Record {
+interface RepairRecord {
   docNum: string; name: string; mobile: string; metal: string; jewellery: string;
   weight: string; amount: number; salesman: string; desc: string;
   receivedDate: string; deliveryDate: string; status: string;
@@ -16,7 +16,7 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day
 const fmtFull = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 const addDays = (d: string | Date, n: number) => { const r = new Date(d); r.setDate(r.getDate() + n); return r }
 const randTok = (n: number) => Array.from({ length: n }, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]).join('')
-const effStatus = (r: Record) => {
+const effStatus = (r: RepairRecord) => {
   if (r.status === 'ready') return 'ready'
   if ((r.status === 'received' || r.status === 'with_karagir') && new Date(r.deliveryDate) < new Date()) return 'overdue'
   return r.status
@@ -50,7 +50,7 @@ function generateInvoiceLink(docNum: string, type: string, baseUrl: string, expD
   return { url: `${baseUrl.replace(/\/$/, '')}/INV-${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`, expDate }
 }
 
-function buildAndDownloadPDF(rec: Record, type: 'received' | 'final', baseUrl: string, expDays: number) {
+function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', baseUrl: string, expDays: number) {
   if (typeof window === 'undefined' || !window.jspdf) return null
   const { jsPDF } = window.jspdf
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
@@ -125,7 +125,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   )
 }
 
-function InvoicePanel({ rec, type, baseUrl, expDays, onMsg }: { rec: Record; type: 'received' | 'final'; baseUrl: string; expDays: number; onMsg: (m: string, ok: boolean) => void }) {
+function InvoicePanel({ rec, type, baseUrl, expDays, onMsg }: { rec: RepairRecord; type: 'received' | 'final'; baseUrl: string; expDays: number; onMsg: (m: string, ok: boolean) => void }) {
   const { url, expDate } = generateInvoiceLink(rec.docNum, type, baseUrl, expDays)
   const waMsg = type === 'received'
     ? `Dear ${rec.name},\n\nYour ${rec.metal} jewellery (${rec.jewellery}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate)}\n💰 *Est. Charges:* Rs ${rec.amount}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
@@ -158,7 +158,7 @@ function InvoicePanel({ rec, type, baseUrl, expDays, onMsg }: { rec: Record; typ
 /* ─── Main App ─── */
 export default function App() {
   const [page, setPage] = useState('dashboard')
-  const [records, setRecords] = useState<Record[]>([])
+  const [records, setRecords] = useState<RepairRecord[]>([])
   const [docSeq, setDocSeq] = useState(1000)
   const [msg, setMsg] = useState<Record<string, { text: string; ok: boolean }>>({})
 
@@ -170,16 +170,16 @@ export default function App() {
   const [masterTab, setMasterTab] = useState('salesman')
 
   // Receive form
-  const [rName, setRName] = useState(''); const [rMobile, setRMobile] = useState(''); const [rMetal, setRMetal] = useState(''); const [rType, setRType] = useState(''); const [rWeight, setRWeight] = useState(''); const [rDays, setRDays] = useState(''); const [rAmount, setRAmount] = useState(''); const [rSalesman, setRSalesman] = useState(''); const [rDesc, setRDesc] = useState(''); const [savedRec, setSavedRec] = useState<Record | null>(null)
+  const [rName, setRName] = useState(''); const [rMobile, setRMobile] = useState(''); const [rMetal, setRMetal] = useState(''); const [rType, setRType] = useState(''); const [rWeight, setRWeight] = useState(''); const [rDays, setRDays] = useState(''); const [rAmount, setRAmount] = useState(''); const [rSalesman, setRSalesman] = useState(''); const [rDesc, setRDesc] = useState(''); const [savedRec, setSavedRec] = useState<RepairRecord | null>(null)
 
   // Karagir out
   const [koDoc, setKoDoc] = useState(''); const [koKaragir, setKoKaragir] = useState(''); const [koNotes, setKoNotes] = useState(''); const [koLoaded, setKoLoaded] = useState(false)
 
   // Karagir in
-  const [kiDoc, setKiDoc] = useState(''); const [kiAmount, setKiAmount] = useState(''); const [kiQuality, setKiQuality] = useState('Good'); const [kiLoaded, setKiLoaded] = useState(false); const [finalRec, setFinalRec] = useState<Record | null>(null)
+  const [kiDoc, setKiDoc] = useState(''); const [kiAmount, setKiAmount] = useState(''); const [kiQuality, setKiQuality] = useState('Good'); const [kiLoaded, setKiLoaded] = useState(false); const [finalRec, setFinalRec] = useState<RepairRecord | null>(null)
 
   // Track
-  const [trackQ, setTrackQ] = useState(''); const [trackResults, setTrackResults] = useState<Record[]>([]); const [showAll, setShowAll] = useState(true)
+  const [trackQ, setTrackQ] = useState(''); const [trackResults, setTrackResults] = useState<RepairRecord[]>([]); const [showAll, setShowAll] = useState(true)
 
   // Settings
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
@@ -220,7 +220,7 @@ export default function App() {
     const docNum = 'JR' + String(seq).padStart(4, '0')
     const receivedDate = new Date().toISOString()
     const deliveryDate = addDays(receivedDate, parseInt(rDays)).toISOString()
-    const rec: Record = { docNum, name: rName, mobile: rMobile, metal: rMetal, jewellery: rType, weight: rWeight, amount: parseFloat(rAmount), salesman: rSalesman, desc: rDesc, receivedDate, deliveryDate, status: 'received', karagir: null, karagirDate: null, finalAmount: null, completedDate: null }
+    const rec: RepairRecord = { docNum, name: rName, mobile: rMobile, metal: rMetal, jewellery: rType, weight: rWeight, amount: parseFloat(rAmount), salesman: rSalesman, desc: rDesc, receivedDate, deliveryDate, status: 'received', karagir: null, karagirDate: null, finalAmount: null, completedDate: null }
     setRecords(prev => [...prev, rec])
     setSavedRec(rec)
     showMessage('receive', `Saved! Document: ${docNum}`, true)
@@ -264,7 +264,7 @@ export default function App() {
   }
 
   /* ── Tracker card ── */
-  const TrackerCard = ({ r }: { r: Record }) => {
+  const TrackerCard = ({ r }: { r: RepairRecord }) => {
     const es = effStatus(r)
     const daysLeft = Math.ceil((new Date(r.deliveryDate).getTime() - Date.now()) / 86400000)
     const daysText = es === 'ready' ? 'Completed' : es === 'overdue' ? `${Math.abs(daysLeft)} day(s) overdue` : daysLeft === 0 ? 'Due today' : `${daysLeft} day(s) left`
@@ -303,7 +303,7 @@ export default function App() {
     )
   }
 
-  const grp: Record<string, Record[]> = { overdue: [], ready: [], with_karagir: [], received: [] }
+  const grp: Record<string, RepairRecord[]> = { overdue: [], ready: [], with_karagir: [], received: [] }
   records.forEach(r => { const es = effStatus(r); if (grp[es]) grp[es].push(r) })
 
   /* ──────── RENDER ──────── */
