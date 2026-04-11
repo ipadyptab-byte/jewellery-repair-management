@@ -3,10 +3,10 @@ import { sql } from '@/lib/db'
 
 export async function GET() {
   try {
-    await sql`SELECT 1`;
+    await sql()`SELECT 1`;
 
     const requiredTables = ['repair_records', 'masters', 'settings'];
-    const existingTables = await sql`
+    const existingTables = await sql()`
       SELECT tablename
       FROM pg_catalog.pg_tables
       WHERE schemaname = 'public'
