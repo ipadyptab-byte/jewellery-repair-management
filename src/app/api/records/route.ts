@@ -43,11 +43,11 @@ export async function POST(request: NextRequest) {
     const [record] = await sql()
       `INSERT INTO repair_records (
         doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description,
-        received_date, delivery_date, status, notes, images
+        received_date, delivery_date, status
       ) VALUES (
         ${doc_num}, ${customer_name}, ${phone_number}, ${metal}, ${item_type}, ${weight},
         ${estimated_cost}, ${salesman}, ${description}, ${received_date}, ${delivery_date},
-        ${status}, ${notes}, ${JSON.stringify(images || [])}
+        ${status}
       )
       RETURNING *`;
 
@@ -112,8 +112,6 @@ export async function PUT(request: NextRequest) {
         final_amount = ${final_amount},
         completed_date = ${completed_date},
         quality = ${quality},
-        notes = ${notes},
-        images = ${JSON.stringify(images || [])},
         updated_at = NOW()
       WHERE id = ${id}
       RETURNING *`;
