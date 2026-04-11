@@ -15,7 +15,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('POST /api/records called');
     const body = await request.json();
+    console.log('Request body:', body);
     const {
       doc_num,
       customer_name,
@@ -34,6 +36,10 @@ export async function POST(request: NextRequest) {
       salesman
     } = body;
 
+    console.log('Inserting record with values:', {
+      doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status
+    });
+
     const [record] = await sql()
       `INSERT INTO repair_records (
         doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description,
@@ -45,9 +51,11 @@ export async function POST(request: NextRequest) {
       )
       RETURNING *`;
 
+    console.log('Record created successfully:', record);
     return NextResponse.json(record);
   } catch (error) {
     console.error('Error creating record:', error);
+    console.error('Error details:', error.message, error.stack);
     return NextResponse.json({ error: 'Failed to create record' }, { status: 500 });
   }
 }
