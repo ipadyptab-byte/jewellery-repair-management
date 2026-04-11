@@ -12,8 +12,8 @@ interface RepairRecord {
 interface Master { id: number; name: string; status: string; mob?: string; cat?: string; type?: string; karat?: string; spec?: string; addr?: string }
 
 /* ─── Helpers ─── */
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-const fmtFull = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+const fmtDate = (iso: string | Date) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+const fmtFull = (iso: string | Date) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 const addDays = (d: string | Date, n: number) => { const r = new Date(d); r.setDate(r.getDate() + n); return r }
 const randTok = (n: number) => Array.from({ length: n }, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]).join('')
 const effStatus = (r: RepairRecord) => {
@@ -125,7 +125,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   )
 }
 
-function InvoicePanel({ rec, type, baseUrl, expDays, onMsg }: { rec: RepairRecord; type: 'received' | 'final'; baseUrl: string; expDays: number; onMsg: (m: string, ok: boolean) => void }) {
+function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp }: { rec: RepairRecord; type: 'received' | 'final'; baseUrl: string; expDays: number; onMsg: (m: string, ok: boolean) => void; onSendWhatsApp: () => Promise<void> }) {
   const { url, expDate } = generateInvoiceLink(rec.docNum, type, baseUrl, expDays)
   const waMsg = type === 'received'
     ? `Dear ${rec.name},\n\nYour ${rec.metal} jewellery (${rec.jewellery}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate)}\n💰 *Est. Charges:* Rs ${rec.amount}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
@@ -133,7 +133,15 @@ function InvoicePanel({ rec, type, baseUrl, expDays, onMsg }: { rec: RepairRecor
 
   const copy = () => navigator.clipboard.writeText(url).then(() => onMsg('Link copied!', true)).catch(() => onMsg('Copy failed', false))
   const download = () => buildAndDownloadPDF(rec, type, baseUrl, expDays)
-  const sendWA = () => onMsg(`WhatsApp ${type === 'final' ? 'final invoice' : 'receipt'} sent to +91${rec.mobile} via Route Mobile!`, true)
+  const sendWA = async () => {
+    try {
+      await onSendWhatsApp()
+      onMsg(`WhatsApp ${type === 'final' ? 'final invoice' : 'receipt'} sent to +91${rec.mobile} via Route Mobile!`, true)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to send WhatsApp message'
+      onMsg(`WhatsApp send failed: ${message}`, false)
+    }
+  }
 
   return (
     <div className="invoice-panel">
@@ -190,6 +198,44 @@ export default function App() {
   const [settingsTab, setSettingsTab] = useState('creds')
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
+
+  const sendWhatsApp = async (rec: RepairRecord, type: 'received' | 'final') => {
+    if (!rmUser || !rmWaba || !rmPhoneid || !rmWaphone || !rmToken) throw new Error('WhatsApp credentials are incomplete.')
+    if (!tpl1Name || !tpl2Name) throw new Error('WhatsApp template names are required.')
+
+    const templateName = type === 'received' ? tpl1Name : tpl2Name
+    const invoiceLink = `${cfgLinkBase.replace(/\/$/, '')}/INV-${rec.docNum}${type === 'final' ? '-final' : ''}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
+    const params = type === 'received'
+      ? [rec.name, rec.metal, rec.jewellery, fmtDate(rec.deliveryDate), String(rec.amount), invoiceLink]
+      : [rec.name, rec.metal, String(rec.finalAmount ?? rec.amount), invoiceLink]
+
+    const toNumber = rec.mobile.replace(/^\+/, '')
+    const baseUrl = rmApiUrl.replace(/\/$/, '')
+    const url = baseUrl.includes('/messages') ? baseUrl : baseUrl.includes('/v') ? `${baseUrl}/messages` : `${baseUrl}/${rmApiver}/messages`
+
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (rmToken) headers.Authorization = `Bearer ${rmToken}`
+    else if (typeof btoa === 'function') headers.Authorization = `Basic ${btoa(`${rmUser}:${rmPass}`)}`
+
+    const body = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: toNumber,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: { code: 'en_IN' },
+        components: [{ type: 'body', parameters: params.map(text => ({ type: 'text', text })) }]
+      }
+    }
+
+    const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) })
+    const json = await response.json().catch(() => null)
+    if (!response.ok) {
+      throw new Error(json?.error?.message || json?.message || response.statusText)
+    }
+    return json
+  }
 
   // Master form fields
   const [msName, setMsName] = useState(''); const [msMob, setMsMob] = useState(''); const [msStatus, setMsStatus] = useState('active')
@@ -404,7 +450,7 @@ export default function App() {
         {savedRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Invoice PDF &amp; WhatsApp — <span style={{ color: 'var(--brand)' }}>{savedRec.docNum}</span></div>
-            <InvoicePanel rec={savedRec} type="received" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} />
+            <InvoicePanel rec={savedRec} type="received" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} onSendWhatsApp={() => sendWhatsApp(savedRec, 'received')} />
             <Msg text={msg['wa-recv']?.text || ''} ok={msg['wa-recv']?.ok || false} />
           </div>
         )}
@@ -477,7 +523,7 @@ export default function App() {
         {finalRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Final Invoice — <span style={{ color: 'var(--brand)' }}>{finalRec.docNum}</span></div>
-            <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} />
+            <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} />
             <Msg text={msg['wa-final']?.text || ''} ok={msg['wa-final']?.ok || false} />
           </div>
         )}
