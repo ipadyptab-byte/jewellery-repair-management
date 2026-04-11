@@ -237,6 +237,39 @@ export default function App() {
     return json
   }
 
+  const sendTestWhatsApp = async () => {
+    if (!rmUser) { showMessage('watest', 'Save credentials first.', false); return }
+    if (!testWa || !/^\+\d{10,15}$/.test(testWa)) { showMessage('watest', 'Enter valid number with country code.', false); return }
+
+    try {
+      // Create a test record
+      const testRec: RepairRecord = {
+        docNum: 'TEST001',
+        name: 'Test Customer',
+        mobile: testWa.replace(/^\+/, ''),
+        metal: 'Gold 22K',
+        jewellery: 'Gold Ring',
+        weight: '5.0',
+        amount: 1500,
+        salesman: 'Test Salesman',
+        desc: 'Test repair',
+        receivedDate: new Date().toISOString(),
+        deliveryDate: addDays(new Date(), 7).toISOString(),
+        status: testTpl === 'received' ? 'received' : 'ready',
+        karagir: null,
+        karagirDate: null,
+        finalAmount: testTpl === 'ready' ? 1600 : null,
+        completedDate: testTpl === 'ready' ? new Date().toISOString() : null
+      }
+
+      await sendWhatsApp(testRec, testTpl as 'received' | 'final')
+      showMessage('watest', `Test WhatsApp with invoice link sent to ${testWa}.`, true)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to send test WhatsApp message'
+      showMessage('watest', `Test WhatsApp failed: ${message}`, false)
+    }
+  }
+
   // Master form fields
   const [msName, setMsName] = useState(''); const [msMob, setMsMob] = useState(''); const [msStatus, setMsStatus] = useState('active')
   const [mjName, setMjName] = useState(''); const [mjCat, setMjCat] = useState('Necklace'); const [mjStatus, setMjStatus] = useState('active')
@@ -793,7 +826,7 @@ export default function App() {
                 <div className="field"><label>Test WhatsApp number <span className="req">*</span></label><input value={testWa} onChange={e => setTestWa(e.target.value)} placeholder="+919876543210" /><div className="hint">Include country code.</div></div>
                 <div className="field"><label>Template to test</label><select value={testTpl} onChange={e => setTestTpl(e.target.value)}><option value="received">Template 1 — {tpl1Name}</option><option value="ready">Template 2 — {tpl2Name}</option></select></div>
               </div>
-              <div className="btn-row"><button className="btn btn-wa" onClick={() => { if (!rmUser) { showMessage('watest', 'Save credentials first.', false); return }; if (!testWa || !/^\+\d{10,15}$/.test(testWa)) { showMessage('watest', 'Enter valid number with country code.', false); return }; showMessage('watest', `Test WhatsApp with invoice link sent to ${testWa}.`, true) }}><IcWA />Send test WhatsApp</button></div>
+              <div className="btn-row"><button className="btn btn-wa" onClick={sendTestWhatsApp}><IcWA />Send test WhatsApp</button></div>
               <Msg text={msg['watest']?.text || ''} ok={msg['watest']?.ok || false} />
               <div className="divider" />
               <div className="sec-label">Credential reference</div>
