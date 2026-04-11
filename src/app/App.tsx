@@ -60,22 +60,32 @@ interface Master {
 /* ─── Data Conversion Helpers ─── */
 const convertFromDB = (record: any): RepairRecord => ({
   ...record,
-  // Add legacy fields for backward compatibility
+  // Map DB fields to frontend fields
   docNum: record.doc_num,
-  name: record.customer_name,
-  mobile: record.phone_number,
-  jewellery: record.item_type,
+  name: record.name,
+  mobile: record.mobile,
+  jewellery: record.jewellery,
   desc: record.description,
-  amount: record.estimated_cost,
+  amount: record.amount,
   karagir: record.karagir,
   karagirDate: record.karagir_date,
   finalAmount: record.final_amount,
   completedDate: record.completed_date,
-  receivedDate: record.received_date || record.created_at,
+  receivedDate: record.received_date,
   deliveryDate: record.delivery_date,
   metal: record.metal,
   weight: record.weight,
   salesman: record.salesman,
+  quality: record.quality,
+  // Keep legacy fields for compatibility
+  customer_name: record.name,
+  phone_number: record.mobile,
+  item_type: record.jewellery,
+  description: record.description,
+  estimated_cost: record.amount,
+  master_id: record.master_id,
+  notes: record.notes,
+  images: record.images,
 });
 
 const convertToDB = (record: RepairRecord) => ({

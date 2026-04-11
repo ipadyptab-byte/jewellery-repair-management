@@ -17,24 +17,31 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      customerName,
-      phoneNumber,
-      itemType,
+      doc_num,
+      customer_name,
+      phone_number,
+      item_type,
       description,
-      estimatedCost,
+      estimated_cost,
       status,
-      masterId,
+      master_id,
       notes,
-      images
+      images,
+      received_date,
+      delivery_date,
+      metal,
+      weight,
+      salesman
     } = body;
 
     const [record] = await sql()
       `INSERT INTO repair_records (
-        customer_name, phone_number, item_type, description,
-        estimated_cost, status, master_id, notes, images
+        doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description,
+        received_date, delivery_date, status, notes, images
       ) VALUES (
-        ${customerName}, ${phoneNumber}, ${itemType}, ${description},
-        ${estimatedCost}, ${status}, ${masterId}, ${notes}, ${JSON.stringify(images || [])}
+        ${doc_num}, ${customer_name}, ${phone_number}, ${metal}, ${item_type}, ${weight},
+        ${estimated_cost}, ${salesman}, ${description}, ${received_date}, ${delivery_date},
+        ${status}, ${notes}, ${JSON.stringify(images || [])}
       )
       RETURNING *`;
 
@@ -50,22 +57,23 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const {
       id,
-      customerName,
-      phoneNumber,
-      itemType,
+      doc_num,
+      customer_name,
+      phone_number,
+      item_type,
       description,
-      estimatedCost,
+      estimated_cost,
       status,
-      masterId,
+      master_id,
       notes,
       images,
       karagir,
-      karagirDate,
-      finalAmount,
-      completedDate,
+      karagir_date,
+      final_amount,
+      completed_date,
       quality,
-      receivedDate,
-      deliveryDate,
+      received_date,
+      delivery_date,
       metal,
       weight,
       salesman
@@ -77,25 +85,25 @@ export async function PUT(request: NextRequest) {
 
     const [record] = await sql()
       `UPDATE repair_records SET
-        customer_name = ${customerName},
-        phone_number = ${phoneNumber},
-        item_type = ${itemType},
+        doc_num = ${doc_num},
+        name = ${customer_name},
+        mobile = ${phone_number},
+        metal = ${metal},
+        jewellery = ${item_type},
+        weight = ${weight},
+        amount = ${estimated_cost},
+        salesman = ${salesman},
         description = ${description},
-        estimated_cost = ${estimatedCost},
+        received_date = ${received_date},
+        delivery_date = ${delivery_date},
         status = ${status},
-        master_id = ${masterId},
+        karagir = ${karagir},
+        karagir_date = ${karagir_date},
+        final_amount = ${final_amount},
+        completed_date = ${completed_date},
+        quality = ${quality},
         notes = ${notes},
         images = ${JSON.stringify(images || [])},
-        karagir = ${karagir},
-        karagir_date = ${karagirDate},
-        final_amount = ${finalAmount},
-        completed_date = ${completedDate},
-        quality = ${quality},
-        received_date = ${receivedDate},
-        delivery_date = ${deliveryDate},
-        metal = ${metal},
-        weight = ${weight},
-        salesman = ${salesman},
         updated_at = NOW()
       WHERE id = ${id}
       RETURNING *`;
