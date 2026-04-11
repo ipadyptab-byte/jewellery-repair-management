@@ -6,6 +6,10 @@ let sql: any = null
 function getSql() {
   if (!sql) {
     const databaseUrl = process.env.DATABASE_URL_repair
+    console.log('DATABASE_URL_repair found:', !!databaseUrl);
+    if (databaseUrl) {
+      console.log('Database URL prefix:', databaseUrl.slice(0, 30) + '...');
+    }
     if (!databaseUrl) {
       throw new Error('DATABASE_URL_repair environment variable is not set')
     }
