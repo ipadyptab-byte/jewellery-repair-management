@@ -5,9 +5,9 @@ let sql: any = null
 // Lazy initialization of database connection
 function getSql() {
   if (!sql) {
-    const databaseUrl = process.env.DATABASE_URL
+    const databaseUrl = process.env.DATABASE_URL_repair
     if (!databaseUrl) {
-      throw new Error('DATABASE_URL environment variable is not set')
+      throw new Error('DATABASE_URL_repair environment variable is not set')
     }
     sql = neon(databaseUrl)
   }
