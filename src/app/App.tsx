@@ -3,13 +3,127 @@ import { useState, useEffect, useCallback } from 'react'
 
 /* ─── Types ─── */
 interface RepairRecord {
-  docNum: string; name: string; mobile: string; metal: string; jewellery: string;
-  weight: string; amount: number; salesman: string; desc: string;
-  receivedDate: string; deliveryDate: string; status: string;
-  karagir: string | null; karagirDate: string | null;
-  finalAmount: number | null; completedDate: string | null; quality?: string;
+  id?: number;
+  doc_num: string;
+  customer_name: string;
+  phone_number: string;
+  item_type: string;
+  description: string;
+  estimated_cost: number;
+  status: string;
+  master_id: number | null;
+  notes: string;
+  images: string[];
+  created_at?: string;
+  updated_at?: string;
+  // Legacy fields for backward compatibility
+  karagir?: string | null;
+  karagir_date?: string | null;
+  final_amount?: number | null;
+  completed_date?: string | null;
+  quality?: string;
+  received_date?: string;
+  delivery_date?: string;
+  metal?: string;
+  jewellery?: string;
+  weight?: string;
+  amount?: number;
+  salesman?: string;
+  mobile?: string;
+  name?: string;
+  docNum?: string;
+  desc?: string;
+  karagirDate?: string | null;
+  finalAmount?: number | null;
+  completedDate?: string | null;
+  receivedDate?: string;
+  deliveryDate?: string;
 }
-interface Master { id: number; name: string; status: string; mob?: string; cat?: string; type?: string; karat?: string; spec?: string; addr?: string }
+interface Master {
+  id: number;
+  name: string;
+  specialty?: string;
+  phone_number?: string;
+  email?: string;
+  is_active: boolean;
+  type?: string;
+  karat?: string;
+  category?: string;
+  address?: string;
+  spec?: string;
+  addr?: string;
+  mob?: string;
+  cat?: string;
+  status?: string;
+}
+
+/* ─── Data Conversion Helpers ─── */
+const convertFromDB = (record: any): RepairRecord => ({
+  ...record,
+  // Add legacy fields for backward compatibility
+  docNum: record.doc_num,
+  name: record.customer_name,
+  mobile: record.phone_number,
+  jewellery: record.item_type,
+  desc: record.description,
+  amount: record.estimated_cost,
+  karagir: record.karagir,
+  karagirDate: record.karagir_date,
+  finalAmount: record.final_amount,
+  completedDate: record.completed_date,
+  receivedDate: record.received_date || record.created_at,
+  deliveryDate: record.delivery_date,
+  metal: record.metal,
+  weight: record.weight,
+  salesman: record.salesman,
+});
+
+const convertToDB = (record: RepairRecord) => ({
+  doc_num: record.docNum || record.doc_num,
+  customer_name: record.name || record.customer_name,
+  phone_number: record.mobile || record.phone_number,
+  item_type: record.jewellery || record.item_type,
+  description: record.desc || record.description || '',
+  estimated_cost: record.amount || record.estimated_cost,
+  status: record.status,
+  master_id: record.master_id,
+  notes: record.notes || '',
+  images: record.images || [],
+  karagir: record.karagir,
+  karagir_date: record.karagirDate || record.karagir_date,
+  final_amount: record.finalAmount || record.final_amount,
+  completed_date: record.completedDate || record.completed_date,
+  quality: record.quality,
+  received_date: record.receivedDate || record.received_date,
+  delivery_date: record.deliveryDate || record.delivery_date,
+  metal: record.metal,
+  weight: record.weight,
+  salesman: record.salesman,
+});
+
+const convertMasterFromDB = (master: any): Master => ({
+  ...master,
+  // Add legacy fields
+  mob: master.phone_number,
+  cat: master.category,
+  type: master.type,
+  karat: master.karat,
+  spec: master.specialty,
+  addr: master.address,
+  status: master.is_active ? 'active' : 'inactive',
+});
+
+const convertMasterToDB = (master: Master) => ({
+  name: master.name,
+  specialty: master.spec || master.specialty,
+  phone_number: master.mob || master.phone_number,
+  email: master.email,
+  is_active: master.status === 'active' || master.is_active,
+  type: master.type,
+  karat: master.karat,
+  category: master.cat || master.category,
+  address: master.addr || master.address,
+});
 
 /* ─── Helpers ─── */
 const fmtDate = (iso: string | Date) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -18,7 +132,7 @@ const addDays = (d: string | Date, n: number) => { const r = new Date(d); r.setD
 const randTok = (n: number) => Array.from({ length: n }, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]).join('')
 const effStatus = (r: RepairRecord) => {
   if (r.status === 'ready') return 'ready'
-  if ((r.status === 'received' || r.status === 'with_karagir') && new Date(r.deliveryDate) < new Date()) return 'overdue'
+  if ((r.status === 'received' || r.status === 'with_karagir') && r.deliveryDate && new Date(r.deliveryDate) < new Date()) return 'overdue'
   return r.status
 }
 
@@ -71,7 +185,7 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
 
   doc.setTextColor(0, 0, 0); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
   doc.text('Document No:', pad, y); doc.setFont('helvetica', 'normal'); doc.text(rec.docNum, pad + 32, y)
-  doc.setFont('helvetica', 'bold'); doc.text('Date:', W - pad - 50, y); doc.setFont('helvetica', 'normal'); doc.text(fmtDate(rec.receivedDate), W - pad - 36, y)
+  doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text('Date:', W - pad - 50, y); doc.setFont('helvetica', 'normal'); doc.text(fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString()), W - pad - 36, y)
   y += 7; doc.setDrawColor(192, 0, 58); doc.setLineWidth(0.3); doc.line(pad, y, W - pad, y); y += 6
 
   doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.text('Customer Details', pad, y); y += 5
@@ -81,7 +195,7 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
   doc.line(pad, y, W - pad, y); y += 6
 
   doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.text('Jewellery Details', pad, y); y += 5
-  const rows: [string, string][] = [['Item', rec.jewellery], ['Metal', rec.metal], ['Weight', `${rec.weight} grams`], ['Repair Work', rec.desc || 'General repair'], ['Salesman', rec.salesman], ['Received Date', fmtDate(rec.receivedDate)], ['Est. Delivery', fmtDate(rec.deliveryDate)]]
+  const rows: [string, string][] = [['Item', rec.jewellery || rec.item_type || ''], ['Metal', rec.metal || ''], ['Weight', `${rec.weight || '0'} grams`], ['Repair Work', rec.desc || rec.description || 'General repair'], ['Salesman', rec.salesman || ''], ['Received Date', fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString())], ['Est. Delivery', fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())]]
   if (rec.karagir) rows.push(['Karagir', rec.karagir])
   rows.forEach(([k, v]) => { doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text(`${k}:`, pad, y); doc.setFont('helvetica', 'normal'); doc.text(String(v), pad + 38, y); y += 5 })
   y += 2; doc.line(pad, y, W - pad, y); y += 6
@@ -96,7 +210,7 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
   }
   y += 2; doc.line(pad, y, W - pad, y); y += 6
 
-  const { url, expDate } = generateInvoiceLink(rec.docNum, type, baseUrl, expDays)
+  const { url, expDate } = generateInvoiceLink(rec.docNum || rec.doc_num, type, baseUrl, expDays)
   doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text('Invoice Link:', pad, y); y += 5
   doc.setFont('helvetica', 'normal'); doc.setTextColor(0, 100, 0); doc.text(url, pad, y, { maxWidth: W - 2 * pad }); y += 6
   doc.setTextColor(150, 80, 0); doc.setFontSize(8); doc.text(`Link expires on ${expDate} (valid ${expDays} days)`, pad, y); doc.setTextColor(0, 0, 0); y += 8
@@ -126,10 +240,10 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 }
 
 function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp }: { rec: RepairRecord; type: 'received' | 'final'; baseUrl: string; expDays: number; onMsg: (m: string, ok: boolean) => void; onSendWhatsApp: () => Promise<void> }) {
-  const { url, expDate } = generateInvoiceLink(rec.docNum, type, baseUrl, expDays)
+  const { url, expDate } = generateInvoiceLink(rec.docNum || rec.doc_num, type, baseUrl, expDays)
   const waMsg = type === 'received'
-    ? `Dear ${rec.name},\n\nYour ${rec.metal} jewellery (${rec.jewellery}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate)}\n💰 *Est. Charges:* Rs ${rec.amount}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
-    : `Dear ${rec.name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum}\n💰 *Final Charges:* Rs ${rec.finalAmount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
+    ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* Rs ${rec.amount || rec.estimated_cost}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
+    : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* Rs ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
 
   const copy = () => navigator.clipboard.writeText(url).then(() => onMsg('Link copied!', true)).catch(() => onMsg('Copy failed', false))
   const download = () => buildAndDownloadPDF(rec, type, baseUrl, expDays)
@@ -171,14 +285,17 @@ export default function App() {
   const [msg, setMsg] = useState<Record<string, { text: string; ok: boolean }>>({})
 
   // Masters
-  const [salesmen, setSalesmen] = useState<Master[]>([{ id: 1, name: 'Suresh', mob: '9876500001', status: 'active' }, { id: 2, name: 'Pooja', mob: '9876500002', status: 'active' }, { id: 3, name: 'Amit', mob: '9876500003', status: 'active' }])
-  const [jewelleries, setJewelleries] = useState<Master[]>([{ id: 1, name: 'Gold Ring', cat: 'Ring', status: 'active' }, { id: 2, name: 'Gold Necklace', cat: 'Necklace', status: 'active' }, { id: 3, name: 'Gold Bracelet', cat: 'Bracelet', status: 'active' }, { id: 4, name: 'Silver Anklet', cat: 'Anklet', status: 'active' }, { id: 5, name: 'Silver Chain', cat: 'Chain', status: 'active' }, { id: 6, name: 'Mangalsutra', cat: 'Necklace', status: 'active' }])
-  const [metals, setMetals] = useState<Master[]>([{ id: 1, name: 'Gold 22K', type: 'Gold', karat: '22K', status: 'active' }, { id: 2, name: 'Gold 18K', type: 'Gold', karat: '18K', status: 'active' }, { id: 3, name: 'Silver 925', type: 'Silver', karat: '925', status: 'active' }])
-  const [karagirs, setKaragirs] = useState<Master[]>([{ id: 1, name: 'Ganesh Soni', mob: '9765400001', spec: 'Gold repair', addr: 'Budhwar Peth', status: 'active' }, { id: 2, name: 'Manoj Karekar', mob: '9765400002', spec: 'Silver polishing', addr: 'Laxmi Road', status: 'active' }])
+  const [salesmen, setSalesmen] = useState<Master[]>([{ id: 1, name: 'Suresh', mob: '9876500001', status: 'active', is_active: true }, { id: 2, name: 'Pooja', mob: '9876500002', status: 'active', is_active: true }, { id: 3, name: 'Amit', mob: '9876500003', status: 'active', is_active: true }])
+  const [jewelleries, setJewelleries] = useState<Master[]>([{ id: 1, name: 'Gold Ring', cat: 'Ring', status: 'active', is_active: true }, { id: 2, name: 'Gold Necklace', cat: 'Necklace', status: 'active', is_active: true }, { id: 3, name: 'Gold Bracelet', cat: 'Bracelet', status: 'active', is_active: true }, { id: 4, name: 'Silver Anklet', cat: 'Anklet', status: 'active', is_active: true }, { id: 5, name: 'Silver Chain', cat: 'Chain', status: 'active', is_active: true }, { id: 6, name: 'Mangalsutra', cat: 'Necklace', status: 'active', is_active: true }])
+  const [metals, setMetals] = useState<Master[]>([{ id: 1, name: 'Gold 22K', type: 'Gold', karat: '22K', status: 'active', is_active: true }, { id: 2, name: 'Gold 18K', type: 'Gold', karat: '18K', status: 'active', is_active: true }, { id: 3, name: 'Silver 925', type: 'Silver', karat: '925', status: 'active', is_active: true }])
+  const [karagirs, setKaragirs] = useState<Master[]>([{ id: 1, name: 'Ganesh Soni', mob: '9765400001', spec: 'Gold repair', addr: 'Budhwar Peth', status: 'active', is_active: true }, { id: 2, name: 'Manoj Karekar', mob: '9765400002', spec: 'Silver polishing', addr: 'Laxmi Road', status: 'active', is_active: true }])
   const [masterTab, setMasterTab] = useState('salesman')
 
   // Receive form
   const [rName, setRName] = useState(''); const [rMobile, setRMobile] = useState(''); const [rMetal, setRMetal] = useState(''); const [rType, setRType] = useState(''); const [rWeight, setRWeight] = useState(''); const [rDays, setRDays] = useState(''); const [rAmount, setRAmount] = useState(''); const [rSalesman, setRSalesman] = useState(''); const [rDesc, setRDesc] = useState(''); const [savedRec, setSavedRec] = useState<RepairRecord | null>(null)
+
+  // Edit mode
+  const [isEditing, setIsEditing] = useState(false); const [editingRecord, setEditingRecord] = useState<RepairRecord | null>(null)
 
   // Karagir out
   const [koDoc, setKoDoc] = useState(''); const [koKaragir, setKoKaragir] = useState(''); const [koNotes, setKoNotes] = useState(''); const [koLoaded, setKoLoaded] = useState(false)
@@ -204,41 +321,70 @@ export default function App() {
     if (!tpl1Name || !tpl2Name) throw new Error('WhatsApp template names are required.')
 
     const templateName = type === 'received' ? tpl1Name : tpl2Name
-    const invoiceLink = `${cfgLinkBase.replace(/\/$/, '')}/INV-${rec.docNum}${type === 'final' ? '-final' : ''}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
+    const invoiceLink = `${cfgLinkBase.replace(/\/$/, '')}/INV-${rec.docNum || rec.doc_num}${type === 'final' ? '-final' : ''}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
     const params = type === 'received'
-      ? [rec.name, rec.metal, rec.jewellery, fmtDate(rec.deliveryDate), String(rec.amount), invoiceLink]
-      : [rec.name, rec.metal, String(rec.finalAmount ?? rec.amount), invoiceLink]
+      ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]
+      : [rec.name || rec.customer_name, rec.metal, String(rec.finalAmount || rec.final_amount || rec.amount || rec.estimated_cost), invoiceLink]
 
-    const toNumber = rec.mobile.replace(/^\+/, '')
+    const toNumber = (rec.mobile || rec.phone_number || '').replace(/^\+/, '')
     const baseUrl = rmApiUrl.replace(/\/$/, '')
-    // Route Mobile typically uses: https://api.routemobile.com/whatsapp/v1/messages
-    const url = baseUrl.includes('/messages') ? baseUrl : `${baseUrl}/messages`
 
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (rmToken) {
-      // Route Mobile typically uses API key in apikey header or Authorization
-      headers.apikey = rmToken
-      // Some Route Mobile endpoints also accept: headers.Authorization = `apikey ${rmToken}`
-    } else if (rmUser && rmPass) {
-      // Fallback to basic auth if no token
-      headers.Authorization = `Basic ${typeof btoa === 'function' ? btoa(`${rmUser}:${rmPass}`) : ''}`
+    // Route Mobile API endpoint
+    const url = `${baseUrl}/messages`
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
     }
 
+    // Route Mobile authentication
+    if (rmToken) {
+      headers['Authorization'] = `Bearer ${rmToken}`
+    } else if (rmUser && rmPass) {
+      headers['Authorization'] = `Basic ${btoa(`${rmUser}:${rmPass}`)}`
+    }
+
+    // Route Mobile request body format
     const body = {
-      to: toNumber,
+      to: toNumber.startsWith('91') ? toNumber : `91${toNumber}`,
       type: 'template',
+      messaging_product: 'whatsapp',
       template: {
         name: templateName,
-        language: 'en',
-        parameters: params
+        language: {
+          code: 'en'
+        },
+        components: [{
+          type: 'body',
+          parameters: params.map(param => ({ type: 'text', text: param }))
+        }]
       }
     }
 
-    const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) })
-    const json = await response.json().catch(() => null)
-    if (!response.ok) {
-      throw new Error(json?.error?.message || json?.message || response.statusText)
+    console.log('WhatsApp API Request:', { url, headers: { ...headers, Authorization: '[REDACTED]' }, body })
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body)
+    })
+
+    const responseText = await response.text()
+    let json
+
+    try {
+      json = JSON.parse(responseText)
+    } catch (e) {
+      console.error('Failed to parse response:', responseText)
+      throw new Error(`API returned invalid JSON: ${responseText}`)
     }
+
+    console.log('WhatsApp API Response:', { status: response.status, json })
+
+    if (!response.ok) {
+      const errorMessage = json?.error?.message || json?.message || json?.description || response.statusText
+      throw new Error(errorMessage || 'WhatsApp API request failed')
+    }
+
     return json
   }
 
@@ -249,6 +395,21 @@ export default function App() {
     try {
       // Create a test record
       const testRec: RepairRecord = {
+        doc_num: 'TEST001',
+        customer_name: 'Test Customer',
+        phone_number: testWa.replace(/^\+/, ''),
+        item_type: 'Gold Ring',
+        description: 'Test repair',
+        estimated_cost: 1500,
+        status: testTpl === 'received' ? 'received' : 'ready',
+        master_id: null,
+        notes: '',
+        images: [],
+        received_date: new Date().toISOString(),
+        delivery_date: addDays(new Date(), 7).toISOString(),
+        final_amount: testTpl === 'ready' ? 1600 : null,
+        completed_date: testTpl === 'ready' ? new Date().toISOString() : null,
+        // Legacy fields for compatibility
         docNum: 'TEST001',
         name: 'Test Customer',
         mobile: testWa.replace(/^\+/, ''),
@@ -260,9 +421,6 @@ export default function App() {
         desc: 'Test repair',
         receivedDate: new Date().toISOString(),
         deliveryDate: addDays(new Date(), 7).toISOString(),
-        status: testTpl === 'received' ? 'received' : 'ready',
-        karagir: null,
-        karagirDate: null,
         finalAmount: testTpl === 'ready' ? 1600 : null,
         completedDate: testTpl === 'ready' ? new Date().toISOString() : null
       }
@@ -281,99 +439,91 @@ export default function App() {
   const [mmName, setMmName] = useState(''); const [mmType, setMmType] = useState('Gold'); const [mmKarat, setMmKarat] = useState(''); const [mmStatus, setMmStatus] = useState('active')
   const [mkName, setMkName] = useState(''); const [mkMob, setMkMob] = useState(''); const [mkSpec, setMkSpec] = useState(''); const [mkAddr, setMkAddr] = useState(''); const [mkStatus, setMkStatus] = useState('active')
 
-  // Load data from localStorage on mount
+  // Load data from APIs on mount
   useEffect(() => {
-    try {
-      const savedRecords = localStorage.getItem('devi-jewellers-records')
-      if (savedRecords) setRecords(JSON.parse(savedRecords))
+    const loadData = async () => {
+      try {
+        // Load records
+        const recordsResponse = await fetch('/api/records');
+        if (recordsResponse.ok) {
+          const dbRecords = await recordsResponse.json();
+          setRecords(dbRecords.map(convertFromDB));
+        }
 
-      const savedDocSeq = localStorage.getItem('devi-jewellers-docSeq')
-      if (savedDocSeq) setDocSeq(parseInt(savedDocSeq))
+        // Load masters
+        const mastersResponse = await fetch('/api/masters');
+        if (mastersResponse.ok) {
+          const dbMasters = await mastersResponse.json();
+          const salesmen = dbMasters.filter((m: any) => m.type === 'salesman').map(convertMasterFromDB);
+          const jewelleries = dbMasters.filter((m: any) => m.type === 'jewellery').map(convertMasterFromDB);
+          const metals = dbMasters.filter((m: any) => m.type === 'metal').map(convertMasterFromDB);
+          const karagirs = dbMasters.filter((m: any) => m.type === 'karagir').map(convertMasterFromDB);
+          setSalesmen(salesmen);
+          setJewelleries(jewelleries);
+          setMetals(metals);
+          setKaragirs(karagirs);
+        }
 
-      const savedSalesmen = localStorage.getItem('devi-jewellers-salesmen')
-      if (savedSalesmen) setSalesmen(JSON.parse(savedSalesmen))
+        // Load settings
+        const settingsResponse = await fetch('/api/settings');
+        if (settingsResponse.ok) {
+          const settings = await settingsResponse.json();
+          setCfgShop(settings.businessName || 'Devi Jewellers');
+          setRmToken(settings.whatsappApiKey || '');
+          setRmApiUrl(settings.whatsappApiUrl || 'https://api.routemobile.com/whatsapp/v1');
+          // Add other settings mappings as needed
+        }
 
-      const savedJewelleries = localStorage.getItem('devi-jewellers-jewelleries')
-      if (savedJewelleries) setJewelleries(JSON.parse(savedJewelleries))
+        // Load docSeq from localStorage as fallback (since it's not in DB yet)
+        const savedDocSeq = localStorage.getItem('devi-jewellers-docSeq');
+        if (savedDocSeq) setDocSeq(parseInt(savedDocSeq));
 
-      const savedMetals = localStorage.getItem('devi-jewellers-metals')
-      if (savedMetals) setMetals(JSON.parse(savedMetals))
+      } catch (error) {
+        console.error('Error loading data from APIs:', error);
+        // Fallback to localStorage if APIs fail
+        try {
+          const savedRecords = localStorage.getItem('devi-jewellers-records');
+          if (savedRecords) setRecords(JSON.parse(savedRecords));
 
-      const savedKaragirs = localStorage.getItem('devi-jewellers-karagirs')
-      if (savedKaragirs) setKaragirs(JSON.parse(savedKaragirs))
+          const savedDocSeq = localStorage.getItem('devi-jewellers-docSeq');
+          if (savedDocSeq) setDocSeq(parseInt(savedDocSeq));
 
-      // Settings
-      const savedCfgShop = localStorage.getItem('devi-jewellers-cfgShop')
-      if (savedCfgShop) setCfgShop(savedCfgShop)
+          const savedSalesmen = localStorage.getItem('devi-jewellers-salesmen');
+          if (savedSalesmen) setSalesmen(JSON.parse(savedSalesmen));
 
-      const savedCfgOwner = localStorage.getItem('devi-jewellers-cfgOwner')
-      if (savedCfgOwner) setCfgOwner(savedCfgOwner)
+          const savedJewelleries = localStorage.getItem('devi-jewellers-jewelleries');
+          if (savedJewelleries) setJewelleries(JSON.parse(savedJewelleries));
 
-      const savedCfgPhone = localStorage.getItem('devi-jewellers-cfgPhone')
-      if (savedCfgPhone) setCfgPhone(savedCfgPhone)
+          const savedMetals = localStorage.getItem('devi-jewellers-metals');
+          if (savedMetals) setMetals(JSON.parse(savedMetals));
 
-      const savedCfgGst = localStorage.getItem('devi-jewellers-cfgGst')
-      if (savedCfgGst) setCfgGst(savedCfgGst)
+          const savedKaragirs = localStorage.getItem('devi-jewellers-karagirs');
+          if (savedKaragirs) setKaragirs(JSON.parse(savedKaragirs));
+        } catch (fallbackError) {
+          console.error('Error loading fallback data:', fallbackError);
+        }
+      }
+    };
 
-      const savedCfgCity = localStorage.getItem('devi-jewellers-cfgCity')
-      if (savedCfgCity) setCfgCity(savedCfgCity)
+    loadData();
+  }, []);
 
-      const savedCfgAddr = localStorage.getItem('devi-jewellers-cfgAddr')
-      if (savedCfgAddr) setCfgAddr(savedCfgAddr)
+  // Save records to API whenever records change
+  useEffect(() => {
+    const saveRecords = async () => {
+      if (records.length === 0) return; // Don't save empty array on initial load
+      try {
+        // For now, we'll save to localStorage as backup and plan to migrate existing data
+        localStorage.setItem('devi-jewellers-records', JSON.stringify(records));
+        // TODO: Implement API sync for records
+      } catch (error) {
+        console.error('Error saving records:', error);
+      }
+    };
+    saveRecords();
+  }, [records]);
 
-      // WhatsApp settings
-      const savedRmUser = localStorage.getItem('devi-jewellers-rmUser')
-      if (savedRmUser) setRmUser(savedRmUser)
-
-      const savedRmPass = localStorage.getItem('devi-jewellers-rmPass')
-      if (savedRmPass) setRmPass(savedRmPass)
-
-      const savedRmWaba = localStorage.getItem('devi-jewellers-rmWaba')
-      if (savedRmWaba) setRmWaba(savedRmWaba)
-
-      const savedRmPhoneid = localStorage.getItem('devi-jewellers-rmPhoneid')
-      if (savedRmPhoneid) setRmPhoneid(savedRmPhoneid)
-
-      const savedRmWaphone = localStorage.getItem('devi-jewellers-rmWaphone')
-      if (savedRmWaphone) setRmWaphone(savedRmWaphone)
-
-      const savedRmToken = localStorage.getItem('devi-jewellers-rmToken')
-      if (savedRmToken) setRmToken(savedRmToken)
-
-      const savedRmApiUrl = localStorage.getItem('devi-jewellers-rmApiUrl')
-      if (savedRmApiUrl) setRmApiUrl(savedRmApiUrl)
-
-      const savedRmApiver = localStorage.getItem('devi-jewellers-rmApiver')
-      if (savedRmApiver) setRmApiver(savedRmApiver)
-
-      const savedCfgLinkBase = localStorage.getItem('devi-jewellers-cfgLinkBase')
-      if (savedCfgLinkBase) setCfgLinkBase(savedCfgLinkBase)
-
-      const savedCfgExpiry = localStorage.getItem('devi-jewellers-cfgExpiry')
-      if (savedCfgExpiry) setCfgExpiry(parseInt(savedCfgExpiry))
-
-      const savedTpl1Name = localStorage.getItem('devi-jewellers-tpl1Name')
-      if (savedTpl1Name) setTpl1Name(savedTpl1Name)
-
-      const savedTpl2Name = localStorage.getItem('devi-jewellers-tpl2Name')
-      if (savedTpl2Name) setTpl2Name(savedTpl2Name)
-
-      const savedTrRecv = localStorage.getItem('devi-jewellers-trRecv')
-      if (savedTrRecv) setTrRecv(savedTrRecv === 'true')
-
-      const savedTrReady = localStorage.getItem('devi-jewellers-trReady')
-      if (savedTrReady) setTrReady(savedTrReady === 'true')
-
-      const savedTrKaragir = localStorage.getItem('devi-jewellers-trKaragir')
-      if (savedTrKaragir) setTrKaragir(savedTrKaragir === 'true')
-
-    } catch (error) {
-      console.error('Error loading data from localStorage:', error)
-    }
-  }, [])
-
-  // Save data to localStorage whenever it changes
-  useEffect(() => { localStorage.setItem('devi-jewellers-records', JSON.stringify(records)) }, [records])
+  // Save docSeq to localStorage (keeping for now)
   useEffect(() => { localStorage.setItem('devi-jewellers-docSeq', docSeq.toString()) }, [docSeq])
   useEffect(() => { localStorage.setItem('devi-jewellers-salesmen', JSON.stringify(salesmen)) }, [salesmen])
   useEffect(() => { localStorage.setItem('devi-jewellers-jewelleries', JSON.stringify(jewelleries)) }, [jewelleries])
@@ -421,37 +571,185 @@ export default function App() {
   }
 
   /* ── Save Receipt ── */
-  const saveReceipt = () => {
+  const saveReceipt = async () => {
     if (!rName || !rMobile || !rMetal || !rType || !rWeight || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields.', false); return }
     if (!/^\d{10}$/.test(rMobile)) { showMessage('receive', 'Enter valid 10-digit mobile.', false); return }
-    const seq = docSeq + 1; setDocSeq(seq)
-    const docNum = 'JR' + String(seq).padStart(4, '0')
-    const receivedDate = new Date().toISOString()
-    const deliveryDate = addDays(receivedDate, parseInt(rDays)).toISOString()
-    const rec: RepairRecord = { docNum, name: rName, mobile: rMobile, metal: rMetal, jewellery: rType, weight: rWeight, amount: parseFloat(rAmount), salesman: rSalesman, desc: rDesc, receivedDate, deliveryDate, status: 'received', karagir: null, karagirDate: null, finalAmount: null, completedDate: null }
-    setRecords(prev => [...prev, rec])
-    setSavedRec(rec)
-    showMessage('receive', `Saved! Document: ${docNum}`, true)
+
+    try {
+      const seq = docSeq + 1;
+      const docNum = 'JR' + String(seq).padStart(4, '0');
+      const receivedDate = new Date().toISOString();
+      const deliveryDate = addDays(receivedDate, parseInt(rDays)).toISOString();
+
+      const recordData = {
+        doc_num: docNum,
+        customer_name: rName,
+        phone_number: rMobile,
+        item_type: rType,
+        description: rDesc || '',
+        estimated_cost: parseFloat(rAmount),
+        status: 'received',
+        master_id: null, // Will be set when assigned to karagir
+        notes: '',
+        images: [],
+        received_date: receivedDate,
+        delivery_date: deliveryDate,
+        metal: rMetal,
+        weight: rWeight,
+        salesman: rSalesman,
+      };
+
+      const response = await fetch('/api/records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recordData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save record');
+      }
+
+      const savedRecord = await response.json();
+      setRecords(prev => [...prev, convertFromDB(savedRecord)]);
+      setDocSeq(seq);
+      setSavedRec(convertFromDB(savedRecord));
+      showMessage('receive', `Saved! Document: ${docNum}`, true);
+    } catch (error) {
+      console.error('Error saving receipt:', error);
+      showMessage('receive', 'Failed to save receipt. Please try again.', false);
+    }
+  }
+
+  /* ── Edit Receipt ── */
+  const startEdit = (record: RepairRecord) => {
+    setIsEditing(true);
+    setEditingRecord(record);
+    setRName(record.name || record.customer_name || '');
+    setRMobile(record.mobile || record.phone_number || '');
+    setRMetal(record.metal || '');
+    setRType(record.jewellery || record.item_type || '');
+    setRWeight(record.weight || '');
+    setRDays(record.deliveryDate ? Math.ceil((new Date(record.deliveryDate).getTime() - new Date(record.receivedDate || record.received_date || new Date()).getTime()) / (1000 * 60 * 60 * 24)).toString() : '7');
+    setRAmount((record.amount || record.estimated_cost || 0).toString());
+    setRSalesman(record.salesman || '');
+    setRDesc(record.desc || record.description || '');
+    setPage('receive');
+  }
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditingRecord(null);
+    setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc('');
+  }
+
+  const updateReceipt = async () => {
+    if (!editingRecord) return;
+    if (!rName || !rMobile || !rMetal || !rType || !rWeight || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields.', false); return }
+    if (!/^\d{10}$/.test(rMobile)) { showMessage('receive', 'Enter valid 10-digit mobile.', false); return }
+
+    try {
+      const deliveryDate = addDays(new Date(editingRecord.receivedDate || editingRecord.received_date || new Date()), parseInt(rDays)).toISOString();
+
+      const updateData = {
+        id: editingRecord.id,
+        customerName: rName,
+        phoneNumber: rMobile,
+        itemType: rType,
+        description: rDesc || '',
+        estimatedCost: parseFloat(rAmount),
+        status: editingRecord.status,
+        masterId: editingRecord.master_id,
+        notes: editingRecord.notes || '',
+        images: editingRecord.images || [],
+        karagir: editingRecord.karagir,
+        karagirDate: editingRecord.karagirDate || editingRecord.karagir_date,
+        finalAmount: editingRecord.finalAmount || editingRecord.final_amount,
+        completedDate: editingRecord.completedDate || editingRecord.completed_date,
+        quality: editingRecord.quality,
+        receivedDate: editingRecord.receivedDate || editingRecord.received_date,
+        deliveryDate: deliveryDate,
+        metal: rMetal,
+        weight: rWeight,
+        salesman: rSalesman,
+      };
+
+      const response = await fetch('/api/records', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update record');
+      }
+
+      const updatedRecord = await response.json();
+      setRecords(prev => prev.map(r => r.id === editingRecord.id ? convertFromDB(updatedRecord) : r));
+      setSavedRec(convertFromDB(updatedRecord));
+      setIsEditing(false);
+      setEditingRecord(null);
+      showMessage('receive', `Updated! Document: ${editingRecord.docNum || editingRecord.doc_num}`, true);
+    } catch (error) {
+      console.error('Error updating receipt:', error);
+      showMessage('receive', 'Failed to update receipt. Please try again.', false);
+    }
   }
 
   /* ── Karagir Out ── */
   const koRecord = records.find(r => r.docNum === koDoc)
-  const saveKO = () => {
+  const saveKO = async () => {
     if (!koDoc || !koKaragir) { showMessage('ko', 'Select document and karagir.', false); return }
-    setRecords(prev => prev.map(r => r.docNum === koDoc ? { ...r, karagir: koKaragir, karagirDate: new Date().toISOString(), status: 'with_karagir' } : r))
-    showMessage('ko', `Issued to ${koKaragir} for ${koDoc}`, true)
-    setKoDoc(''); setKoLoaded(false)
+
+    try {
+      // Find the karagir master to get the ID
+      const karagirMaster = karagirs.find(k => k.name === koKaragir);
+      if (!karagirMaster) {
+        showMessage('ko', 'Selected karagir not found.', false);
+        return;
+      }
+
+      // Update the record via API (we'll need to implement PUT/PATCH endpoint)
+      // For now, update local state and save to localStorage
+      setRecords(prev => prev.map(r => r.docNum === koDoc ? {
+        ...r,
+        karagir: koKaragir,
+        karagirDate: new Date().toISOString(),
+        status: 'with_karagir',
+        master_id: karagirMaster.id
+      } : r));
+
+      showMessage('ko', `Issued to ${koKaragir} for ${koDoc}`, true);
+      setKoDoc(''); setKoLoaded(false);
+    } catch (error) {
+      console.error('Error saving karagir out:', error);
+      showMessage('ko', 'Failed to update record.', false);
+    }
   }
 
   /* ── Karagir In ── */
   const kiRecord = records.find(r => r.docNum === kiDoc)
-  const saveKI = () => {
+  const saveKI = async () => {
     if (!kiDoc || !kiAmount) { showMessage('ki', 'Enter final amount.', false); return }
-    const updated = records.map(r => r.docNum === kiDoc ? { ...r, finalAmount: parseFloat(kiAmount), completedDate: new Date().toISOString(), quality: kiQuality, status: 'ready' } : r)
-    setRecords(updated)
-    setFinalRec(updated.find(r => r.docNum === kiDoc) || null)
-    showMessage('ki', `Updated! Final invoice generated for ${kiDoc}`, true)
-    setKiLoaded(false)
+
+    try {
+      const updated = records.map(r => r.docNum === kiDoc ? {
+        ...r,
+        finalAmount: parseFloat(kiAmount),
+        completedDate: new Date().toISOString(),
+        quality: kiQuality,
+        status: 'ready',
+        final_amount: parseFloat(kiAmount),
+        completed_date: new Date().toISOString()
+      } : r);
+
+      setRecords(updated);
+      setFinalRec(updated.find(r => r.docNum === kiDoc) || null);
+      showMessage('ki', `Updated! Final invoice generated for ${kiDoc}`, true);
+      setKiLoaded(false);
+    } catch (error) {
+      console.error('Error saving karagir in:', error);
+      showMessage('ki', 'Failed to update record.', false);
+    }
   }
 
   /* ── Track ── */
@@ -459,40 +757,113 @@ export default function App() {
     const q = trackQ.trim().toLowerCase()
     if (!q) return
     setShowAll(false)
-    setTrackResults(records.filter(r => r.docNum.toLowerCase() === q || r.mobile === q || r.docNum.toLowerCase().includes(q)))
+    setTrackResults(records.filter(r => (r.docNum || r.doc_num || '').toLowerCase() === q || (r.mobile || r.phone_number) === q || (r.docNum || r.doc_num || '').toLowerCase().includes(q)))
   }
 
   /* ── Masters ── */
   const idSeq = { salesman: salesmen.length + 10, jewellery: jewelleries.length + 10, metal: metals.length + 10, karagir: karagirs.length + 10 }
-  const addMaster = (type: string) => {
-    if (type === 'salesman') { if (!msName.trim()) { showMessage('master-salesman', 'Name required.', false); return }; setSalesmen(p => [...p, { id: idSeq.salesman + 1, name: msName.trim(), mob: msMob.trim(), status: msStatus }]); setMsName(''); setMsMob(''); showMessage('master-salesman', 'Added.', true) }
-    if (type === 'jewellery') { if (!mjName.trim()) { showMessage('master-jewellery', 'Name required.', false); return }; setJewelleries(p => [...p, { id: idSeq.jewellery + 1, name: mjName.trim(), cat: mjCat, status: mjStatus }]); setMjName(''); showMessage('master-jewellery', 'Added.', true) }
-    if (type === 'metal') { if (!mmName.trim()) { showMessage('master-metal', 'Name required.', false); return }; setMetals(p => [...p, { id: idSeq.metal + 1, name: mmName.trim(), type: mmType, karat: mmKarat.trim(), status: mmStatus }]); setMmName(''); setMmKarat(''); showMessage('master-metal', 'Added.', true) }
-    if (type === 'karagir') { if (!mkName.trim() || !mkMob.trim()) { showMessage('master-karagir', 'Name and mobile required.', false); return }; if (!/^\d{10}$/.test(mkMob)) { showMessage('master-karagir', 'Valid 10-digit mobile required.', false); return }; setKaragirs(p => [...p, { id: idSeq.karagir + 1, name: mkName.trim(), mob: mkMob.trim(), spec: mkSpec.trim(), addr: mkAddr.trim(), status: mkStatus }]); setMkName(''); setMkMob(''); setMkSpec(''); setMkAddr(''); showMessage('master-karagir', 'Added.', true) }
+  const addMaster = async (type: string) => {
+    try {
+      let masterData: any = {};
+
+      if (type === 'salesman') {
+        if (!msName.trim()) { showMessage('master-salesman', 'Name required.', false); return }
+        masterData = {
+          name: msName.trim(),
+          phone_number: msMob.trim(),
+          type: 'salesman',
+          is_active: msStatus === 'active'
+        };
+      } else if (type === 'jewellery') {
+        if (!mjName.trim()) { showMessage('master-jewellery', 'Name required.', false); return }
+        masterData = {
+          name: mjName.trim(),
+          category: mjCat,
+          type: 'jewellery',
+          is_active: mjStatus === 'active'
+        };
+      } else if (type === 'metal') {
+        if (!mmName.trim()) { showMessage('master-metal', 'Name required.', false); return }
+        masterData = {
+          name: mmName.trim(),
+          type: 'metal',
+          karat: mmKarat.trim(),
+          is_active: mmStatus === 'active'
+        };
+      } else if (type === 'karagir') {
+        if (!mkName.trim() || !mkMob.trim()) { showMessage('master-karagir', 'Name and mobile required.', false); return }
+        if (!/^\d{10}$/.test(mkMob)) { showMessage('master-karagir', 'Valid 10-digit mobile required.', false); return }
+        masterData = {
+          name: mkName.trim(),
+          phone_number: mkMob.trim(),
+          specialty: mkSpec.trim(),
+          address: mkAddr.trim(),
+          type: 'karagir',
+          is_active: mkStatus === 'active'
+        };
+      }
+
+      const response = await fetch('/api/masters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(masterData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save master');
+      }
+
+      const savedMaster = await response.json();
+
+      // Update local state
+      if (type === 'salesman') {
+        setSalesmen(p => [...p, convertMasterFromDB(savedMaster)]);
+        setMsName(''); setMsMob('');
+        showMessage('master-salesman', 'Added.', true);
+      } else if (type === 'jewellery') {
+        setJewelleries(p => [...p, convertMasterFromDB(savedMaster)]);
+        setMjName('');
+        showMessage('master-jewellery', 'Added.', true);
+      } else if (type === 'metal') {
+        setMetals(p => [...p, convertMasterFromDB(savedMaster)]);
+        setMmName(''); setMmKarat('');
+        showMessage('master-metal', 'Added.', true);
+      } else if (type === 'karagir') {
+        setKaragirs(p => [...p, convertMasterFromDB(savedMaster)]);
+        setMkName(''); setMkMob(''); setMkSpec(''); setMkAddr('');
+        showMessage('master-karagir', 'Added.', true);
+      }
+    } catch (error) {
+      console.error('Error saving master:', error);
+      showMessage(`master-${type}`, 'Failed to save master.', false);
+    }
   }
 
   /* ── Tracker card ── */
   const TrackerCard = ({ r }: { r: RepairRecord }) => {
     const es = effStatus(r)
-    const daysLeft = Math.ceil((new Date(r.deliveryDate).getTime() - Date.now()) / 86400000)
+    const daysLeft = Math.ceil((new Date(r.deliveryDate || addDays(new Date(), 7).toISOString()).getTime() - Date.now()) / 86400000)
     const daysText = es === 'ready' ? 'Completed' : es === 'overdue' ? `${Math.abs(daysLeft)} day(s) overdue` : daysLeft === 0 ? 'Due today' : `${daysLeft} day(s) left`
     const steps = [
-      { label: 'Jewellery received', sub: `${r.jewellery} · ${r.metal} · ${r.weight}g · Est ₹${r.amount}`, date: r.receivedDate, done: true },
-      { label: r.karagir ? `Issued to karagir — ${r.karagir}` : 'Issued to karagir', sub: r.karagir ? 'In repair' : 'Pending', date: r.karagirDate, done: !!r.karagir },
-      { label: 'Received from karagir', sub: r.finalAmount ? `Final: ₹${r.finalAmount}` : 'Awaiting', date: r.completedDate, done: !!r.completedDate },
-      { label: 'Ready for delivery', sub: r.finalAmount ? `Charges: ₹${r.finalAmount}` : 'Pending', date: r.completedDate, done: r.status === 'ready' },
+      { label: 'Jewellery received', sub: `${r.jewellery || r.item_type} · ${r.metal} · ${r.weight}g · Est ₹${r.amount || r.estimated_cost}`, date: r.receivedDate || r.received_date, done: true },
+      { label: r.karagir ? `Issued to karagir — ${r.karagir}` : 'Issued to karagir', sub: r.karagir ? 'In repair' : 'Pending', date: r.karagirDate || r.karagir_date, done: !!r.karagir },
+      { label: 'Received from karagir', sub: r.finalAmount || r.final_amount ? `Final: ₹${r.finalAmount || r.final_amount}` : 'Awaiting', date: r.completedDate || r.completed_date, done: !!(r.completedDate || r.completed_date) },
+      { label: 'Ready for delivery', sub: r.finalAmount || r.final_amount ? `Charges: ₹${r.finalAmount || r.final_amount}` : 'Pending', date: r.completedDate || r.completed_date, done: r.status === 'ready' },
     ]
     const ai = steps.filter(s => s.done).length
     return (
       <div className="card" style={{ marginTop: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-          <div><div style={{ fontSize: 17, fontWeight: 700 }}>{r.docNum}</div><div style={{ fontSize: 12, color: 'var(--text2)' }}>{r.name} | {r.mobile}</div></div>
-          <span className={`badge ${bdgCls[es]}`}>{bdgLbl[es]}</span>
+          <div><div style={{ fontSize: 17, fontWeight: 700 }}>{r.docNum || r.doc_num}</div><div style={{ fontSize: 12, color: 'var(--text2)' }}>{r.name || r.customer_name} | {r.mobile || r.phone_number}</div></div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button className="btn btn-sm" onClick={() => startEdit(r)} title="Edit record">✏️ Edit</button>
+            <span className={`badge ${bdgCls[es]}`}>{bdgLbl[es]}</span>
+          </div>
         </div>
         <div className={`status-bar ${sbCls[es]}`}>{sbLbl[es]}</div>
         <div className="meta-grid">
-          <div className="meta-item"><div className="meta-label">Item</div><div className="meta-val">{r.jewellery}</div></div>
-          <div className="meta-item"><div className="meta-label">Est. delivery</div><div className="meta-val">{fmtDate(r.deliveryDate)}</div></div>
+          <div className="meta-item"><div className="meta-label">Item</div><div className="meta-val">{r.jewellery || r.item_type}</div></div>
+          <div className="meta-item"><div className="meta-label">Est. delivery</div><div className="meta-val">{fmtDate(r.deliveryDate || r.delivery_date || addDays(new Date(), 7).toISOString())}</div></div>
           <div className="meta-item"><div className="meta-label">Status</div><div className="meta-val" style={{ color: es === 'overdue' ? '#A32D2D' : es === 'ready' ? '#3B6D11' : 'var(--text)' }}>{daysText}</div></div>
         </div>
         <div className="sec-label">Timeline</div>
@@ -587,7 +958,7 @@ export default function App() {
       <div className={`page ${page === 'receive' ? 'active' : ''}`}>
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
         <div className="card">
-          <div className="card-title"><img src="/icon.png" alt="" />Receive from customer</div>
+          <div className="card-title"><img src="/icon.png" alt="" />{isEditing ? 'Edit repair record' : 'Receive from customer'}</div>
           <div className="grid2">
             <div className="field"><label>Customer name <span className="req">*</span></label><input value={rName} onChange={e => setRName(e.target.value)} placeholder="e.g. Ramesh Patil" /></div>
             <div className="field"><label>Mobile <span className="req">*</span></label><input value={rMobile} onChange={e => setRMobile(e.target.value)} placeholder="10-digit" maxLength={10} /></div>
@@ -604,12 +975,21 @@ export default function App() {
           </div>
           <div className="field"><label>Repair description</label><textarea rows={2} value={rDesc} onChange={e => setRDesc(e.target.value)} placeholder="Describe the repair work..." /></div>
           <div className="btn-row">
-            <button className="btn btn-primary" onClick={saveReceipt}><IcPdf />Save &amp; Generate Invoice PDF</button>
-            <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
+            {isEditing ? (
+              <>
+                <button className="btn btn-primary" onClick={updateReceipt}><IcPdf />Update Record</button>
+                <button className="btn" onClick={cancelEdit}>Cancel Edit</button>
+              </>
+            ) : (
+              <>
+                <button className="btn btn-primary" onClick={saveReceipt}><IcPdf />Save &amp; Generate Invoice PDF</button>
+                <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
+              </>
+            )}
           </div>
           <Msg text={msg['receive']?.text || ''} ok={msg['receive']?.ok || false} />
         </div>
-        {savedRec && (
+        {savedRec && !isEditing && (
           <div className="card">
             <div className="card-title"><IcPdf />Invoice PDF &amp; WhatsApp — <span style={{ color: 'var(--brand)' }}>{savedRec.docNum}</span></div>
             <InvoicePanel rec={savedRec} type="received" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} onSendWhatsApp={() => sendWhatsApp(savedRec, 'received')} />
@@ -638,7 +1018,7 @@ export default function App() {
               <div className="meta-grid">
                 <div className="meta-item"><div className="meta-label">Customer</div><div className="meta-val">{koRecord.name}</div></div>
                 <div className="meta-item"><div className="meta-label">Item</div><div className="meta-val">{koRecord.metal} {koRecord.jewellery}</div></div>
-                <div className="meta-item"><div className="meta-label">Est. delivery</div><div className="meta-val">{fmtDate(koRecord.deliveryDate)}</div></div>
+                <div className="meta-item"><div className="meta-label">Est. delivery</div><div className="meta-val">{fmtDate(koRecord.deliveryDate || addDays(new Date(), 7).toISOString())}</div></div>
               </div>
               <div className="grid2">
                 <div className="field"><label>Karagir <span className="req">*</span></label><select value={koKaragir} onChange={e => setKoKaragir(e.target.value)}><option value="">Select karagir</option>{karagirs.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
@@ -708,7 +1088,7 @@ export default function App() {
             <div key={g}>
               <div className="sec-label" style={{ marginTop: 12 }}>{g === 'with_karagir' ? 'With karagir' : g.charAt(0).toUpperCase() + g.slice(1)}</div>
               {grp[g].map(r => (
-                <div key={r.docNum} className="list-row" onClick={() => { setShowAll(false); setTrackQ(r.docNum); setTrackResults([r]) }}>
+                <div key={r.docNum || r.doc_num} className="list-row" onClick={() => { setShowAll(false); setTrackQ(r.docNum || r.doc_num || ''); setTrackResults([r]) }}>
                   <div><span style={{ fontWeight: 700 }}>{r.docNum}</span><span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span>{r.name}<span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span><span style={{ color: 'var(--text2)' }}>{r.metal} {r.jewellery}</span></div>
                   <span className={`badge ${bdgCls[effStatus(r)]}`}>{bdgLbl[effStatus(r)]}</span>
                 </div>
@@ -730,7 +1110,7 @@ export default function App() {
               <div key={r.docNum} className="list-row">
                 <div><span style={{ fontWeight: 700 }}>{r.docNum}</span><span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span>{r.name}<span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span><span style={{ color: 'var(--text2)' }}>{r.metal} {r.jewellery} {r.weight}g</span></div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: 'var(--text2)' }}>{fmtDate(r.receivedDate)}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text2)' }}>{fmtDate(r.receivedDate || r.received_date || r.created_at || new Date().toISOString())}</span>
                   <span className={`badge ${bdgCls[es]}`}>{bdgLbl[es]}</span>
                 </div>
               </div>
