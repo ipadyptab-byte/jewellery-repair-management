@@ -317,9 +317,10 @@ export default function App() {
 
   // Settings
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
-  const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.routemobile.com/whatsapp/v1'); const [rmApiver, setRmApiver] = useState('v17.0')
+  const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://apis.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState('https://invoice.devijewellers.in'); const [cfgExpiry, setCfgExpiry] = useState(10)
-  const [tpl1Name, setTpl1Name] = useState('jewellery_received_invoice'); const [tpl2Name, setTpl2Name] = useState('jewellery_ready_invoice')
+  const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('jewellery_ready_invoice')
+  const [tpl1Id, setTpl1Id] = useState('970154325534876'); const [tpl2Id, setTpl2Id] = useState('')
   const [connStatus, setConnStatus] = useState<'no' | 'ok' | 'checking'>('no')
   const [settingsTab, setSettingsTab] = useState('creds')
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
@@ -330,6 +331,7 @@ export default function App() {
     if (!tpl1Name || !tpl2Name) throw new Error('WhatsApp template names are required.')
 
     const templateName = type === 'received' ? tpl1Name : tpl2Name
+    const templateId = type === 'received' ? tpl1Id : tpl2Id
     const invoiceLink = `${cfgLinkBase.replace(/\/$/, '')}/INV-${rec.docNum || rec.doc_num}${type === 'final' ? '-final' : ''}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
     const params = type === 'received'
       ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]
@@ -346,11 +348,10 @@ export default function App() {
       body: JSON.stringify({
         to: toNumber,
         templateName,
+        templateId,
         params,
         apiKey: rmToken,
-        apiUrl: rmApiUrl,
-        username: rmUser,
-        password: rmPass
+        apiUrl: rmApiUrl
       })
     })
 
@@ -447,7 +448,7 @@ export default function App() {
           const settings = await settingsResponse.json();
           setCfgShop(settings.businessName || 'Devi Jewellers');
           setRmToken(settings.whatsappApiKey || '');
-          setRmApiUrl(settings.whatsappApiUrl || 'https://api.routemobile.com/whatsapp/v1');
+          setRmApiUrl(settings.whatsappApiUrl || 'https://apis.rmlconnect.net/wba/v1/messages');
           // Add other settings mappings as needed
         }
 
@@ -1409,7 +1410,7 @@ export default function App() {
               <div className="sec-label">Template 1 — Jewellery received (with invoice link)</div>
               <div className="grid2">
                 <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl1Name} onChange={e => setTpl1Name(e.target.value)} /><div className="hint">Exact name as approved in Meta Business Manager</div></div>
-                <div className="field"><label>Language</label><select><option value="en_IN">en_IN — English (India)</option><option value="en">en</option><option value="hi">hi — Hindi</option><option value="mr">mr — Marathi</option></select></div>
+                <div className="field"><label>Template ID</label><input value={tpl1Id} onChange={e => setTpl1Id(e.target.value)} placeholder="e.g. 970154325534876" /><div className="hint">Route Mobile template ID</div></div>
               </div>
               <div className="field"><label>Template body</label><textarea rows={3} defaultValue={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: Rs {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated, {cfgExpiry} day expiry)</div></div>
               <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: Rs <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>{cfgLinkBase}/INV-JR1001-a3f9b2?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
@@ -1417,7 +1418,7 @@ export default function App() {
               <div className="sec-label">Template 2 — Ready for delivery (with final invoice link)</div>
               <div className="grid2">
                 <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl2Name} onChange={e => setTpl2Name(e.target.value)} /></div>
-                <div className="field"><label>Language</label><select><option value="en_IN">en_IN</option><option value="en">en</option><option value="hi">hi</option><option value="mr">mr</option></select></div>
+                <div className="field"><label>Template ID</label><input value={tpl2Id} onChange={e => setTpl2Id(e.target.value)} placeholder="Optional" /><div className="hint">Route Mobile template ID (if different)</div></div>
               </div>
               <div className="field"><label>Template body</label><textarea rows={3} defaultValue={`Dear {{1}}, Your {{2}} jewellery is ready at Devi Jewellers. Final charges: Rs {{3}}. View final invoice: {{4}} (valid ${cfgExpiry} days). Please visit with receipt. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Final amount {'{{4}}'} Final invoice link</div></div>
               <div className="btn-row"><button className="btn btn-primary" onClick={() => { if (!tpl1Name || !tpl2Name) { showMessage('templates', 'Template names required.', false); return }; showMessage('templates', 'Templates saved.', true) }}>Save templates</button></div>

@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { to, templateName, params, apiKey, apiUrl, username, password } = body;
+    const { to, templateName, templateId, params, apiKey, apiUrl, wabaId } = body;
 
     if (!to || !templateName) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
-    // Get the base URL from settings or use default
-    let baseUrl = apiUrl || 'https://api.routemobile.com/whatsapp/v1';
+    // Get the base URL from settings or use default (Route Mobile provided URL)
+    let baseUrl = apiUrl || 'https://apis.rmlconnect.net/wba/v1/messages';
     baseUrl = baseUrl.replace(/\/$/, '');
-    const url = `${baseUrl}/messages`;
+    const url = `${baseUrl}`;
 
     // Build authentication headers
     const headers: Record<string, string> = {
@@ -22,14 +21,12 @@ export async function POST(request: NextRequest) {
 
     if (apiKey) {
       headers['Authorization'] = `Bearer ${apiKey}`;
-    } else if (username && password) {
-      headers['Authorization'] = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
     } else {
-      return NextResponse.json({ error: 'API key or username/password required' }, { status: 400 });
+      return NextResponse.json({ error: 'API key required' }, { status: 400 });
     }
 
-    // Build request body for Route Mobile API
-    const requestBody = {
+    // Build request body for Route Mobile API with template_id
+    const requestBody: any = {
       to: to.startsWith('91') ? to : `91${to}`,
       type: 'template',
       messaging_product: 'whatsapp',
@@ -37,13 +34,31 @@ export async function POST(request: NextRequest) {
         name: templateName,
         language: {
           code: 'en'
-        },
+        }
+      }
+    };
+
+    // Add template_id from Route Mobile if provided
+    if (templateId) {
+      requestBody.template = {
+        ...requestBody.template,
         components: [{
           type: 'body',
           parameters: (params || []).map((param: string) => ({ type: 'text', text: param }))
         }]
-      }
-    };
+      };
+      // Add template_id as header component
+      requestBody.template.components.unshift({
+        type: 'header',
+        parameters: [{ type: 'text', text: templateId }]
+      });
+    } else {
+      // Original format without template ID
+      requestBody.template.components = [{
+        type: 'body',
+        parameters: (params || []).map((param: string) => ({ type: 'text', text: param }))
+      }];
+    }
 
     console.log('WhatsApp API Request:', { url, headers: { ...headers, Authorization: '[REDACTED]' }, body: requestBody });
 
