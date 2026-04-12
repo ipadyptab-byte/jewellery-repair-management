@@ -17,14 +17,14 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, category, type, phone_number: phoneNumber, specialty, address, karat, is_active: isActive } = body;
+    const { name, category, type, mobile, specialty, address, karat, status } = body;
 
     const pool = sql()
     const result = await pool.query(
-      `INSERT INTO masters (name, category, type, specialty, phone_number, address, karat, is_active)
+      `INSERT INTO masters (name, category, type, mobile, speciality, address, karat, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *`,
-      [name, category, type, specialty, phoneNumber, address, karat, isActive]
+      [name, category, type, mobile, specialty, address, karat, status || 'active']
     );
 
     return NextResponse.json(result.rows[0]);
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, category, type, phone_number: phoneNumber, specialty, address, karat, is_active: isActive } = body;
+    const { id, name, category, type, mobile, specialty, address, karat, status } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Master ID is required' }, { status: 400 });
@@ -48,15 +48,16 @@ export async function PUT(request: NextRequest) {
       `UPDATE masters SET 
         name = COALESCE($1, name),
         category = COALESCE($2, category),
-        specialty = COALESCE($3, specialty),
-        phone_number = COALESCE($4, phone_number),
-        address = COALESCE($5, address),
-        karat = COALESCE($6, karat),
-        is_active = COALESCE($7, is_active),
+        type = COALESCE($3, type),
+        mobile = COALESCE($4, mobile),
+        speciality = COALESCE($5, speciality),
+        address = COALESCE($6, address),
+        karat = COALESCE($7, karat),
+        status = COALESCE($8, status),
         updated_at = NOW()
-      WHERE id = $8
+      WHERE id = $9
       RETURNING *`,
-      [name, category, specialty, phoneNumber, address, karat, isActive, id]
+      [name, category, type, mobile, specialty, address, karat, status, id]
     );
 
     if (result.rows.length === 0) {

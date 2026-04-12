@@ -113,26 +113,25 @@ const convertToDB = (record: RepairRecord) => ({
 
 const convertMasterFromDB = (master: any): Master => ({
   ...master,
-  // Add legacy fields
-  mob: master.phone_number,
+  // Map database fields to frontend fields
+  mob: master.mobile,
   cat: master.category,
   type: master.type,
   karat: master.karat,
-  spec: master.specialty,
+  spec: master.speciality,
   addr: master.address,
-  status: master.is_active ? 'active' : 'inactive',
+  status: master.status || 'active',
 });
 
 const convertMasterToDB = (master: Master) => ({
   name: master.name,
-  specialty: master.spec || master.specialty,
-  phone_number: master.mob || master.phone_number,
-  email: master.email,
-  is_active: master.status === 'active' || master.is_active,
-  type: master.type,
-  karat: master.karat,
   category: master.cat || master.category,
+  type: master.type,
+  mobile: master.mob || master.phone_number,
+  specialty: master.spec || master.specialty,
   address: master.addr || master.address,
+  karat: master.karat,
+  status: master.status || 'active',
 });
 
 /* ─── Helpers ─── */
