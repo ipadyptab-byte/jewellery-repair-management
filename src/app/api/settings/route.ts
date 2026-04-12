@@ -5,36 +5,52 @@ export async function GET() {
   try {
     const pool = sql();
     const result = await pool.query(
-      `SELECT * FROM settings LIMIT 1`
+      `SELECT key, value FROM settings`
     );
 
-    if (result.rows.length === 0) {
-      const defaultSettings = {
-        id: 1,
-        businessName: 'Devi Jewellers',
-        whatsappApiKey: '',
-        whatsappApiUrl: '',
-        currency: 'INR',
-        taxRate: 0,
-        logoUrl: '',
-        contactInfo: {
-          phone: '',
-          email: '',
-          address: ''
-        },
-        notifications: {
-          email: false,
-          whatsapp: true,
-          sms: false
-        }
-      };
-      return NextResponse.json(defaultSettings);
-    }
+    // Convert key-value pairs to structured object - use keys from schema
+    const settings: any = {
+      businessName: 'Devi Jewellers',
+      whatsappApiKey: '',
+      whatsappApiUrl: '',
+      currency: 'INR',
+      taxRate: 0,
+      invoiceLinkBase: ''
+    };
 
-    return NextResponse.json(result.rows[0]);
+    result.rows.forEach((row: any) => {
+      switch (row.key) {
+        case 'shop_name':
+          settings.businessName = row.value || 'Devi Jewellers';
+          break;
+        case 'whatsapp_rm_token':
+          settings.whatsappApiKey = row.value || '';
+          break;
+        case 'whatsapp_rm_api_url':
+          settings.whatsappApiUrl = row.value || '';
+          break;
+        case 'invoice_link_base':
+          settings.invoiceLinkBase = row.value || '';
+          break;
+        case 'currency':
+          settings.currency = row.value || 'INR';
+          break;
+        case 'tax_rate':
+          settings.taxRate = parseFloat(row.value) || 0;
+          break;
+      }
+    });
+
+    return NextResponse.json(settings);
   } catch (error) {
     console.error('Error fetching settings:', error);
-    return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
+    return NextResponse.json({ 
+      businessName: 'Devi Jewellers',
+      whatsappApiKey: '',
+      whatsappApiUrl: '',
+      currency: 'INR',
+      taxRate: 0
+    });
   }
 }
 
@@ -47,42 +63,31 @@ export async function POST(request: NextRequest) {
       whatsappApiUrl,
       currency,
       taxRate,
-      logoUrl,
-      contactInfo,
-      notifications
+      invoiceLinkBase
     } = body;
 
     const pool = sql();
-    const existing = await pool.query(`SELECT id FROM settings LIMIT 1`);
 
-    let result;
-    if (existing.rows.length > 0) {
-      result = await pool.query(
-        `UPDATE settings SET
-          business_name = $1,
-          whatsapp_api_key = $2,
-          whatsapp_api_url = $3,
-          currency = $4,
-          tax_rate = $5,
-          logo_url = $6,
-          contact_info = $7,
-          notifications = $8
-        WHERE id = $9
-        RETURNING *`,
-        [businessName, whatsappApiKey, whatsappApiUrl, currency, taxRate, logoUrl, JSON.stringify(contactInfo), JSON.stringify(notifications), existing.rows[0].id]
-      );
-    } else {
-      result = await pool.query(
-        `INSERT INTO settings (
-          business_name, whatsapp_api_key, whatsapp_api_url,
-          currency, tax_rate, logo_url, contact_info, notifications
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        RETURNING *`,
-        [businessName, whatsappApiKey, whatsappApiUrl, currency, taxRate, logoUrl, JSON.stringify(contactInfo), JSON.stringify(notifications)]
+    // Map to keys from schema.sql
+    const settingsMap: Record<string, string> = {
+      'shop_name': businessName || 'Devi Jewellers',
+      'whatsapp_rm_token': whatsappApiKey || '',
+      'whatsapp_rm_api_url': whatsappApiUrl || '',
+      'invoice_link_base': invoiceLinkBase || '',
+      'currency': currency || 'INR',
+      'tax_rate': String(taxRate || 0)
+    };
+
+    // Upsert each setting using keys from schema
+    for (const [key, value] of Object.entries(settingsMap)) {
+      await pool.query(
+        `INSERT INTO settings (key, value) VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
+        [key, value]
       );
     }
 
-    return NextResponse.json(result.rows[0]);
+    return NextResponse.json({ success: true, message: 'Settings saved' });
   } catch (error) {
     console.error('Error saving settings:', error);
     return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
