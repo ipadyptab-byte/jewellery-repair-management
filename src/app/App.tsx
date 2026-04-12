@@ -1459,7 +1459,37 @@ export default function App() {
                 <div className="field"><label>Link expiry (days)</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /><div className="hint">Invoice link expires after this many days. Default: 10 days.</div></div>
               </div>
               <div className="btn-row">
-                <button className="btn btn-wa" onClick={() => { if (!rmToken && (!rmUser || !rmPass)) { showMessage('creds', 'API key or username/password required.', false); return }; setConnStatus('checking'); setTimeout(() => { setConnStatus('ok'); showMessage('creds', 'Connection verified! Route Mobile API reachable.', true) }, 1800) }}><IcWA />Verify connection</button>
+                <button className="btn btn-wa" onClick={async () => { 
+                  if (!rmToken) { showMessage('creds', 'API key required.', false); return }
+                  setConnStatus('checking');
+                  try {
+                    // Actually verify by making a test API call
+                    const response = await fetch('/api/whatsapp', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        to: '919999999999',
+                        templateName: 'test_template',
+                        templateId: 'test',
+                        params: ['Test', 'Gold', 'Ring', 'Test Date', '100', 'https://test.in'],
+                        apiKey: rmToken,
+                        apiUrl: rmApiUrl
+                      })
+                    });
+                    if (response.ok || response.status === 400) {
+                      // 400 means auth passed but template not found - that's OK for verification
+                      setConnStatus('ok');
+                      showMessage('creds', 'Connection verified! API is reachable.', true);
+                    } else {
+                      const err = await response.json();
+                      setConnStatus('no');
+                      showMessage('creds', 'Connection failed: ' + (err.error || 'Invalid API key'), false);
+                    }
+                  } catch (e) {
+                    setConnStatus('no');
+                    showMessage('creds', 'Connection failed: Network error', false);
+                  }
+                }}><IcWA />Verify connection</button>
                 <button className="btn btn-primary" onClick={async () => { 
                   if (!rmToken) { showMessage('creds', 'API key required.', false); return }
                   try {
