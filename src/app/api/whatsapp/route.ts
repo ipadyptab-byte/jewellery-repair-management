@@ -3,10 +3,16 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('WhatsApp request received:', { ...body, apiKey: body.apiKey ? '[REDACTED]' : undefined });
+    
     const { to, templateName, templateId, params, apiKey, apiUrl, wabaId } = body;
 
     if (!to || !templateName) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+    }
+
+    if (!apiKey) {
+      return NextResponse.json({ error: 'API key is missing or not configured. Please add your API key in Settings → Credentials.' }, { status: 401 });
     }
 
     // Get the base URL from settings or use default (Route Mobile provided URL)
@@ -14,16 +20,13 @@ export async function POST(request: NextRequest) {
     baseUrl = baseUrl.replace(/\/$/, '');
     const url = `${baseUrl}`;
 
+    console.log('Sending to URL:', url);
+
     // Build authentication headers
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
     };
-
-    if (apiKey) {
-      headers['Authorization'] = `Bearer ${apiKey}`;
-    } else {
-      return NextResponse.json({ error: 'API key required' }, { status: 400 });
-    }
 
     // Build request body for Route Mobile API with template_id
     const requestBody: any = {
@@ -69,6 +72,8 @@ export async function POST(request: NextRequest) {
     });
 
     const responseText = await response.text();
+    console.log('WhatsApp API Response:', response.status, responseText);
+
     let json;
 
     try {
