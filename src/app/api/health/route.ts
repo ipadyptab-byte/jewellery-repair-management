@@ -3,18 +3,19 @@ import { sql } from '@/lib/db'
 
 export async function GET() {
   try {
-    await sql()`SELECT 1`;
+    await sql.query(`SELECT 1`);
 
     const requiredTables = ['repair_records', 'masters', 'settings'];
-    const existingTables = await sql()`
-      SELECT tablename
+    const existingTablesResult = await sql.query(
+      `SELECT tablename
       FROM pg_catalog.pg_tables
       WHERE schemaname = 'public'
-        AND tablename = ANY(${requiredTables})
-      ORDER BY tablename
-    `;
+        AND tablename = ANY($1)
+      ORDER BY tablename`,
+      [requiredTables]
+    );
 
-    const existingNames = existingTables.map((row: any) => row.tablename);
+    const existingNames = existingTablesResult.rows.map((row: any) => row.tablename);
     const missingTables = requiredTables.filter((table) => !existingNames.includes(table));
 
     if (missingTables.length > 0) {
