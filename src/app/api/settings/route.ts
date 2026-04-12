@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+mport { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
 export async function GET() {
   try {
-    const settings = await sql()
-      `SELECT * FROM settings
-       LIMIT 1`;
+    const result = await sql.query(
+      `SELECT * FROM settings LIMIT 1`
+    );
 
-    if (settings.length === 0) {
+    if (result.rows.length === 0) {
       // Return default settings if none exist
       const defaultSettings = {
         id: 1,
@@ -31,7 +31,7 @@ export async function GET() {
       return NextResponse.json(defaultSettings);
     }
 
-    return NextResponse.json(settings[0]);
+    return NextResponse.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching settings:', error);
     return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
@@ -53,38 +53,38 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Check if settings already exist
-    const existing = await sql()`SELECT id FROM settings LIMIT 1`;
+    const existing = await sql.query(`SELECT id FROM settings LIMIT 1`);
 
     let result;
-    if (existing.length > 0) {
+    if (existing.rows.length > 0) {
       // Update existing settings
-      [result] = await sql()
+      result = await sql.query(
         `UPDATE settings SET
-          business_name = ${businessName},
-          whatsapp_api_key = ${whatsappApiKey},
-          whatsapp_api_url = ${whatsappApiUrl},
-          currency = ${currency},
-          tax_rate = ${taxRate},
-          logo_url = ${logoUrl},
-          contact_info = ${JSON.stringify(contactInfo)},
-          notifications = ${JSON.stringify(notifications)}
-        WHERE id = ${existing[0].id}
-        RETURNING *`;
+          business_name = $1,
+          whatsapp_api_key = $2,
+          whatsapp_api_url = $3,
+          currency = $4,
+          tax_rate = $5,
+          logo_url = $6,
+          contact_info = $7,
+          notifications = $8
+        WHERE id = $9
+        RETURNING *`,
+        [businessName, whatsappApiKey, whatsappApiUrl, currency, taxRate, logoUrl, JSON.stringify(contactInfo), JSON.stringify(notifications), existing.rows[0].id]
+      );
     } else {
       // Insert new settings
-      [result] = await sql()
+      result = await sql.query(
         `INSERT INTO settings (
           business_name, whatsapp_api_key, whatsapp_api_url,
           currency, tax_rate, logo_url, contact_info, notifications
-        ) VALUES (
-          ${businessName}, ${whatsappApiKey}, ${whatsappApiUrl},
-          ${currency}, ${taxRate}, ${logoUrl},
-          ${JSON.stringify(contactInfo)}, ${JSON.stringify(notifications)}
-        )
-        RETURNING *`;
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *`,
+        [businessName, whatsappApiKey, whatsappApiUrl, currency, taxRate, logoUrl, JSON.stringify(contactInfo), JSON.stringify(notifications)]
+      );
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json(result.rows[0]);
   } catch (error) {
     console.error('Error saving settings:', error);
     return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
