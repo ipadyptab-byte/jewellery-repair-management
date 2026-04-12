@@ -449,8 +449,24 @@ export default function App() {
           setCfgShop(settings.businessName || 'Devi Jewellers');
           setRmToken(settings.whatsappApiKey || '');
           setRmApiUrl(settings.whatsappApiUrl || 'https://apis.rmlconnect.net/wba/v1/messages');
-          // Add other settings mappings as needed
+          setCfgLinkBase(settings.whatsappApiUrl ? settings.whatsappApiUrl.replace('/messages', '') : 'https://invoice.devijewellers.in');
         }
+
+        // Load additional settings from localStorage
+        const savedCfgLinkBase = localStorage.getItem('devi-jewellers-cfgLinkBase');
+        if (savedCfgLinkBase) setCfgLinkBase(savedCfgLinkBase);
+        
+        const savedTpl1Name = localStorage.getItem('devi-jewellers-tpl1Name');
+        if (savedTpl1Name) setTpl1Name(savedTpl1Name);
+        
+        const savedTpl2Name = localStorage.getItem('devi-jewellers-tpl2Name');
+        if (savedTpl2Name) setTpl2Name(savedTpl2Name);
+        
+        const savedTpl1Id = localStorage.getItem('devi-jewellers-tpl1Id');
+        if (savedTpl1Id) setTpl1Id(savedTpl1Id);
+        
+        const savedTpl2Id = localStorage.getItem('devi-jewellers-tpl2Id');
+        if (savedTpl2Id) setTpl2Id(savedTpl2Id);
 
         // Load docSeq from localStorage as fallback (since it's not in DB yet)
         const savedDocSeq = localStorage.getItem('devi-jewellers-docSeq');
@@ -529,6 +545,8 @@ export default function App() {
   useEffect(() => { localStorage.setItem('devi-jewellers-cfgExpiry', cfgExpiry.toString()) }, [cfgExpiry])
   useEffect(() => { localStorage.setItem('devi-jewellers-tpl1Name', tpl1Name) }, [tpl1Name])
   useEffect(() => { localStorage.setItem('devi-jewellers-tpl2Name', tpl2Name) }, [tpl2Name])
+  useEffect(() => { localStorage.setItem('devi-jewellers-tpl1Id', tpl1Id) }, [tpl1Id])
+  useEffect(() => { localStorage.setItem('devi-jewellers-tpl2Id', tpl2Id) }, [tpl2Id])
   useEffect(() => { localStorage.setItem('devi-jewellers-trRecv', trRecv.toString()) }, [trRecv])
   useEffect(() => { localStorage.setItem('devi-jewellers-trReady', trReady.toString()) }, [trReady])
   useEffect(() => { localStorage.setItem('devi-jewellers-trKaragir', trKaragir.toString()) }, [trKaragir])

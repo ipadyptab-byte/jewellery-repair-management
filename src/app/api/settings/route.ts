@@ -31,7 +31,19 @@ export async function GET() {
       return NextResponse.json(defaultSettings);
     }
 
-    return NextResponse.json(result.rows[0]);
+    const row = result.rows[0];
+    // Map database field names to frontend expected field names
+    return NextResponse.json({
+      id: row.id,
+      businessName: row.business_name || '',
+      whatsappApiKey: row.whatsapp_api_key || '',
+      whatsappApiUrl: row.whatsapp_api_url || '',
+      currency: row.currency || 'INR',
+      taxRate: row.tax_rate || 0,
+      logoUrl: row.logo_url || '',
+      contactInfo: row.contact_info ? (typeof row.contact_info === 'string' ? JSON.parse(row.contact_info) : row.contact_info) : { phone: '', email: '', address: '' },
+      notifications: row.notifications ? (typeof row.notifications === 'string' ? JSON.parse(row.notifications) : row.notifications) : { email: false, whatsapp: true, sms: false }
+    });
   } catch (error) {
     console.error('Error fetching settings:', error);
     return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
