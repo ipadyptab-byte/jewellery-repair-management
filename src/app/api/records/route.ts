@@ -3,10 +3,10 @@ import { sql } from '@/lib/db';
 
 export async function GET() {
   try {
-    const records = await sql()
-      `SELECT * FROM repair_records
-       ORDER BY created_at DESC`;
-    return NextResponse.json(records);
+    const result = await sql.query(
+      `SELECT * FROM repair_records ORDER BY created_at DESC`
+    );
+    return NextResponse.json(result.rows);
   } catch (error) {
     console.error('Error fetching records:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch records';
@@ -41,17 +41,16 @@ export async function POST(request: NextRequest) {
       doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status
     });
 
-    const [record] = await sql()
+    const result = await sql.query(
       `INSERT INTO repair_records (
         doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description,
         received_date, delivery_date, status
-      ) VALUES (
-        ${doc_num}, ${customer_name}, ${phone_number}, ${metal}, ${item_type}, ${weight},
-        ${estimated_cost}, ${salesman}, ${description}, ${received_date}, ${delivery_date},
-        ${status}
-      )
-      RETURNING *`;
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *`,
+      [doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status]
+    );
 
+    const record = result.rows[0];
     console.log('Record created successfully:', record);
     return NextResponse.json(record);
   } catch (error) {
@@ -92,34 +91,36 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Record ID is required' }, { status: 400 });
     }
 
-    const [record] = await sql()
+    const result = await sql.query(
       `UPDATE repair_records SET
-        doc_num = ${doc_num},
-        name = ${customer_name},
-        mobile = ${phone_number},
-        metal = ${metal},
-        jewellery = ${item_type},
-        weight = ${weight},
-        amount = ${estimated_cost},
-        salesman = ${salesman},
-        description = ${description},
-        received_date = ${received_date},
-        delivery_date = ${delivery_date},
-        status = ${status},
-        karagir = ${karagir},
-        karagir_date = ${karagir_date},
-        final_amount = ${final_amount},
-        completed_date = ${completed_date},
-        quality = ${quality},
+        doc_num = $1,
+        name = $2,
+        mobile = $3,
+        metal = $4,
+        jewellery = $5,
+        weight = $6,
+        amount = $7,
+        salesman = $8,
+        description = $9,
+        received_date = $10,
+        delivery_date = $11,
+        status = $12,
+        karagir = $13,
+        karagir_date = $14,
+        final_amount = $15,
+        completed_date = $16,
+        quality = $17,
         updated_at = NOW()
-      WHERE id = ${id}
-      RETURNING *`;
+      WHERE id = $18
+      RETURNING *`,
+      [doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status, karagir, karagir_date, final_amount, completed_date, quality, id]
+    );
 
-    if (!record) {
+    if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Record not found' }, { status: 404 });
     }
 
-    return NextResponse.json(record);
+    return NextResponse.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating record:', error);
     const message = error instanceof Error ? error.message : 'Failed to update record';
