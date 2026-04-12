@@ -706,6 +706,40 @@ export default function App() {
     }
   }
 
+  const loadRecordForEdit = (r: RepairRecord) => {
+    setIsEditing(true);
+    setEditingRecord(r);
+    setRName(r.name || r.customer_name || '');
+    setRMobile(r.mobile || r.phone_number || '');
+    setRMetal(r.metal || '');
+    setRType(r.jewellery || r.item_type || '');
+    setRWeight(r.weight || '');
+    const days = r.deliveryDate && r.receivedDate ? Math.ceil((new Date(r.deliveryDate).getTime() - new Date(r.receivedDate).getTime()) / (1000 * 60 * 60 * 24)) : r.delivery_date && r.received_date ? Math.ceil((new Date(r.delivery_date).getTime() - new Date(r.received_date).getTime()) / (1000 * 60 * 60 * 24)) : 7;
+    setRDays(String(days));
+    setRAmount(String(r.amount || r.estimated_cost || ''));
+    setRSalesman(r.salesman || '');
+    setRDesc(r.description || r.desc || '');
+    setSavedRec(r);
+    setPage('receive');
+  }
+
+  const deleteRecord = async (docNum: string) => {
+    if (!confirm(`Delete record ${docNum}? This cannot be undone.`)) return;
+    try {
+      const response = await fetch('/api/records', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ doc_num: docNum }),
+      });
+      if (!response.ok) throw new Error('Failed to delete');
+      setRecords(prev => prev.filter(r => (r.docNum || r.doc_num) !== docNum));
+      showMessage('records', 'Record deleted.', true);
+    } catch (error) {
+      console.error('Error deleting record:', error);
+      showMessage('records', 'Failed to delete record.', false);
+    }
+  }
+
   /* ── Karagir Out ── */
   const koRecord = records.find(r => r.docNum === koDoc)
   const saveKO = async () => {
@@ -1182,6 +1216,9 @@ export default function App() {
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: 11, color: 'var(--text2)' }}>{fmtDate(r.receivedDate || r.received_date || r.created_at || new Date().toISOString())}</span>
                   <span className={`badge ${bdgCls[es]}`}>{bdgLbl[es]}</span>
+                  <button className="btn btn-sm" onClick={() => loadRecordForEdit(r)}>Edit</button>
+                  <button className="btn btn-sm" onClick={() => { loadRecordForEdit(r); }}>Reprint</button>
+                  <button className="btn btn-sm btn-danger" onClick={() => deleteRecord(r.docNum || r.doc_num || '')}>Delete</button>
                 </div>
               </div>
             )

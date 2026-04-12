@@ -130,3 +130,29 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { doc_num } = body;
+
+    if (!doc_num) {
+      return NextResponse.json({ error: 'Document number is required' }, { status: 400 });
+    }
+
+    const pool = sql()
+    const result = await pool.query(
+      `DELETE FROM repair_records WHERE doc_num = $1 RETURNING *`,
+      [doc_num]
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: 'Record deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting record:', error);
+    return NextResponse.json({ error: 'Failed to delete record' }, { status: 500 });
+  }
+}
