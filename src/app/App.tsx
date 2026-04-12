@@ -700,7 +700,7 @@ export default function App() {
       setSavedRec(convertFromDB(updatedRecord));
       setIsEditing(false);
       setEditingRecord(null);
-      showMessage('receive', `Updated! Document: ${editingRecord.docNum || editingRecord.doc_num}`, true);
+      showMessage('receive', `Updated! Document: ${updatedRecord.doc_num}`, true);
     } catch (error) {
       console.error('Error updating receipt:', error);
       showMessage('receive', 'Failed to update receipt. Please try again.', false);
@@ -1083,6 +1083,7 @@ export default function App() {
             {isEditing ? (
               <>
                 <button className="btn btn-primary" onClick={updateReceipt}><IcPdf />Update Record</button>
+                <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', cfgLinkBase, cfgExpiry)}>Print PDF</button>
                 <button className="btn" onClick={cancelEdit}>Cancel Edit</button>
               </>
             ) : (
@@ -1094,9 +1095,9 @@ export default function App() {
           </div>
           <Msg text={msg['receive']?.text || ''} ok={msg['receive']?.ok || false} />
         </div>
-        {savedRec && !isEditing && (
+        {savedRec && (
           <div className="card">
-            <div className="card-title"><IcPdf />Invoice PDF &amp; WhatsApp — <span style={{ color: 'var(--brand)' }}>{savedRec.docNum}</span></div>
+            <div className="card-title"><IcPdf />Invoice PDF &amp; WhatsApp — <span style={{ color: 'var(--brand)' }}>{savedRec.docNum || savedRec.doc_num}</span></div>
             <InvoicePanel rec={savedRec} type="received" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} onSendWhatsApp={() => sendWhatsApp(savedRec, 'received')} />
             <Msg text={msg['wa-recv']?.text || ''} ok={msg['wa-recv']?.ok || false} />
           </div>
