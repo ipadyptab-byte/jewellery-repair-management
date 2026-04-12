@@ -1,6 +1,6 @@
-import { neon } from '@neondatabase/serverless'
+import pg from 'pg'
 
-let sql: any = null
+let sql: pg.Pool | null = null
 
 // Lazy initialization of database connection
 function getSql() {
@@ -13,7 +13,12 @@ function getSql() {
     if (!databaseUrl) {
       throw new Error('DATABASE_URL_repair environment variable is not set')
     }
-    sql = neon(databaseUrl)
+    sql = new pg.Pool({
+      connectionString: databaseUrl,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    })
   }
   return sql
 }
