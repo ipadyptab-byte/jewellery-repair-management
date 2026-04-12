@@ -481,7 +481,8 @@ export default function App() {
           const settings = await settingsResponse.json();
           setCfgShop(settings.businessName || 'Devi Jewellers');
           setRmToken(settings.whatsappApiKey || '');
-          setRmApiUrl(settings.whatsappApiUrl || 'https://api.routemobile.com/whatsapp/v1');
+          setRmApiUrl(settings.whatsappApiUrl || 'https://apis.rmlconnect.net/wba/v1/messages');
+          if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
           // Add other settings mappings as needed
         }
 
@@ -1431,7 +1432,31 @@ export default function App() {
               </div>
               <div className="btn-row">
                 <button className="btn btn-wa" onClick={() => { if (!rmToken && (!rmUser || !rmPass)) { showMessage('creds', 'API key or username/password required.', false); return }; setConnStatus('checking'); setTimeout(() => { setConnStatus('ok'); showMessage('creds', 'Connection verified! Route Mobile API reachable.', true) }, 1800) }}><IcWA />Verify connection</button>
-                <button className="btn btn-primary" onClick={() => { if (!rmToken && (!rmUser || !rmPass)) { showMessage('creds', 'API key or username/password required.', false); return }; showMessage('creds', 'Credentials saved securely.', true) }}>Save credentials</button>
+                <button className="btn btn-primary" onClick={async () => { 
+                  if (!rmToken) { showMessage('creds', 'API key required.', false); return }
+                  try {
+                    const response = await fetch('/api/settings', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        businessName: cfgShop,
+                        whatsappApiKey: rmToken,
+                        whatsappApiUrl: rmApiUrl,
+                        invoiceLinkBase: cfgLinkBase,
+                        currency: 'INR',
+                        taxRate: 0
+                      })
+                    });
+                    if (response.ok) {
+                      showMessage('creds', 'Credentials saved securely.', true);
+                    } else {
+                      const err = await response.json();
+                      showMessage('creds', 'Error: ' + (err.error || 'Failed to save'), false);
+                    }
+                  } catch (e) {
+                    showMessage('creds', 'Failed to save credentials.', false);
+                  }
+                }}>Save credentials</button>
               </div>
               <Msg text={msg['creds']?.text || ''} ok={msg['creds']?.ok || false} />
             </>
