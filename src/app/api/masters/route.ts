@@ -3,7 +3,8 @@ import { sql } from '@/lib/db';
 
 export async function GET() {
   try {
-    const result = await sql.query(
+    const pool = sql()
+    const result = await pool.query(
       `SELECT * FROM masters ORDER BY name ASC`
     );
     return NextResponse.json(result.rows);
@@ -18,7 +19,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, specialty, phoneNumber, email, isActive } = body;
 
-    const result = await sql.query(
+    const pool = sql()
+    const result = await pool.query(
       `INSERT INTO masters (name, specialty, phone_number, email, is_active)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *`,

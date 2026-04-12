@@ -13,8 +13,14 @@ function getSql() {
     if (!databaseUrl) {
       throw new Error('DATABASE_URL_repair environment variable is not set')
     }
+    // Add SSL compatibility for Supabase
+    let connectionString = databaseUrl
+    if (!databaseUrl.includes('uselibpqcompat')) {
+      connectionString = databaseUrl + (databaseUrl.includes('?') ? '&' : '?') + 'uselibpqcompat=true'
+    }
+    
     sql = new pg.Pool({
-      connectionString: databaseUrl,
+      connectionString,
       ssl: {
         rejectUnauthorized: false
       }

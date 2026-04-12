@@ -1,14 +1,14 @@
-mport { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
 export async function GET() {
   try {
-    const result = await sql.query(
+    const pool = sql();
+    const result = await pool.query(
       `SELECT * FROM settings LIMIT 1`
     );
 
     if (result.rows.length === 0) {
-      // Return default settings if none exist
       const defaultSettings = {
         id: 1,
         businessName: 'Devi Jewellers',
@@ -52,13 +52,12 @@ export async function POST(request: NextRequest) {
       notifications
     } = body;
 
-    // Check if settings already exist
-    const existing = await sql.query(`SELECT id FROM settings LIMIT 1`);
+    const pool = sql();
+    const existing = await pool.query(`SELECT id FROM settings LIMIT 1`);
 
     let result;
     if (existing.rows.length > 0) {
-      // Update existing settings
-      result = await sql.query(
+      result = await pool.query(
         `UPDATE settings SET
           business_name = $1,
           whatsapp_api_key = $2,
@@ -73,8 +72,7 @@ export async function POST(request: NextRequest) {
         [businessName, whatsappApiKey, whatsappApiUrl, currency, taxRate, logoUrl, JSON.stringify(contactInfo), JSON.stringify(notifications), existing.rows[0].id]
       );
     } else {
-      // Insert new settings
-      result = await sql.query(
+      result = await pool.query(
         `INSERT INTO settings (
           business_name, whatsapp_api_key, whatsapp_api_url,
           currency, tax_rate, logo_url, contact_info, notifications

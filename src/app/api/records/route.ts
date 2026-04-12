@@ -3,7 +3,8 @@ import { sql } from '@/lib/db';
 
 export async function GET() {
   try {
-    const result = await sql.query(
+    const pool = sql()
+    const result = await pool.query(
       `SELECT * FROM repair_records ORDER BY created_at DESC`
     );
     return NextResponse.json(result.rows);
@@ -41,7 +42,8 @@ export async function POST(request: NextRequest) {
       doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status
     });
 
-    const result = await sql.query(
+    const pool = sql()
+    const result = await pool.query(
       `INSERT INTO repair_records (
         doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description,
         received_date, delivery_date, status
@@ -91,7 +93,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Record ID is required' }, { status: 400 });
     }
 
-    const result = await sql.query(
+    const pool = sql()
+    const result = await pool.query(
       `UPDATE repair_records SET
         doc_num = $1,
         name = $2,
