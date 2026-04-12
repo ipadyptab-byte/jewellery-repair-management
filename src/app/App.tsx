@@ -454,38 +454,7 @@ export default function App() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load records
-        const recordsResponse = await fetch('/api/records');
-        if (recordsResponse.ok) {
-          const dbRecords = await recordsResponse.json();
-          setRecords(dbRecords.map(convertFromDB));
-        }
-
-        // Load masters
-        const mastersResponse = await fetch('/api/masters');
-        if (mastersResponse.ok) {
-          const dbMasters = await mastersResponse.json();
-          const salesmen = dbMasters.filter((m: any) => m.type === 'salesman').map(convertMasterFromDB);
-          const jewelleries = dbMasters.filter((m: any) => m.type === 'jewellery').map(convertMasterFromDB);
-          const metals = dbMasters.filter((m: any) => m.type === 'metal').map(convertMasterFromDB);
-          const karagirs = dbMasters.filter((m: any) => m.type === 'karagir').map(convertMasterFromDB);
-          setSalesmen(salesmen);
-          setJewelleries(jewelleries);
-          setMetals(metals);
-          setKaragirs(karagirs);
-        }
-
-        // Load settings
-        const settingsResponse = await fetch('/api/settings');
-        if (settingsResponse.ok) {
-          const settings = await settingsResponse.json();
-          setCfgShop(settings.businessName || 'Devi Jewellers');
-          setRmToken(settings.whatsappApiKey || '');
-          setRmApiUrl(settings.whatsappApiUrl || 'https://apis.rmlconnect.net/wba/v1/messages');
-          if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
-        }
-
-        // Fallback: load from localStorage if API failed or missing
+        // FIRST: Load from localStorage as initial values (these will always work)
         const savedRmToken = localStorage.getItem('devi-jewellers-rmToken');
         if (savedRmToken) setRmToken(savedRmToken);
         
@@ -495,7 +464,6 @@ export default function App() {
         const savedCfgLinkBase = localStorage.getItem('devi-jewellers-cfgLinkBase');
         if (savedCfgLinkBase) setCfgLinkBase(savedCfgLinkBase);
         
-        // Load shop info from localStorage
         const savedCfgShop = localStorage.getItem('devi-jewellers-cfgShop');
         if (savedCfgShop) setCfgShop(savedCfgShop);
         
@@ -514,13 +482,45 @@ export default function App() {
         const savedCfgAddr = localStorage.getItem('devi-jewellers-cfgAddr');
         if (savedCfgAddr) setCfgAddr(savedCfgAddr);
 
-        // Load docSeq from localStorage as fallback (since it's not in DB yet)
+        // SECOND: Try to load records from API
+        const recordsResponse = await fetch('/api/records');
+        if (recordsResponse.ok) {
+          const dbRecords = await recordsResponse.json();
+          setRecords(dbRecords.map(convertFromDB));
+        }
+
+        // Load masters from API
+        const mastersResponse = await fetch('/api/masters');
+        if (mastersResponse.ok) {
+          const dbMasters = await mastersResponse.json();
+          const salesmen = dbMasters.filter((m: any) => m.type === 'salesman').map(convertMasterFromDB);
+          const jewelleries = dbMasters.filter((m: any) => m.type === 'jewellery').map(convertMasterFromDB);
+          const metals = dbMasters.filter((m: any) => m.type === 'metal').map(convertMasterFromDB);
+          const karagirs = dbMasters.filter((m: any) => m.type === 'karagir').map(convertMasterFromDB);
+          setSalesmen(salesmen);
+          setJewelleries(jewelleries);
+          setMetals(metals);
+          setKaragirs(karagirs);
+        }
+
+        // Load settings from API (only to override if DB has data)
+        const settingsResponse = await fetch('/api/settings');
+        if (settingsResponse.ok) {
+          const settings = await settingsResponse.json();
+          // Only override if API returned non-empty values
+          if (settings.businessName && settings.businessName !== 'Devi Jewellers') setCfgShop(settings.businessName);
+          if (settings.whatsappApiKey) setRmToken(settings.whatsappApiKey);
+          if (settings.whatsappApiUrl) setRmApiUrl(settings.whatsappApiUrl);
+          if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
+        }
+
+        // Load docSeq from localStorage as fallback
         const savedDocSeq = localStorage.getItem('devi-jewellers-docSeq');
         if (savedDocSeq) setDocSeq(parseInt(savedDocSeq));
 
       } catch (error) {
-        console.error('Error loading data from APIs:', error);
-        // Fallback to localStorage if APIs fail
+        console.error('Error loading data:', error);
+        // Fallback to localStorage if APIs fail completely
         try {
           const savedRecords = localStorage.getItem('devi-jewellers-records');
           if (savedRecords) setRecords(JSON.parse(savedRecords));
