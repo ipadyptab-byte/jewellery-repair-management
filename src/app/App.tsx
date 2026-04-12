@@ -448,6 +448,7 @@ export default function App() {
   const [mjName, setMjName] = useState(''); const [mjCat, setMjCat] = useState('Necklace'); const [mjStatus, setMjStatus] = useState('active')
   const [mmName, setMmName] = useState(''); const [mmType, setMmType] = useState('Gold'); const [mmKarat, setMmKarat] = useState(''); const [mmStatus, setMmStatus] = useState('active')
   const [mkName, setMkName] = useState(''); const [mkMob, setMkMob] = useState(''); const [mkSpec, setMkSpec] = useState(''); const [mkAddr, setMkAddr] = useState(''); const [mkStatus, setMkStatus] = useState('active')
+  const [editMasterId, setEditMasterId] = useState<number | null>(null)
 
   // Load data from APIs on mount
   useEffect(() => {
@@ -779,6 +780,7 @@ export default function App() {
       if (type === 'salesman') {
         if (!msName.trim()) { showMessage('master-salesman', 'Name required.', false); return }
         masterData = {
+          id: editMasterId || undefined,
           name: msName.trim(),
           phone_number: msMob.trim(),
           type: 'salesman',
@@ -787,6 +789,7 @@ export default function App() {
       } else if (type === 'jewellery') {
         if (!mjName.trim()) { showMessage('master-jewellery', 'Name required.', false); return }
         masterData = {
+          id: editMasterId || undefined,
           name: mjName.trim(),
           category: mjCat,
           type: 'jewellery',
@@ -795,6 +798,7 @@ export default function App() {
       } else if (type === 'metal') {
         if (!mmName.trim()) { showMessage('master-metal', 'Name required.', false); return }
         masterData = {
+          id: editMasterId || undefined,
           name: mmName.trim(),
           type: 'metal',
           karat: mmKarat.trim(),
@@ -804,6 +808,7 @@ export default function App() {
         if (!mkName.trim() || !mkMob.trim()) { showMessage('master-karagir', 'Name and mobile required.', false); return }
         if (!/^\d{10}$/.test(mkMob)) { showMessage('master-karagir', 'Valid 10-digit mobile required.', false); return }
         masterData = {
+          id: editMasterId || undefined,
           name: mkName.trim(),
           phone_number: mkMob.trim(),
           specialty: mkSpec.trim(),
@@ -813,8 +818,9 @@ export default function App() {
         };
       }
 
+      const method = editMasterId ? 'PUT' : 'POST';
       const response = await fetch('/api/masters', {
-        method: 'POST',
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(masterData),
       });
@@ -824,29 +830,83 @@ export default function App() {
       }
 
       const savedMaster = await response.json();
+      const masterObj = convertMasterFromDB(savedMaster);
 
       // Update local state
       if (type === 'salesman') {
-        setSalesmen(p => [...p, convertMasterFromDB(savedMaster)]);
-        setMsName(''); setMsMob('');
-        showMessage('master-salesman', 'Added.', true);
+        if (editMasterId) {
+          setSalesmen(p => p.map(x => x.id === editMasterId ? masterObj : x));
+          showMessage('master-salesman', 'Updated.', true);
+        } else {
+          setSalesmen(p => [...p, masterObj]);
+          showMessage('master-salesman', 'Added.', true);
+        }
+        setMsName(''); setMsMob(''); setMsStatus('active');
       } else if (type === 'jewellery') {
-        setJewelleries(p => [...p, convertMasterFromDB(savedMaster)]);
-        setMjName('');
-        showMessage('master-jewellery', 'Added.', true);
+        if (editMasterId) {
+          setJewelleries(p => p.map(x => x.id === editMasterId ? masterObj : x));
+          showMessage('master-jewellery', 'Updated.', true);
+        } else {
+          setJewelleries(p => [...p, masterObj]);
+          showMessage('master-jewellery', 'Added.', true);
+        }
+        setMjName(''); setMjStatus('active');
       } else if (type === 'metal') {
-        setMetals(p => [...p, convertMasterFromDB(savedMaster)]);
-        setMmName(''); setMmKarat('');
-        showMessage('master-metal', 'Added.', true);
+        if (editMasterId) {
+          setMetals(p => p.map(x => x.id === editMasterId ? masterObj : x));
+          showMessage('master-metal', 'Updated.', true);
+        } else {
+          setMetals(p => [...p, masterObj]);
+          showMessage('master-metal', 'Added.', true);
+        }
+        setMmName(''); setMmKarat(''); setMmStatus('active');
       } else if (type === 'karagir') {
-        setKaragirs(p => [...p, convertMasterFromDB(savedMaster)]);
-        setMkName(''); setMkMob(''); setMkSpec(''); setMkAddr('');
-        showMessage('master-karagir', 'Added.', true);
+        if (editMasterId) {
+          setKaragirs(p => p.map(x => x.id === editMasterId ? masterObj : x));
+          showMessage('master-karagir', 'Updated.', true);
+        } else {
+          setKaragirs(p => [...p, masterObj]);
+          showMessage('master-karagir', 'Added.', true);
+        }
+        setMkName(''); setMkMob(''); setMkSpec(''); setMkAddr(''); setMkStatus('active');
       }
+      setEditMasterId(null);
     } catch (error) {
       console.error('Error saving master:', error);
       showMessage(`master-${type}`, 'Failed to save master.', false);
     }
+  }
+
+  const editMaster = (master: { id?: number; name?: string; mob?: string; mobile?: string; category?: string; cat?: string; karat?: string; spec?: string; specialty?: string; address?: string; status?: string; type?: string }) => {
+    if (!master.id) return;
+    setEditMasterId(master.id);
+    if (master.type === 'salesman') {
+      setMsName(master.name || '');
+      setMsMob(master.mob || master.mobile || '');
+      setMsStatus(master.status || 'active');
+    } else if (master.type === 'jewellery') {
+      setMjName(master.name || '');
+      setMjCat(master.category || master.cat || 'Necklace');
+      setMjStatus(master.status || 'active');
+    } else if (master.type === 'metal') {
+      setMmName(master.name || '');
+      setMmKarat(master.karat || '');
+      setMmStatus(master.status || 'active');
+    } else if (master.type === 'karagir') {
+      setMkName(master.name || '');
+      setMkMob(master.mob || master.mobile || '');
+      setMkSpec(master.specialty || master.spec || '');
+      setMkAddr(master.address || '');
+      setMkStatus(master.status || 'active');
+    }
+  }
+
+  const cancelEditMaster = () => {
+    setEditMasterId(null);
+    setMsName(''); setMsMob(''); setMsStatus('active');
+    setMjName(''); setMjStatus('active');
+    setMmName(''); setMmKarat(''); setMmStatus('active');
+    setMkName(''); setMkMob(''); setMkSpec(''); setMkAddr(''); setMkStatus('active');
   }
 
   /* ── Tracker card ── */
@@ -1146,7 +1206,14 @@ export default function App() {
               <div className="field" style={{ flex: 2, minWidth: 130, marginBottom: 0 }}><label>Name *</label><input value={msName} onChange={e => setMsName(e.target.value)} placeholder="Salesman name" /></div>
               <div className="field" style={{ flex: 1, minWidth: 110, marginBottom: 0 }}><label>Mobile</label><input value={msMob} onChange={e => setMsMob(e.target.value)} placeholder="Mobile" maxLength={10} /></div>
               <div className="field" style={{ width: 110, marginBottom: 0 }}><label>Status</label><select value={msStatus} onChange={e => setMsStatus(e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-              <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('salesman')}>Add</button>
+              {editMasterId ? (
+                <>
+                  <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('salesman')}>Update</button>
+                  <button className="btn" style={{ alignSelf: 'flex-end' }} onClick={cancelEditMaster}>Cancel</button>
+                </>
+              ) : (
+                <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('salesman')}>Add</button>
+              )}
             </div>
             <Msg text={msg['master-salesman']?.text || ''} ok={msg['master-salesman']?.ok || false} />
             {salesmen.map(s => (
@@ -1154,6 +1221,7 @@ export default function App() {
                 <div><div style={{ fontWeight: 600 }}>{s.name}</div><div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>{s.mob}</div></div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${s.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{s.status}</span>
+                  <button className="btn btn-sm" onClick={() => editMaster(s)}>Edit</button>
                   <button className="btn btn-sm" onClick={() => setSalesmen(p => p.map(x => x.id === s.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{s.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setSalesmen(p => p.filter(x => x.id !== s.id))}>Remove</button>
                 </div>
@@ -1168,7 +1236,14 @@ export default function App() {
               <div className="field" style={{ flex: 2, minWidth: 130, marginBottom: 0 }}><label>Type name *</label><input value={mjName} onChange={e => setMjName(e.target.value)} placeholder="e.g. Mangalsutra" /></div>
               <div className="field" style={{ flex: 1, minWidth: 100, marginBottom: 0 }}><label>Category</label><select value={mjCat} onChange={e => setMjCat(e.target.value)}>{['Necklace', 'Ring', 'Bracelet', 'Earring', 'Chain', 'Anklet', 'Bangle', 'Other'].map(c => <option key={c}>{c}</option>)}</select></div>
               <div className="field" style={{ width: 110, marginBottom: 0 }}><label>Status</label><select value={mjStatus} onChange={e => setMjStatus(e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-              <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('jewellery')}>Add</button>
+              {editMasterId ? (
+                <>
+                  <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('jewellery')}>Update</button>
+                  <button className="btn" style={{ alignSelf: 'flex-end' }} onClick={cancelEditMaster}>Cancel</button>
+                </>
+              ) : (
+                <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('jewellery')}>Add</button>
+              )}
             </div>
             <Msg text={msg['master-jewellery']?.text || ''} ok={msg['master-jewellery']?.ok || false} />
             {jewelleries.map(j => (
@@ -1176,6 +1251,7 @@ export default function App() {
                 <div><div style={{ fontWeight: 600 }}>{j.name}</div><div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>{j.cat}</div></div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${j.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{j.status}</span>
+                  <button className="btn btn-sm" onClick={() => editMaster(j)}>Edit</button>
                   <button className="btn btn-sm" onClick={() => setJewelleries(p => p.map(x => x.id === j.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{j.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setJewelleries(p => p.filter(x => x.id !== j.id))}>Remove</button>
                 </div>
@@ -1191,7 +1267,14 @@ export default function App() {
               <div className="field" style={{ flex: 1, minWidth: 90, marginBottom: 0 }}><label>Type</label><select value={mmType} onChange={e => setMmType(e.target.value)}><option>Gold</option><option>Silver</option><option>Platinum</option><option>Other</option></select></div>
               <div className="field" style={{ flex: 1, minWidth: 80, marginBottom: 0 }}><label>Purity</label><input value={mmKarat} onChange={e => setMmKarat(e.target.value)} placeholder="22K" /></div>
               <div className="field" style={{ width: 110, marginBottom: 0 }}><label>Status</label><select value={mmStatus} onChange={e => setMmStatus(e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-              <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('metal')}>Add</button>
+              {editMasterId ? (
+                <>
+                  <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('metal')}>Update</button>
+                  <button className="btn" style={{ alignSelf: 'flex-end' }} onClick={cancelEditMaster}>Cancel</button>
+                </>
+              ) : (
+                <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('metal')}>Add</button>
+              )}
             </div>
             <Msg text={msg['master-metal']?.text || ''} ok={msg['master-metal']?.ok || false} />
             {metals.map(m => (
@@ -1199,6 +1282,7 @@ export default function App() {
                 <div><div style={{ fontWeight: 600 }}>{m.name}</div><div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>{m.type}{m.karat ? ' · ' + m.karat : ''}</div></div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${m.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{m.status}</span>
+                  <button className="btn btn-sm" onClick={() => editMaster(m)}>Edit</button>
                   <button className="btn btn-sm" onClick={() => setMetals(p => p.map(x => x.id === m.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{m.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setMetals(p => p.filter(x => x.id !== m.id))}>Remove</button>
                 </div>
@@ -1217,7 +1301,14 @@ export default function App() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
               <div className="field" style={{ flex: 3, minWidth: 160, marginBottom: 0 }}><label>Address</label><input value={mkAddr} onChange={e => setMkAddr(e.target.value)} placeholder="Workshop address" /></div>
               <div className="field" style={{ width: 110, marginBottom: 0 }}><label>Status</label><select value={mkStatus} onChange={e => setMkStatus(e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-              <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('karagir')}>Add</button>
+              {editMasterId ? (
+                <>
+                  <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('karagir')}>Update</button>
+                  <button className="btn" style={{ alignSelf: 'flex-end' }} onClick={cancelEditMaster}>Cancel</button>
+                </>
+              ) : (
+                <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('karagir')}>Add</button>
+              )}
             </div>
             <Msg text={msg['master-karagir']?.text || ''} ok={msg['master-karagir']?.ok || false} />
             {karagirs.map(k => (
@@ -1225,6 +1316,7 @@ export default function App() {
                 <div><div style={{ fontWeight: 600 }}>{k.name}</div><div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>{k.mob}{k.spec ? ' · ' + k.spec : ''}</div></div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${k.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{k.status}</span>
+                  <button className="btn btn-sm" onClick={() => editMaster(k)}>Edit</button>
                   <button className="btn btn-sm" onClick={() => setKaragirs(p => p.map(x => x.id === k.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{k.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setKaragirs(p => p.filter(x => x.id !== k.id))}>Remove</button>
                 </div>
