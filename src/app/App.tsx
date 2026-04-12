@@ -483,8 +483,36 @@ export default function App() {
           setRmToken(settings.whatsappApiKey || '');
           setRmApiUrl(settings.whatsappApiUrl || 'https://apis.rmlconnect.net/wba/v1/messages');
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
-          // Add other settings mappings as needed
         }
+
+        // Fallback: load from localStorage if API failed or missing
+        const savedRmToken = localStorage.getItem('devi-jewellers-rmToken');
+        if (savedRmToken) setRmToken(savedRmToken);
+        
+        const savedRmApiUrl = localStorage.getItem('devi-jewellers-rmApiUrl');
+        if (savedRmApiUrl) setRmApiUrl(savedRmApiUrl);
+        
+        const savedCfgLinkBase = localStorage.getItem('devi-jewellers-cfgLinkBase');
+        if (savedCfgLinkBase) setCfgLinkBase(savedCfgLinkBase);
+        
+        // Load shop info from localStorage
+        const savedCfgShop = localStorage.getItem('devi-jewellers-cfgShop');
+        if (savedCfgShop) setCfgShop(savedCfgShop);
+        
+        const savedCfgOwner = localStorage.getItem('devi-jewellers-cfgOwner');
+        if (savedCfgOwner) setCfgOwner(savedCfgOwner);
+        
+        const savedCfgPhone = localStorage.getItem('devi-jewellers-cfgPhone');
+        if (savedCfgPhone) setCfgPhone(savedCfgPhone);
+        
+        const savedCfgGst = localStorage.getItem('devi-jewellers-cfgGst');
+        if (savedCfgGst) setCfgGst(savedCfgGst);
+        
+        const savedCfgCity = localStorage.getItem('devi-jewellers-cfgCity');
+        if (savedCfgCity) setCfgCity(savedCfgCity);
+        
+        const savedCfgAddr = localStorage.getItem('devi-jewellers-cfgAddr');
+        if (savedCfgAddr) setCfgAddr(savedCfgAddr);
 
         // Load docSeq from localStorage as fallback (since it's not in DB yet)
         const savedDocSeq = localStorage.getItem('devi-jewellers-docSeq');
@@ -1435,6 +1463,12 @@ export default function App() {
                 <button className="btn btn-primary" onClick={async () => { 
                   if (!rmToken) { showMessage('creds', 'API key required.', false); return }
                   try {
+                    // Save to localStorage immediately for backup
+                    localStorage.setItem('devi-jewellers-rmToken', rmToken);
+                    localStorage.setItem('devi-jewellers-rmApiUrl', rmApiUrl);
+                    localStorage.setItem('devi-jewellers-cfgLinkBase', cfgLinkBase);
+                    
+                    // Try to save to API as well
                     const response = await fetch('/api/settings', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
@@ -1448,13 +1482,18 @@ export default function App() {
                       })
                     });
                     if (response.ok) {
-                      showMessage('creds', 'Credentials saved securely.', true);
+                      showMessage('creds', 'Credentials saved.', true);
                     } else {
+                      // API failed but localStorage saved
                       const err = await response.json();
-                      showMessage('creds', 'Error: ' + (err.error || 'Failed to save'), false);
+                      showMessage('creds', 'Saved locally. API error: ' + (err.error || 'failed'), false);
                     }
                   } catch (e) {
-                    showMessage('creds', 'Failed to save credentials.', false);
+                    // Save to localStorage even on error
+                    localStorage.setItem('devi-jewellers-rmToken', rmToken);
+                    localStorage.setItem('devi-jewellers-rmApiUrl', rmApiUrl);
+                    localStorage.setItem('devi-jewellers-cfgLinkBase', cfgLinkBase);
+                    showMessage('creds', 'Saved locally.', true);
                   }
                 }}>Save credentials</button>
               </div>
