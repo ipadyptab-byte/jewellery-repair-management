@@ -1166,7 +1166,9 @@ export default function App() {
                 <button className="btn btn-primary" onClick={async () => { 
                   const rec = await saveReceipt(); 
                   if (rec) { 
-                    // Go to dashboard after save
+                    setThermalRecord(rec); 
+                    setThermalType('receipt'); 
+                    setShowThermalPreview(true); 
                     setPage('dashboard');
                   }
                 }}><IcPdf />Save & Generate Invoice Thermal</button>
@@ -1781,10 +1783,13 @@ export default function App() {
                     `);
                     printWindow.document.close();
                     printWindow.print();
+                    // Close modal and go to dashboard after print
+                    setShowThermalPreview(false);
+                    setPage('dashboard');
                   }
                 }
               }}>🖨️ Print Thermal Invoice</button>
-              <button className="btn" onClick={() => setShowThermalPreview(false)}>Close</button>
+              <button className="btn" onClick={() => { setShowThermalPreview(false); setPage('dashboard'); }}>Close & Go to Dashboard</button>
             </div>
           </div>
         </div>
