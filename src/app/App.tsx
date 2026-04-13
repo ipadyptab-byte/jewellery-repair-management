@@ -973,7 +973,8 @@ export default function App() {
           setSalesmen(p => [...p, masterObj]);
           showMessage('master-salesman', 'Added.', true);
         }
-        setMsName(''); setMsMob(''); setMsStatus('active');
+        // Keep form values as they are (don't reset status)
+        setMsName(''); setMsMob('');
       } else if (type === 'jewellery') {
         if (editMasterId) {
           setJewelleries(p => p.map(x => x.id === editMasterId ? masterObj : x));
@@ -982,7 +983,7 @@ export default function App() {
           setJewelleries(p => [...p, masterObj]);
           showMessage('master-jewellery', 'Added.', true);
         }
-        setMjName(''); setMjStatus('active');
+        setMjName(''); // Keep status as selected
       } else if (type === 'metal') {
         if (editMasterId) {
           setMetals(p => p.map(x => x.id === editMasterId ? masterObj : x));
@@ -991,7 +992,7 @@ export default function App() {
           setMetals(p => [...p, masterObj]);
           showMessage('master-metal', 'Added.', true);
         }
-        setMmName(''); setMmKarat(''); setMmStatus('active');
+        setMmName(''); setMmKarat(''); // Keep status as selected
       } else if (type === 'karagir') {
         if (editMasterId) {
           setKaragirs(p => p.map(x => x.id === editMasterId ? masterObj : x));
@@ -1000,7 +1001,7 @@ export default function App() {
           setKaragirs(p => [...p, masterObj]);
           showMessage('master-karagir', 'Added.', true);
         }
-        setMkName(''); setMkMob(''); setMkSpec(''); setMkAddr(''); setMkStatus('active');
+        setMkName(''); setMkMob(''); setMkSpec(''); setMkAddr(''); // Keep status as selected
       }
       setEditMasterId(null);
     } catch (error) {
