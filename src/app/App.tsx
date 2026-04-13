@@ -1609,27 +1609,34 @@ export default function App() {
                   if (!rmToken) { showMessage('creds', 'API key required.', false); return }
                   setConnStatus('checking');
                   try {
-                    // Actually verify by making a test API call
-                    const response = await fetch('/api/whatsapp', {
+                    // Verify by making a test API call directly to Route Mobile
+                    const testUrl = `${rmApiUrl.replace(/\/$/, '')}/messages`;
+                    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+                    if (rmToken) headers['Authorization'] = `Bearer ${rmToken}`;
+                    else if (rmUser && rmPass) headers['Authorization'] = `Basic ${btoa(`${rmUser}:${rmPass}`)}`;
+                    
+                    const response = await fetch(testUrl, {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers,
                       body: JSON.stringify({
                         to: '919999999999',
-                        templateName: 'test_template',
-                        templateId: 'test',
-                        params: ['Test', 'Gold', 'Ring', 'Test Date', '100', 'https://test.in'],
-                        apiKey: rmToken,
-                        apiUrl: rmApiUrl
+                        type: 'template',
+                        messaging_product: 'whatsapp',
+                        template: {
+                          name: 'test_template',
+                          language: { code: 'en' },
+                          components: [{ type: 'body', parameters: [{ type: 'text', text: 'Test' }] }]
+                        }
                       })
                     });
-                    if (response.ok || response.status === 400) {
-                      // 400 means auth passed but template not found - that's OK for verification
+                    const responseText = await response.text();
+                    // 200 = success, 400 with template error = auth OK but template not found
+                    if (response.ok || (response.status === 400 && responseText.includes('template'))) {
                       setConnStatus('ok');
                       showMessage('creds', 'Connection verified! API is reachable.', true);
                     } else {
-                      const err = await response.json();
                       setConnStatus('no');
-                      showMessage('creds', 'Connection failed: ' + (err.error || 'Invalid API key'), false);
+                      showMessage('creds', `Connection failed: ${response.status}`, false);
                     }
                   } catch (e) {
                     setConnStatus('no');
