@@ -332,6 +332,7 @@ export default function App() {
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
 
   const sendWhatsApp = async (rec: RepairRecord, type: 'received' | 'final') => {
+    console.log('sendWhatsApp called - rmToken:', rmToken ? '[SET]' : 'EMPTY', 'rmApiUrl:', rmApiUrl)
     if (!rmToken && (!rmUser || !rmPass)) throw new Error('WhatsApp API key or username/password required.')
     if (!tpl1Name || !tpl2Name) throw new Error('WhatsApp template names are required.')
 
