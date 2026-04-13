@@ -174,7 +174,7 @@ function generateInvoiceLink(docNum: string, type: string, baseUrl: string, expD
   return { url: `${baseUrl.replace(/\/$/, '')}/INV-${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`, expDate }
 }
 
-function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', baseUrl: string, expDays: number) {
+function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', baseUrl: string, expDays: number, shopName: string = 'Devi Jewellers', shopAddress: string = '') {
   if (typeof window === 'undefined' || !window.jspdf) return null
   const { jsPDF } = window.jspdf
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
@@ -183,10 +183,15 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
 
   doc.setFillColor(192, 0, 58); doc.rect(0, 0, W, 28, 'F')
   doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont('helvetica', 'bold')
-  doc.text('Devi Jewellers', pad, 11)
+  doc.text(shopName, pad, 11)
   doc.setFontSize(8); doc.setFont('helvetica', 'normal')
-  doc.text('Gold | Silver | Diamonds | Pearls', pad, 17)
-  doc.setFontSize(7); doc.text('Anmol Kshananache Soneri Sakshidar', pad, 22)
+  if (shopAddress) {
+    doc.text(shopAddress.substring(0, 50), pad, 17)
+    doc.setFontSize(7); doc.text('Anmol Kshananache Soneri Sakshidar', pad, 22)
+  } else {
+    doc.text('Gold | Silver | Diamonds | Pearls', pad, 17)
+    doc.setFontSize(7); doc.text('Anmol Kshananache Soneri Sakshidar', pad, 22)
+  }
 
   doc.setFillColor(168, 0, 126); doc.rect(0, 28, W, 7, 'F')
   doc.setTextColor(255, 255, 255); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
@@ -321,14 +326,14 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   )
 }
 
-function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp }: { rec: RepairRecord; type: 'received' | 'final'; baseUrl: string; expDays: number; onMsg: (m: string, ok: boolean) => void; onSendWhatsApp: () => Promise<void> }) {
+function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp, shopName, shopAddress }: { rec: RepairRecord; type: 'received' | 'final'; baseUrl: string; expDays: number; onMsg: (m: string, ok: boolean) => void; onSendWhatsApp: () => Promise<void>; shopName?: string; shopAddress?: string }) {
   const { url, expDate } = generateInvoiceLink(rec.docNum || rec.doc_num, type, baseUrl, expDays)
   const waMsg = type === 'received'
     ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* Rs ${rec.amount || rec.estimated_cost}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
     : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* Rs ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
 
   const copy = () => navigator.clipboard.writeText(url).then(() => onMsg('Link copied!', true)).catch(() => onMsg('Copy failed', false))
-  const download = () => buildAndDownloadPDF(rec, type, baseUrl, expDays)
+  const download = () => buildAndDownloadPDF(rec, type, baseUrl, expDays, shopName || 'Devi Jewellers', shopAddress || '')
   const sendWA = async () => {
     try {
       await onSendWhatsApp()
@@ -351,7 +356,7 @@ function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp }: { 
       <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.04em', margin: '10px 0 6px' }}>WhatsApp message preview</div>
       <div className="wa-msg-box">{waMsg}</div>
       <div className="btn-row">
-        <button className="btn" onClick={() => printThermalReceipt(rec, type, 'Devi Jewellers', '')}>🖨️ Thermal Print</button>
+        <button className="btn" onClick={() => printThermalReceipt(rec, type, shopName || 'Devi Jewellers', shopAddress || '')}>🖨️ Thermal Print</button>
         <button className="btn btn-primary" onClick={download}><IcDown />Download PDF</button>
         <button className="btn btn-wa" onClick={sendWA}><IcWA />Send via WhatsApp</button>
         <button className="btn" onClick={copy}><IcCopy />Copy link</button>
@@ -1197,7 +1202,7 @@ export default function App() {
             {isEditing ? (
               <>
                 <button className="btn btn-primary" onClick={updateReceipt}><IcPdf />Update Record</button>
-                <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', cfgLinkBase, cfgExpiry)}>Print PDF</button>
+                <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', cfgLinkBase, cfgExpiry, cfgShop, cfgAddr)}>Print PDF</button>
                 <button className="btn" onClick={() => savedRec && printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr)}>Thermal Print</button>
                 <button className="btn" onClick={cancelEdit}>Cancel Edit</button>
               </>
@@ -1214,7 +1219,7 @@ export default function App() {
         {savedRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Invoice PDF &amp; WhatsApp — <span style={{ color: 'var(--brand)' }}>{savedRec.docNum || savedRec.doc_num}</span></div>
-            <InvoicePanel rec={savedRec} type="received" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} onSendWhatsApp={() => sendWhatsApp(savedRec, 'received')} />
+            <InvoicePanel rec={savedRec} type="received" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} onSendWhatsApp={() => sendWhatsApp(savedRec, 'received')} shopName={cfgShop} shopAddress={cfgAddr} />
             <Msg text={msg['wa-recv']?.text || ''} ok={msg['wa-recv']?.ok || false} />
           </div>
         )}
@@ -1287,7 +1292,7 @@ export default function App() {
         {finalRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Final Invoice — <span style={{ color: 'var(--brand)' }}>{finalRec.docNum}</span></div>
-            <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} />
+            <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} shopName={cfgShop} shopAddress={cfgAddr} />
             <Msg text={msg['wa-final']?.text || ''} ok={msg['wa-final']?.ok || false} />
           </div>
         )}
