@@ -307,6 +307,9 @@ export default function App() {
 
   // Edit mode
   const [isEditing, setIsEditing] = useState(false); const [editingRecord, setEditingRecord] = useState<RepairRecord | null>(null)
+  
+  // Thermal invoice preview
+  const [showThermalPreview, setShowThermalPreview] = useState(false); const [thermalRecord, setThermalRecord] = useState<RepairRecord | null>(null); const [thermalType, setThermalType] = useState<'receipt' | 'final'>('receipt')
 
   // Karagir out
   const [koDoc, setKoDoc] = useState(''); const [koKaragir, setKoKaragir] = useState(''); const [koNotes, setKoNotes] = useState(''); const [koLoaded, setKoLoaded] = useState(false)
@@ -619,8 +622,29 @@ export default function App() {
     setTimeout(() => setMsg(m => { const n = { ...m }; delete n[id]; return n }), 4500)
   }, [])
 
-  const openPage = (p: string) => { setPage(p); window.scrollTo(0, 0) }
-  const goBack = () => { setPage('dashboard'); window.scrollTo(0, 0) }
+  const openPage = (p: string) => { 
+    // Cancel edit if switching pages without saving
+    if (isEditing || editMasterId) {
+      setIsEditing(false);
+      setEditingRecord(null);
+      setEditMasterId(null);
+      // Reset form fields
+      cancelEditMaster();
+    }
+    setPage(p); 
+    window.scrollTo(0, 0) 
+  }
+  const goBack = () => { 
+    // Cancel edit when going back to dashboard
+    if (isEditing || editMasterId) {
+      setIsEditing(false);
+      setEditingRecord(null);
+      setEditMasterId(null);
+      cancelEditMaster();
+    }
+    setPage('dashboard'); 
+    window.scrollTo(0, 0) 
+  }
 
   const stats = {
     total: records.length,
@@ -1266,6 +1290,7 @@ export default function App() {
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: 11, color: 'var(--text2)' }}>{fmtDate(r.receivedDate || r.received_date || r.created_at || new Date().toISOString())}</span>
                   <span className={`badge ${bdgCls[es]}`}>{bdgLbl[es]}</span>
+                  <button className="btn btn-sm" onClick={() => { setThermalRecord(r); setThermalType('receipt'); setShowThermalPreview(true); }}>Thermal</button>
                   <button className="btn btn-sm" onClick={() => loadRecordForEdit(r)}>Edit</button>
                   <button className="btn btn-sm" onClick={() => { loadRecordForEdit(r); }}>Reprint</button>
                   <button className="btn btn-sm btn-danger" onClick={() => deleteRecord(r.docNum || r.doc_num || '')}>Delete</button>
@@ -1680,6 +1705,90 @@ export default function App() {
           )}
         </div>}
       </div>
+
+      {/* ── THERMAL INVOICE PREVIEW MODAL ── */}
+      {showThermalPreview && thermalRecord && (
+        <div className="modal-overlay" onClick={() => setShowThermalPreview(false)}>
+          <div className="modal-content thermal-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>🖨️ Thermal Invoice Preview</h3>
+              <button className="modal-close" onClick={() => setShowThermalPreview(false)}>×</button>
+            </div>
+            <div className="thermal-preview">
+              {/* 4 inch thermal receipt style */}
+              <div className="thermal-receipt" style={{ width: '4in', padding: '10px', fontFamily: 'monospace', fontSize: '12px', border: '1px dashed #ccc' }}>
+                <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '14px' }}>{cfgShop || 'Devi Jewellers'}</div>
+                <div style={{ textAlign: 'center', fontSize: '10px' }}>{cfgOwner && `${cfgOwner}, `}{cfgPhone}<br/>{cfgGst && `GST: ${cfgGst}`}</div>
+                <div style={{ textAlign: 'center', margin: '8px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '5px 0' }}>
+                  {thermalType === 'receipt' ? 'REPAIR RECEIPT' : 'FINAL INVOICE'}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span>Doc No:</span><span>{thermalRecord.docNum || thermalRecord.doc_num}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span>Date:</span><span>{fmtDate(thermalRecord.receivedDate || thermalRecord.received_date || new Date())}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span>Customer:</span><span>{thermalRecord.name || thermalRecord.customer_name}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span>Mobile:</span><span>{thermalRecord.mobile || thermalRecord.phone_number}</span>
+                </div>
+                <div style={{ borderTop: '1px dashed #000', margin: '8px 0', paddingTop: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Metal:</span><span>{thermalRecord.metal}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Item:</span><span>{thermalRecord.jewellery || thermalRecord.item_type}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Weight:</span><span>{thermalRecord.weight}g</span></div>
+                  {thermalType === 'final' && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}><span>Final Amount:</span><span>₹{thermalRecord.finalAmount || thermalRecord.final_amount}</span></div>
+                  )}
+                  {thermalType === 'receipt' && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Est. Amount:</span><span>₹{thermalRecord.amount || thermalRecord.estimated_cost}</span></div>
+                  )}
+                </div>
+                {thermalRecord.description && (
+                  <div style={{ marginTop: '8px', fontSize: '10px' }}>Desc: {thermalRecord.description}</div>
+                )}
+                <div style={{ borderTop: '1px dashed #000', margin: '8px 0', paddingTop: '8px', textAlign: 'center', fontSize: '10px' }}>
+                  Thank you for choosing us!
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-primary" onClick={() => {
+                const printContent = document.querySelector('.thermal-receipt') as HTMLElement;
+                if (printContent) {
+                  const printWindow = window.open('', '_blank');
+                  if (printWindow) {
+                    printWindow.document.write(`
+                      <html>
+                        <head>
+                          <title>${thermalType === 'receipt' ? 'Receipt' : 'Invoice'} - ${thermalRecord.docNum || thermalRecord.doc_num}</title>
+                          <style>
+                            @page { size: 4in auto; margin: 0; }
+                            body { margin: 0; padding: 10px; font-family: monospace; font-size: 12px; }
+                          </style>
+                        </head>
+                        <body>${printContent.innerHTML}</body>
+                      </html>
+                    `);
+                    printWindow.document.close();
+                    printWindow.print();
+                  }
+                }
+              }}>🖨️ Print Thermal Invoice</button>
+              <button className="btn" onClick={() => setShowThermalPreview(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Thermal Print Styles */}
+      <style>{`
+        @media print {
+          @page { size: 4in auto; margin: 0; }
+          body { -webkit-print-color-adjust: exact; }
+        }
+      `}</style>
     </div>
   )
 }
