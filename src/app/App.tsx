@@ -1718,7 +1718,7 @@ export default function App() {
               {/* 4 inch thermal receipt style */}
               <div className="thermal-receipt" style={{ width: '4in', padding: '10px', fontFamily: 'monospace', fontSize: '12px', border: '1px dashed #ccc' }}>
                 <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '14px' }}>{cfgShop || 'Devi Jewellers'}</div>
-                <div style={{ textAlign: 'center', fontSize: '10px' }}>{cfgOwner && `${cfgOwner}, `}{cfgPhone}<br/>{cfgGst && `GST: ${cfgGst}`}</div>
+                <div style={{ textAlign: 'center', fontSize: '10px' }}>{cfgAddr || cfgCity}{cfgPhone && `<br/>${cfgPhone}`}</div>
                 <div style={{ textAlign: 'center', margin: '8px 0', borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '5px 0' }}>
                   {thermalType === 'receipt' ? 'REPAIR RECEIPT' : 'FINAL INVOICE'}
                 </div>
