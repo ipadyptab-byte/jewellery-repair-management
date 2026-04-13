@@ -15,6 +15,13 @@ export async function GET() {
   }
 }
 
+// Helper function
+function addDays(date: string | Date, days: number): string {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result.toISOString();
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('POST /api/records called');
@@ -38,10 +45,7 @@ export async function POST(request: NextRequest) {
       salesman
     } = body;
 
-    console.log('Inserting record with values:', {
-      doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status
-    });
-
+    // Map to schema column names with fallbacks
     const pool = sql()
     const result = await pool.query(
       `INSERT INTO repair_records (
@@ -49,7 +53,20 @@ export async function POST(request: NextRequest) {
         received_date, delivery_date, status
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
-      [doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status]
+      [
+        doc_num,
+        customer_name || '',  // name
+        phone_number || '',   // mobile
+        metal || '',
+        item_type || '',      // jewellery
+        String(weight || ''),
+        estimated_cost || 0,  // amount
+        salesman || '',
+        description || '',
+        received_date || new Date().toISOString(),
+        delivery_date || addDays(new Date().toISOString(), 7),
+        status || 'received'
+      ]
     );
 
     const record = result.rows[0];
