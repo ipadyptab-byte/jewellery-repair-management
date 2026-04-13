@@ -7,7 +7,13 @@ export async function GET() {
     const result = await pool.query(
       `SELECT * FROM masters ORDER BY name ASC`
     );
-    return NextResponse.json(result.rows);
+    // Map is_active to status for frontend compatibility
+    const rows = result.rows.map((row: any) => ({
+      ...row,
+      is_active: row.status === 'active',
+      status: row.status || 'active'
+    }));
+    return NextResponse.json(rows);
   } catch (error) {
     console.error('Error fetching masters:', error);
     return NextResponse.json({ error: 'Failed to fetch masters' }, { status: 500 });
@@ -19,15 +25,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, category, type, phone_number: phoneNumber, specialty, address, karat, is_active: isActive } = body;
 
+    // Default to active if not provided
+    const status = isActive !== false ? 'active' : 'inactive';
+
     const pool = sql()
     const result = await pool.query(
-      `INSERT INTO masters (name, category, type, specialty, phone_number, address, karat, is_active)
+      `INSERT INTO masters (name, category, type, specialty, phone_number, address, karat, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *`,
-      [name, category, type, specialty, phoneNumber, address, karat, isActive]
+      [name, category, type, specialty, phoneNumber, address, karat, status]
     );
 
-    return NextResponse.json(result.rows[0]);
+    const row = result.rows[0];
+    return NextResponse.json({ ...row, is_active: row.status === 'active' });
   } catch (error) {
     console.error('Error creating master:', error);
     return NextResponse.json({ error: 'Failed to create master' }, { status: 500 });
@@ -43,6 +53,9 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Master ID is required' }, { status: 400 });
     }
 
+    // Map is_active boolean to status string
+    const status = isActive !== undefined ? (isActive ? 'active' : 'inactive') : null;
+
     const pool = sql()
     const result = await pool.query(
       `UPDATE masters SET 
@@ -52,18 +65,19 @@ export async function PUT(request: NextRequest) {
         phone_number = COALESCE($4, phone_number),
         address = COALESCE($5, address),
         karat = COALESCE($6, karat),
-        is_active = COALESCE($7, is_active),
+        status = COALESCE($7, status),
         updated_at = NOW()
       WHERE id = $8
       RETURNING *`,
-      [name, category, specialty, phoneNumber, address, karat, isActive, id]
+      [name, category, specialty, phoneNumber, address, karat, status, id]
     );
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Master not found' }, { status: 404 });
     }
 
-    return NextResponse.json(result.rows[0]);
+    const row = result.rows[0];
+    return NextResponse.json({ ...row, is_active: row.status === 'active' });
   } catch (error) {
     console.error('Error updating master:', error);
     return NextResponse.json({ error: 'Failed to update master' }, { status: 500 });
