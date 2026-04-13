@@ -7,10 +7,14 @@ function getSql() {
   if (!sql) {
     // Try multiple possible environment variable names
     const databaseUrl = process.env.DATABASE_URL_repair || process.env.DATABASE_URL || process.env.POSTGRES_URL;
-    console.log('Database URL found:', !!databaseUrl);
-    if (databaseUrl) {
-      console.log('Database URL prefix:', databaseUrl.slice(0, 30) + '...');
-    }
+    
+    // Log ALL environment variables that exist (masked)
+    console.log('=== Environment Check ===');
+    console.log('DATABASE_URL_repair:', process.env.DATABASE_URL_repair ? 'SET' : 'NOT SET');
+    console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+    console.log('POSTGRES_URL:', process.env.POSTGRES_URL ? 'SET' : 'NOT SET');
+    console.log('All env keys:', Object.keys(process.env).filter(k => k.toLowerCase().includes('db') || k.toLowerCase().includes('postgres') || k.toLowerCase().includes('url')).join(', '));
+    
     if (!databaseUrl) {
       throw new Error('DATABASE_URL_repair environment variable is not set')
     }
