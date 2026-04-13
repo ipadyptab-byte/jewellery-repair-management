@@ -322,7 +322,8 @@ export default function App() {
   const [cfgLinkBase, setCfgLinkBase] = useState('https://invoice.devijewellers.in'); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [tpl1Name, setTpl1Name] = useState('jewellery_received_invoice'); const [tpl2Name, setTpl2Name] = useState('jewellery_ready_invoice')
   const [connStatus, setConnStatus] = useState<'no' | 'ok' | 'checking'>('no')
-  const [settingsTab, setSettingsTab] = useState('creds')
+  const [settingsTab, setSettingsTab] = useState<'shop' | 'whatsapp'>('shop') // 'shop' or 'whatsapp'
+  const [waSubTab, setWaSubTab] = useState<'creds' | 'templates' | 'triggers' | 'watest'>('creds')
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
 
@@ -503,15 +504,49 @@ export default function App() {
           setKaragirs(karagirs);
         }
 
-        // Load settings from API (only to override if DB has data)
+        // Load settings from API - always set values (even if empty string)
+        console.log('Loading settings from API...');
         const settingsResponse = await fetch('/api/settings');
+        console.log('Settings response status:', settingsResponse.status);
         if (settingsResponse.ok) {
           const settings = await settingsResponse.json();
-          // Only override if API returned non-empty values
-          if (settings.businessName && settings.businessName !== 'Devi Jewellers') setCfgShop(settings.businessName);
-          if (settings.whatsappApiKey) setRmToken(settings.whatsappApiKey);
-          if (settings.whatsappApiUrl) setRmApiUrl(settings.whatsappApiUrl);
-          if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
+          console.log('Settings loaded from DB:', settings);
+          
+          // Load all settings - use defaultValue || settingsValue pattern
+          setCfgShop(settings.businessName || 'Devi Jewellers');
+          setCfgOwner(settings.shopOwner || '');
+          setCfgPhone(settings.shopPhone || '');
+          setCfgGst(settings.shopGst || '');
+          setCfgCity(settings.shopCity || '');
+          setCfgAddr(settings.shopAddress || '');
+          
+          // Always load WhatsApp settings (key field is required)
+          console.log('Loading WhatsApp - API key:', settings.whatsappApiKey);
+          setRmToken(settings.whatsappApiKey || '');
+          setRmApiUrl(settings.whatsappApiUrl || 'https://api.routemobile.com/whatsapp/v1');
+          setRmUser(settings.whatsappRmUser || '');
+          setRmPass(settings.whatsappRmPass || '');
+          setRmWaba(settings.whatsappRmWaba || '');
+          setRmPhoneid(settings.whatsappRmPhoneid || '');
+          setRmWaphone(settings.whatsappRmWaphone || '');
+          setRmApiver(settings.whatsappRmApiVer || 'v17.0');
+          
+          // Invoice settings
+          setCfgLinkBase(settings.invoiceLinkBase || '');
+          setCfgExpiry(settings.invoiceExpiryDays || 10);
+          
+          // Template settings
+          setTpl1Name(settings.template1Name || 'jewellery_received_invoice');
+          setTpl2Name(settings.template2Name || 'jewellery_ready_invoice');
+          
+          // Trigger settings
+          setTrRecv(settings.triggerReceive !== undefined ? settings.triggerReceive : true);
+          setTrReady(settings.triggerReady !== undefined ? settings.triggerReady : true);
+          setTrKaragir(settings.triggerKaragir !== undefined ? settings.triggerKaragir : false);
+          
+          console.log('Settings loaded into state complete');
+        } else {
+          console.error('Failed to load settings, status:', settingsResponse.status);
         }
 
         // Load docSeq from localStorage as fallback
@@ -577,23 +612,6 @@ export default function App() {
   useEffect(() => { localStorage.setItem('devi-jewellers-cfgGst', cfgGst) }, [cfgGst])
   useEffect(() => { localStorage.setItem('devi-jewellers-cfgCity', cfgCity) }, [cfgCity])
   useEffect(() => { localStorage.setItem('devi-jewellers-cfgAddr', cfgAddr) }, [cfgAddr])
-
-  // WhatsApp settings persistence
-  useEffect(() => { localStorage.setItem('devi-jewellers-rmUser', rmUser) }, [rmUser])
-  useEffect(() => { localStorage.setItem('devi-jewellers-rmPass', rmPass) }, [rmPass])
-  useEffect(() => { localStorage.setItem('devi-jewellers-rmWaba', rmWaba) }, [rmWaba])
-  useEffect(() => { localStorage.setItem('devi-jewellers-rmPhoneid', rmPhoneid) }, [rmPhoneid])
-  useEffect(() => { localStorage.setItem('devi-jewellers-rmWaphone', rmWaphone) }, [rmWaphone])
-  useEffect(() => { localStorage.setItem('devi-jewellers-rmToken', rmToken) }, [rmToken])
-  useEffect(() => { localStorage.setItem('devi-jewellers-rmApiUrl', rmApiUrl) }, [rmApiUrl])
-  useEffect(() => { localStorage.setItem('devi-jewellers-rmApiver', rmApiver) }, [rmApiver])
-  useEffect(() => { localStorage.setItem('devi-jewellers-cfgLinkBase', cfgLinkBase) }, [cfgLinkBase])
-  useEffect(() => { localStorage.setItem('devi-jewellers-cfgExpiry', cfgExpiry.toString()) }, [cfgExpiry])
-  useEffect(() => { localStorage.setItem('devi-jewellers-tpl1Name', tpl1Name) }, [tpl1Name])
-  useEffect(() => { localStorage.setItem('devi-jewellers-tpl2Name', tpl2Name) }, [tpl2Name])
-  useEffect(() => { localStorage.setItem('devi-jewellers-trRecv', trRecv.toString()) }, [trRecv])
-  useEffect(() => { localStorage.setItem('devi-jewellers-trReady', trReady.toString()) }, [trReady])
-  useEffect(() => { localStorage.setItem('devi-jewellers-trKaragir', trKaragir.toString()) }, [trKaragir])
 
   const showMessage = useCallback((id: string, text: string, ok: boolean) => {
     setMsg(m => ({ ...m, [id]: { text, ok } }))
@@ -1397,23 +1415,64 @@ export default function App() {
       {/* ── SETTINGS ── */}
       <div className={`page ${page === 'settings' ? 'active' : ''}`}>
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
+        
+        {/* Settings Tabs */}
+        <div className="stab-row" style={{ marginBottom: 16 }}>
+          <button className={`stab ${settingsTab === 'shop' ? 'active' : ''}`} onClick={() => setSettingsTab('shop')}>🏪 Shop information</button>
+          <button className={`stab ${settingsTab === 'whatsapp' ? 'active' : ''}`} onClick={() => setSettingsTab('whatsapp')}>📱 WhatsApp API</button>
+        </div>
+
+        {settingsTab === 'shop' && (
         <div className="card">
-          <div className="card-title"><img src="/icon.png" alt="" />Shop information</div>
+          <div className="card-title">🏪 Shop information</div>
           <div className="grid2">
-            <div className="field"><label>Shop name</label><input value={cfgShop} onChange={e => setCfgShop(e.target.value)} /></div>
+            <div className="field"><label>Shop name *</label><input value={cfgShop} onChange={e => setCfgShop(e.target.value)} placeholder="Your shop name" /></div>
             <div className="field"><label>Owner name</label><input value={cfgOwner} onChange={e => setCfgOwner(e.target.value)} placeholder="Owner name" /></div>
           </div>
           <div className="grid3">
-            <div className="field"><label>Phone</label><input value={cfgPhone} onChange={e => setCfgPhone(e.target.value)} placeholder="Shop phone" /></div>
+            <div className="field"><label>Phone *</label><input value={cfgPhone} onChange={e => setCfgPhone(e.target.value)} placeholder="Shop phone" /></div>
             <div className="field"><label>GST number</label><input value={cfgGst} onChange={e => setCfgGst(e.target.value)} placeholder="GST number" /></div>
             <div className="field"><label>City</label><input value={cfgCity} onChange={e => setCfgCity(e.target.value)} placeholder="City" /></div>
           </div>
           <div className="field"><label>Address</label><input value={cfgAddr} onChange={e => setCfgAddr(e.target.value)} placeholder="Full address" /></div>
-          <div className="btn-row"><button className="btn btn-primary" onClick={() => showMessage('shop', 'Shop info saved.', true)}>Save</button></div>
+          <div className="grid2" style={{ marginTop: 16 }}>
+            <div className="field"><label>Invoice link base URL</label><input value={cfgLinkBase} onChange={e => setCfgLinkBase(e.target.value)} placeholder="https://invoice.yourdomain.in" /></div>
+            <div className="field"><label>Link expiry (days)</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /></div>
+          </div>
+          <div className="btn-row" style={{ marginTop: 16 }}>
+            <button className="btn btn-primary" onClick={async () => { 
+              if (!cfgShop.trim()) { showMessage('shop', 'Shop name is required.', false); return; }
+              try {
+                const response = await fetch('/api/settings', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    businessName: cfgShop,
+                    shopOwner: cfgOwner,
+                    shopPhone: cfgPhone,
+                    shopGst: cfgGst,
+                    shopCity: cfgCity,
+                    shopAddress: cfgAddr,
+                    invoiceLinkBase: cfgLinkBase,
+                    invoiceExpiryDays: cfgExpiry,
+                    currency: 'INR',
+                    taxRate: 0
+                  })
+                });
+                if (response.ok) {
+                  showMessage('shop', 'Shop information saved to database!', true);
+                } else {
+                  showMessage('shop', 'Failed to save.', false);
+                }
+              } catch (e) {
+                showMessage('shop', 'Network error.', false);
+              }
+            }}>💾 Save shop information</button>
+          </div>
           <Msg text={msg['shop']?.text || ''} ok={msg['shop']?.ok || false} />
-        </div>
+        </div>)}
 
-        <div className="card">
+        {settingsTab === 'whatsapp' && <div className="card">
           <div className="card-title">
             <div style={{ width: 20, height: 20, background: '#25D366', borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcWA size={13} /></div>
             WhatsApp API — Route Mobile
@@ -1425,11 +1484,11 @@ export default function App() {
           <div className="info-wa">Route Mobile uses the official <strong>Meta WhatsApp Cloud API</strong>. You need Route Mobile credentials, WABA ID, Phone Number ID, Meta access token, and approved HSM templates.</div>
           <div className="stab-row">
             {(['creds', 'templates', 'triggers', 'watest'] as const).map(t => (
-              <button key={t} className={`stab ${settingsTab === t ? 'active' : ''}`} onClick={() => setSettingsTab(t)}>{t === 'creds' ? 'Credentials' : t === 'templates' ? 'Message templates' : t === 'triggers' ? 'Triggers' : 'Test & verify'}</button>
+              <button key={t} className={`stab ${waSubTab === t ? 'active' : ''}`} onClick={() => setWaSubTab(t)}>{t === 'creds' ? 'Credentials' : t === 'templates' ? 'Message templates' : t === 'triggers' ? 'Triggers' : 'Test & verify'}</button>
             ))}
           </div>
 
-          {settingsTab === 'creds' && (
+          {waSubTab === 'creds' && (
             <>
               <div className="sec-label">Route Mobile account</div>
               <div className="grid2">
@@ -1491,39 +1550,43 @@ export default function App() {
                   }
                 }}><IcWA />Verify connection</button>
                 <button className="btn btn-primary" onClick={async () => { 
-                  if (!rmToken) { showMessage('creds', 'API key required.', false); return }
                   try {
-                    // Save to localStorage immediately for backup
-                    localStorage.setItem('devi-jewellers-rmToken', rmToken);
-                    localStorage.setItem('devi-jewellers-rmApiUrl', rmApiUrl);
-                    localStorage.setItem('devi-jewellers-cfgLinkBase', cfgLinkBase);
-                    
-                    // Try to save to API as well
                     const response = await fetch('/api/settings', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         businessName: cfgShop,
+                        shopOwner: cfgOwner,
+                        shopPhone: cfgPhone,
+                        shopGst: cfgGst,
+                        shopCity: cfgCity,
+                        shopAddress: cfgAddr,
                         whatsappApiKey: rmToken,
                         whatsappApiUrl: rmApiUrl,
+                        whatsappRmUser: rmUser,
+                        whatsappRmPass: rmPass,
+                        whatsappRmWaba: rmWaba,
+                        whatsappRmPhoneid: rmPhoneid,
+                        whatsappRmWaphone: rmWaphone,
+                        whatsappRmApiVer: rmApiver,
                         invoiceLinkBase: cfgLinkBase,
+                        invoiceExpiryDays: cfgExpiry,
+                        template1Name: tpl1Name,
+                        template2Name: tpl2Name,
+                        triggerReceive: trRecv,
+                        triggerReady: trReady,
+                        triggerKaragir: trKaragir,
                         currency: 'INR',
                         taxRate: 0
                       })
                     });
                     if (response.ok) {
-                      showMessage('creds', 'Credentials saved.', true);
+                      showMessage('creds', 'Credentials saved to database!', true);
                     } else {
-                      // API failed but localStorage saved
-                      const err = await response.json();
-                      showMessage('creds', 'Saved locally. API error: ' + (err.error || 'failed'), false);
+                      showMessage('creds', 'Failed to save credentials', false);
                     }
                   } catch (e) {
-                    // Save to localStorage even on error
-                    localStorage.setItem('devi-jewellers-rmToken', rmToken);
-                    localStorage.setItem('devi-jewellers-rmApiUrl', rmApiUrl);
-                    localStorage.setItem('devi-jewellers-cfgLinkBase', cfgLinkBase);
-                    showMessage('creds', 'Saved locally.', true);
+                    showMessage('creds', 'Failed to save: Network error', false);
                   }
                 }}>Save credentials</button>
               </div>
@@ -1531,7 +1594,7 @@ export default function App() {
             </>
           )}
 
-          {settingsTab === 'templates' && (
+          {waSubTab === 'templates' && (
             <>
               <div className="info-blue">WhatsApp Business API requires pre-approved HSM templates. The invoice PDF link is embedded as <code>{'{{6}}'}</code> (received) and <code>{'{{4}}'}</code> (ready) variables.</div>
               <div className="sec-label">Template 1 — Jewellery received (with invoice link)</div>
@@ -1553,7 +1616,7 @@ export default function App() {
             </>
           )}
 
-          {settingsTab === 'triggers' && (
+          {waSubTab === 'triggers' && (
             <>
               <div className="info-warn">WhatsApp HSM templates can only be sent to customers who have opted in. Ensure customer consent.</div>
               <div className="toggle-row"><div><div style={{ fontSize: 13, fontWeight: 600 }}>Send WhatsApp + invoice PDF link on receipt</div><div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>Template: <code>{tpl1Name}</code></div></div><Toggle checked={trRecv} onChange={setTrRecv} /></div>
@@ -1564,7 +1627,7 @@ export default function App() {
             </>
           )}
 
-          {settingsTab === 'watest' && (
+          {waSubTab === 'watest' && (
             <>
               <div className="grid2">
                 <div className="field"><label>Test WhatsApp number <span className="req">*</span></label><input value={testWa} onChange={e => setTestWa(e.target.value)} placeholder="+919876543210" /><div className="hint">Include country code.</div></div>
@@ -1572,16 +1635,9 @@ export default function App() {
               </div>
               <div className="btn-row"><button className="btn btn-wa" onClick={sendTestWhatsApp}><IcWA />Send test WhatsApp</button></div>
               <Msg text={msg['watest']?.text || ''} ok={msg['watest']?.ok || false} />
-              <div className="divider" />
-              <div className="sec-label">Credential reference</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {[['RM username', 'Route Mobile dashboard → Account settings → API credentials'], ['WABA ID', 'Meta Business Manager → WhatsApp → WhatsApp accounts → Account ID'], ['Phone Number ID', 'Meta Business Manager → WhatsApp → Phone numbers → select number'], ['Access token', 'Meta Business Manager → System users → Generate token → WhatsApp permissions'], ['Invoice link URL', 'Your web hosting or cloud storage (AWS S3, Cloudflare R2, or own server)']].map(([k, v]) => (
-                  <div key={k} className="param-row"><span className="param-key">{k}</span><span className="param-val">{v}</span></div>
-                ))}
-              </div>
             </>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   )
