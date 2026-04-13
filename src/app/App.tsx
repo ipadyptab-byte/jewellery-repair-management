@@ -322,7 +322,7 @@ export default function App() {
 
   // Settings
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
-  const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.routemobile.com/whatsapp/v1'); const [rmApiver, setRmApiver] = useState('v17.0')
+  const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://apis.rmlconnect.net/wba/v1'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState('https://invoice.devijewellers.in'); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [tpl1Name, setTpl1Name] = useState('jewellery_received_invoice'); const [tpl2Name, setTpl2Name] = useState('jewellery_ready_invoice')
   const [connStatus, setConnStatus] = useState<'no' | 'ok' | 'checking'>('no')
@@ -342,8 +342,9 @@ export default function App() {
       : [rec.name || rec.customer_name, rec.metal, String(rec.finalAmount || rec.final_amount || rec.amount || rec.estimated_cost), invoiceLink]
 
     const toNumber = (rec.mobile || rec.phone_number || '').replace(/^\+/, '')
-    const baseUrl = rmApiUrl.replace(/\/$/, '')
-
+    // Clean base URL - remove any trailing /messages to avoid duplication
+    let baseUrl = rmApiUrl.replace(/\/$/, '').replace(/\/messages$/, '')
+    
     // Route Mobile API endpoint
     const url = `${baseUrl}/messages`
 
@@ -527,7 +528,7 @@ export default function App() {
           // Always load WhatsApp settings (key field is required)
           console.log('Loading WhatsApp - API key:', settings.whatsappApiKey);
           setRmToken(settings.whatsappApiKey || '');
-          setRmApiUrl(settings.whatsappApiUrl || 'https://api.routemobile.com/whatsapp/v1');
+          setRmApiUrl(settings.whatsappApiUrl || 'https://apis.rmlconnect.net/wba/v1');
           setRmUser(settings.whatsappRmUser || '');
           setRmPass(settings.whatsappRmPass || '');
           setRmWaba(settings.whatsappRmWaba || '');
@@ -1610,7 +1611,7 @@ export default function App() {
                   setConnStatus('checking');
                   try {
                     // Verify by making a test API call directly to Route Mobile
-                    const testUrl = `${rmApiUrl.replace(/\/$/, '')}/messages`;
+                    const testUrl = `${rmApiUrl.replace(/\/$/, '').replace(/\/messages$/, '')}/messages`;
                     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
                     if (rmToken) headers['Authorization'] = `Bearer ${rmToken}`;
                     else if (rmUser && rmPass) headers['Authorization'] = `Basic ${btoa(`${rmUser}:${rmPass}`)}`;
