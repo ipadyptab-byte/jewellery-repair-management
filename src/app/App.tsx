@@ -1295,6 +1295,9 @@ export default function App() {
           <div className="card">
             <div className="card-title"><IcPdf />Final Invoice — <span style={{ color: 'var(--brand)' }}>{finalRec.docNum}</span></div>
             <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} />
+            <div style={{ marginTop: 10 }}>
+              <button className="btn" onClick={() => printThermalReceipt(finalRec, 'final', cfgShop, cfgAddr)}>🖨️ Thermal Print</button>
+            </div>
             <Msg text={msg['wa-final']?.text || ''} ok={msg['wa-final']?.ok || false} />
           </div>
         )}
