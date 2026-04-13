@@ -43,13 +43,28 @@ export async function POST(request: NextRequest) {
     });
 
     const pool = sql()
+    
+    // Map frontend field names to database column names
     const result = await pool.query(
       `INSERT INTO repair_records (
         doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description,
         received_date, delivery_date, status
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
-      [doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status]
+      [
+        doc_num, 
+        customer_name, 
+        phone_number, 
+        metal, 
+        item_type || '', 
+        weight || '0', 
+        estimated_cost || 0, 
+        salesman || '', 
+        description || '', 
+        received_date || new Date().toISOString(), 
+        delivery_date || new Date().toISOString(), 
+        status || 'received'
+      ]
     );
 
     const record = result.rows[0];
