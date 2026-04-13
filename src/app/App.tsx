@@ -351,6 +351,7 @@ function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp }: { 
       <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.04em', margin: '10px 0 6px' }}>WhatsApp message preview</div>
       <div className="wa-msg-box">{waMsg}</div>
       <div className="btn-row">
+        <button className="btn" onClick={() => printThermalReceipt(rec, type, 'Devi Jewellers', '')}>🖨️ Thermal Print</button>
         <button className="btn btn-primary" onClick={download}><IcDown />Download PDF</button>
         <button className="btn btn-wa" onClick={sendWA}><IcWA />Send via WhatsApp</button>
         <button className="btn" onClick={copy}><IcCopy />Copy link</button>
