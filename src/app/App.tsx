@@ -850,7 +850,7 @@ export default function App() {
   /* ── Karagir In ── */
   const kiRecord = records.find(r => r.docNum === kiDoc)
   const saveKI = async () => {
-    if (!kiDoc || !kiAmount) { showMessage('ki', 'Enter final amount.', false); return }
+    if (!kiDoc || !kiAmount) { showMessage('ki', 'Enter final amount.', false); return null; }
 
     try {
       const updated = records.map(r => r.docNum === kiDoc ? {
@@ -864,12 +864,15 @@ export default function App() {
       } : r);
 
       setRecords(updated);
-      setFinalRec(updated.find(r => r.docNum === kiDoc) || null);
+      const finalRecord = updated.find(r => r.docNum === kiDoc) || null;
+      setFinalRec(finalRecord);
       showMessage('ki', `Updated! Final invoice generated for ${kiDoc}`, true);
       setKiLoaded(false);
+      return finalRecord;
     } catch (error) {
       console.error('Error saving karagir in:', error);
       showMessage('ki', 'Failed to update record.', false);
+      return null;
     }
   }
 
@@ -1246,18 +1249,11 @@ export default function App() {
                 <div className="field"><label>Final repair amount (₹) <span className="req">*</span></label><input type="number" value={kiAmount} onChange={e => setKiAmount(e.target.value)} placeholder="Actual amount" /></div>
                 <div className="field"><label>Quality</label><select value={kiQuality} onChange={e => setKiQuality(e.target.value)}><option>Good</option><option>Excellent</option><option>Needs touch-up</option></select></div>
               </div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={saveKI}><IcPdf />Confirm &amp; Generate Final Invoice PDF</button></div>
+              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec) { setThermalRecord(rec); setThermalType('final'); setShowThermalPreview(true); setPage('dashboard'); } }}><IcPdf />Confirm & Generate Final Invoice Thermal</button></div>
             </>
           )}
           <Msg text={msg['ki']?.text || ''} ok={msg['ki']?.ok || false} />
         </div>
-        {finalRec && (
-          <div className="card">
-            <div className="card-title"><IcPdf />Final Invoice — <span style={{ color: 'var(--brand)' }}>{finalRec.docNum}</span></div>
-            <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} />
-            <Msg text={msg['wa-final']?.text || ''} ok={msg['wa-final']?.ok || false} />
-          </div>
-        )}
       </div>
 
       {/* ── TRACK ── */}
