@@ -631,6 +631,14 @@ export default function App() {
       // Reset form fields
       cancelEditMaster();
     }
+    // Reset karagir-in form when entering
+    if (p === 'karagir-in') {
+      setKiDoc('');
+      setKiAmount('');
+      setKiQuality('Good');
+      setKiLoaded(false);
+      setFinalRec(null);
+    }
     setPage(p); 
     window.scrollTo(0, 0) 
   }
@@ -642,6 +650,12 @@ export default function App() {
       setEditMasterId(null);
       cancelEditMaster();
     }
+    // Reset karagir-in form
+    setKiDoc('');
+    setKiAmount('');
+    setKiQuality('Good');
+    setKiLoaded(false);
+    setFinalRec(null);
     setPage('dashboard'); 
     window.scrollTo(0, 0) 
   }
