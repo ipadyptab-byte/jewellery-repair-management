@@ -234,6 +234,74 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
   return { url, expDate }
 }
 
+/* ─── Thermal Print for 4" Printer ─── */
+function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shopName: string, shopAddress: string) {
+  // Use default address if not set
+  const address = shopAddress || 'Nashik, Maharashtra'
+  
+  // Create a simple HTML receipt for thermal printer
+  const isFinal = type === 'final'
+  const content = `
+    <div style="width: 100mm; font-family: Arial, sans-serif; font-size: 12px; padding: 10px;">
+      <div style="text-align: center; font-size: 16px; font-weight: bold;">${shopName}</div>
+      <div style="text-align: center; font-size: 10px;">${address}</div>
+      <div style="text-align: center; border-top: 1px dashed #000; margin: 8px 0;"></div>
+      <div style="text-align: center; font-weight: bold; font-size: 14px;">${isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div>
+      <div style="text-align: center; border-top: 1px dashed #000; margin: 8px 0;"></div>
+      <table style="width: 100%; font-size: 11px;">
+        <tr><td>Doc No:</td><td style="text-align:right;">${rec.docNum}</td></tr>
+        <tr><td>Date:</td><td style="text-align:right;">${fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString())}</td></tr>
+        <tr><td>Customer:</td><td style="text-align:right;">${rec.name}</td></tr>
+        <tr><td>Mobile:</td><td style="text-align:right;">${rec.mobile}</td></tr>
+      </table>
+      <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
+      <table style="width: 100%; font-size: 11px;">
+        <tr><td>Item:</td><td style="text-align:right;">${rec.jewellery || rec.item_type}</td></tr>
+        <tr><td>Metal:</td><td style="text-align:right;">${rec.metal}</td></tr>
+        <tr><td>Weight:</td><td style="text-align:right;">${rec.weight || '0'} gm</tr>
+      </table>
+      <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
+      <table style="width: 100%; font-size: 12px;">
+        ${isFinal ? `
+        <tr><td>Estimated:</td><td style="text-align:right;">Rs ${rec.amount}</td></tr>
+        <tr><td style="font-weight:bold;">Final:</td><td style="text-align:right; font-weight:bold;">Rs ${rec.finalAmount}</td></tr>
+        ` : `
+        <tr><td style="font-weight:bold;">Estimated:</td><td style="text-align:right; font-weight:bold;">Rs ${rec.amount}</td></tr>
+        `}
+      </table>
+      <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
+      <div style="text-align: center; font-size: 10px;">Thank you for trusting us!</div>
+      <div style="text-align: center; font-size: 9px;">Bring receipt at time of delivery</div>
+    </div>
+  `
+  
+  // Open print window
+  const printWindow = window.open('', '_blank', 'width=400,height=600')
+  if (printWindow) {
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Print Receipt</title>
+          <style>
+            @media print {
+              @page { size: 100mm; margin: 0; }
+              body { margin: 0; padding: 0; }
+            }
+          </style>
+        </head>
+        <body>${content}</body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => {
+      printWindow.print()
+      printWindow.close()
+    }, 250)
+  }
+}
+
 /* ─── Sub-components ─── */
 function Msg({ text, ok }: { text: string; ok: boolean }) {
   if (!text) return null
@@ -1113,11 +1181,13 @@ export default function App() {
               <>
                 <button className="btn btn-primary" onClick={updateReceipt}><IcPdf />Update Record</button>
                 <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', cfgLinkBase, cfgExpiry)}>Print PDF</button>
+                <button className="btn" onClick={() => savedRec && printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr)}>Thermal Print</button>
                 <button className="btn" onClick={cancelEdit}>Cancel Edit</button>
               </>
             ) : (
               <>
                 <button className="btn btn-primary" onClick={saveReceipt}><IcPdf />Save &amp; Generate Invoice PDF</button>
+                <button className="btn" onClick={() => savedRec && printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr)}>Thermal Print</button>
                 <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
             )}
@@ -1192,7 +1262,8 @@ export default function App() {
                 <div className="field"><label>Final repair amount (₹) <span className="req">*</span></label><input type="number" value={kiAmount} onChange={e => setKiAmount(e.target.value)} placeholder="Actual amount" /></div>
                 <div className="field"><label>Quality</label><select value={kiQuality} onChange={e => setKiQuality(e.target.value)}><option>Good</option><option>Excellent</option><option>Needs touch-up</option></select></div>
               </div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={saveKI}><IcPdf />Confirm &amp; Generate Final Invoice PDF</button></div>
+              <div className="btn-row"><button className="btn btn-primary" onClick={saveKI}><IcPdf />Confirm &amp; Generate Final Invoice PDF</button>
+            <button className="btn" onClick={() => finalRec && printThermalReceipt(finalRec, 'final', cfgShop, cfgAddr)}>Thermal Print</button></div>
             </>
           )}
           <Msg text={msg['ki']?.text || ''} ok={msg['ki']?.ok || false} />
