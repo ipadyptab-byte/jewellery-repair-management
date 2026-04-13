@@ -72,15 +72,24 @@ export async function POST(request: NextRequest) {
     console.log('Record created successfully:', record);
     return NextResponse.json(record);
   } catch (error) {
-    console.error('Error creating record:', error);
-    const message = error instanceof Error ? error.message : 'Failed to create record';
+    console.error('=== Error creating record ===');
+    console.error('Error details:', error);
+    console.error('Error message:', error?.message);
+    console.error('Error stack:', error?.stack);
     
-    // More detailed error for debugging
-    if (error instanceof Error && error.message.includes('null value')) {
-      return NextResponse.json({ error: 'Required field is missing: ' + error.message }, { status: 500 });
+    let detailedMessage = 'Failed to create record';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('DATABASE_URL')) {
+        detailedMessage = 'Database connection not configured';
+      } else if (error.message.includes('null value')) {
+        detailedMessage = 'A required field is missing: ' + error.message;
+      } else {
+        detailedMessage = 'Error: ' + error.message;
+      }
     }
     
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: detailedMessage, details: String(error) }, { status: 500 });
   }
 }
 
