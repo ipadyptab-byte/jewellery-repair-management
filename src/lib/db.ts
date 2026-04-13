@@ -5,8 +5,9 @@ let sql: pg.Pool | null = null
 // Lazy initialization of database connection
 function getSql() {
   if (!sql) {
-    const databaseUrl = process.env.DATABASE_URL_repair
-    console.log('DATABASE_URL_repair found:', !!databaseUrl);
+    // Try multiple possible environment variable names
+    const databaseUrl = process.env.DATABASE_URL_repair || process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    console.log('Database URL found:', !!databaseUrl);
     if (databaseUrl) {
       console.log('Database URL prefix:', databaseUrl.slice(0, 30) + '...');
     }
