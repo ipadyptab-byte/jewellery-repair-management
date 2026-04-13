@@ -1681,6 +1681,13 @@ export default function App() {
                       })
                     });
                     if (response.ok) {
+                      // Also save to localStorage for immediate persistence
+                      localStorage.setItem('devi-jewellers-rmToken', rmToken);
+                      localStorage.setItem('devi-jewellers-rmApiUrl', rmApiUrl);
+                      localStorage.setItem('devi-jewellers-cfgLinkBase', cfgLinkBase);
+                      localStorage.setItem('devi-jewellers-cfgShop', cfgShop);
+                      localStorage.setItem('devi-jewellers-cfgOwner', cfgOwner);
+                      localStorage.setItem('devi-jewellers-cfgPhone', cfgPhone);
                       showMessage('creds', 'Credentials saved to database!', true);
                     } else {
                       showMessage('creds', 'Failed to save credentials', false);
