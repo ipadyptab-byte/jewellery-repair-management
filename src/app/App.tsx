@@ -206,7 +206,6 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
 
   doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.text('Jewellery Details', pad, y); y += 5
   const rows: [string, string][] = [['Item', rec.jewellery || rec.item_type || ''], ['Metal', rec.metal || ''], ['Repair Work', rec.desc || rec.description || 'General repair'], ['Salesman', rec.salesman || ''], ['Received Date', fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString())], ['Est. Delivery', fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())]]
-  if (rec.karagir) rows.push(['Karagir', rec.karagir])
   rows.forEach(([k, v]) => { doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text(`${k}:`, pad, y); doc.setFont('helvetica', 'normal'); doc.text(String(v), pad + 38, y); y += 5 })
   y += 2; doc.line(pad, y, W - pad, y); y += 6
 
@@ -220,18 +219,12 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
   }
   y += 2; doc.line(pad, y, W - pad, y); y += 6
 
-  const { url, expDate } = generateInvoiceLink(rec.docNum || rec.doc_num, type, baseUrl, expDays)
-  doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text('Invoice Link:', pad, y); y += 5
-  doc.setFont('helvetica', 'normal'); doc.setTextColor(0, 100, 0); doc.text(url, pad, y, { maxWidth: W - 2 * pad }); y += 6
-  doc.setTextColor(150, 80, 0); doc.setFontSize(8); doc.text(`Link expires on ${expDate} (valid ${expDays} days)`, pad, y); doc.setTextColor(0, 0, 0); y += 8
-
-  doc.line(pad, y, W - pad, y); y += 5
   doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 100, 100)
-  doc.text('Thank you for trusting Devi Jewellers. Please bring this receipt at time of delivery.', pad, y, { maxWidth: W - 2 * pad }); y += 5
+  doc.text('Thank you for trusting Devi Jewellers.', pad, y, { maxWidth: W - 2 * pad }); y += 5
   doc.text('Anmol Kshananache Soneri Sakshidar', W / 2, y, { align: 'center' })
 
   doc.save(`Invoice-${rec.docNum}-${type === 'final' ? 'Final' : 'Receipt'}.pdf`)
-  return { url, expDate }
+  return { url: '', expDate: '' }
 }
 
 /* ─── Thermal Print for 4" Printer ─── */
@@ -294,7 +287,7 @@ function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shop
         `}
       </table>
       <div class="divider"></div>
-      <div class="footer">Thank you for trusting us!<br/>Bring receipt at time of delivery</div>
+      <div class="footer">Thank you for trusting us!</div>
       <script>window.onload = function() { window.print(); }</script>
     </body>
     </html>
