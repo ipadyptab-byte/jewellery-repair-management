@@ -1166,9 +1166,8 @@ export default function App() {
                 <button className="btn btn-primary" onClick={async () => { 
                   const rec = await saveReceipt(); 
                   if (rec) { 
-                    setThermalRecord(rec); 
-                    setThermalType('receipt'); 
-                    setShowThermalPreview(true); 
+                    // Go to dashboard after save
+                    setPage('dashboard');
                   }
                 }}><IcPdf />Save & Generate Invoice Thermal</button>
                 <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
