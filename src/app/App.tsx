@@ -205,7 +205,7 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
   doc.line(pad, y, W - pad, y); y += 6
 
   doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.text('Jewellery Details', pad, y); y += 5
-  const rows: [string, string][] = [['Item', rec.jewellery || rec.item_type || ''], ['Metal', rec.metal || ''], ['Weight', `${rec.weight || '0'} grams`], ['Repair Work', rec.desc || rec.description || 'General repair'], ['Salesman', rec.salesman || ''], ['Received Date', fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString())], ['Est. Delivery', fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())]]
+  const rows: [string, string][] = [['Item', rec.jewellery || rec.item_type || ''], ['Metal', rec.metal || ''], ['Repair Work', rec.desc || rec.description || 'General repair'], ['Salesman', rec.salesman || ''], ['Received Date', fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString())], ['Est. Delivery', fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())]]
   if (rec.karagir) rows.push(['Karagir', rec.karagir])
   rows.forEach(([k, v]) => { doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text(`${k}:`, pad, y); doc.setFont('helvetica', 'normal'); doc.text(String(v), pad + 38, y); y += 5 })
   y += 2; doc.line(pad, y, W - pad, y); y += 6
@@ -283,7 +283,6 @@ function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shop
       <table>
         <tr><td>Item:</td><td class="right">${rec.jewellery || rec.item_type || ''}</td></tr>
         <tr><td>Metal:</td><td class="right">${rec.metal || ''}</td></tr>
-        <tr><td>Weight:</td><td class="right">${rec.weight || '0'} gm</td></tr>
       </table>
       <div class="divider"></div>
       <table>
@@ -1071,7 +1070,7 @@ export default function App() {
     const daysLeft = Math.ceil((new Date(r.deliveryDate || addDays(new Date(), 7).toISOString()).getTime() - Date.now()) / 86400000)
     const daysText = es === 'ready' ? 'Completed' : es === 'overdue' ? `${Math.abs(daysLeft)} day(s) overdue` : daysLeft === 0 ? 'Due today' : `${daysLeft} day(s) left`
     const steps = [
-      { label: 'Jewellery received', sub: `${r.jewellery || r.item_type} · ${r.metal} · ${r.weight}g · Est ₹${r.amount || r.estimated_cost}`, date: r.receivedDate || r.received_date, done: true },
+      { label: 'Jewellery received', sub: `${r.jewellery || r.item_type} · ${r.metal} · Est ₹${r.amount || r.estimated_cost}`, date: r.receivedDate || r.received_date, done: true },
       { label: r.karagir ? `Issued to karagir — ${r.karagir}` : 'Issued to karagir', sub: r.karagir ? 'In repair' : 'Pending', date: r.karagirDate || r.karagir_date, done: !!r.karagir },
       { label: 'Received from karagir', sub: r.finalAmount || r.final_amount ? `Final: ₹${r.finalAmount || r.final_amount}` : 'Awaiting', date: r.completedDate || r.completed_date, done: !!(r.completedDate || r.completed_date) },
       { label: 'Ready for delivery', sub: r.finalAmount || r.final_amount ? `Charges: ₹${r.finalAmount || r.final_amount}` : 'Pending', date: r.completedDate || r.completed_date, done: r.status === 'ready' },
@@ -1338,7 +1337,7 @@ export default function App() {
             const es = effStatus(r)
             return (
               <div key={r.docNum} className="list-row">
-                <div><span style={{ fontWeight: 700 }}>{r.docNum}</span><span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span>{r.name}<span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span><span style={{ color: 'var(--text2)' }}>{r.metal} {r.jewellery} {r.weight}g</span></div>
+                <div><span style={{ fontWeight: 700 }}>{r.docNum}</span><span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span>{r.name}<span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span><span style={{ color: 'var(--text2)' }}>{r.metal} {r.jewellery}</span></div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: 11, color: 'var(--text2)' }}>{fmtDate(r.receivedDate || r.received_date || r.created_at || new Date().toISOString())}</span>
                   <span className={`badge ${bdgCls[es]}`}>{bdgLbl[es]}</span>
