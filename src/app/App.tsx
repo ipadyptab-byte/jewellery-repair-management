@@ -693,13 +693,16 @@ export default function App() {
       }
 
       const savedRecord = await response.json();
-      setRecords(prev => [...prev, convertFromDB(savedRecord)]);
+      const converted = convertFromDB(savedRecord);
+      setRecords(prev => [...prev, converted]);
       setDocSeq(seq);
-      setSavedRec(convertFromDB(savedRecord));
+      setSavedRec(converted);
       showMessage('receive', `Saved! Document: ${docNum}`, true);
+      return converted;
     } catch (error) {
       console.error('Error saving receipt:', error);
       showMessage('receive', 'Failed to save receipt. Please try again.', false);
+      return null;
     }
   }
 
@@ -1160,7 +1163,14 @@ export default function App() {
               </>
             ) : (
               <>
-                <button className="btn btn-primary" onClick={async () => { await saveReceipt(); if (savedRec) { setThermalRecord(savedRec); setThermalType('receipt'); setShowThermalPreview(true); } }}><IcPdf />Save & Generate Invoice Thermal</button>
+                <button className="btn btn-primary" onClick={async () => { 
+                  const rec = await saveReceipt(); 
+                  if (rec) { 
+                    setThermalRecord(rec); 
+                    setThermalType('receipt'); 
+                    setShowThermalPreview(true); 
+                  }
+                }}><IcPdf />Save & Generate Invoice Thermal</button>
                 <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
             )}
