@@ -1308,7 +1308,17 @@ export default function App() {
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${s.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{s.status}</span>
                   <button className="btn btn-sm" onClick={() => editMaster(s)}>Edit</button>
-                  <button className="btn btn-sm" onClick={() => setSalesmen(p => p.map(x => x.id === s.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{s.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                  <button className="btn btn-sm" onClick={async () => { 
+                    const newStatus = s.status === 'active' ? 'inactive' : 'active';
+                    setSalesmen(p => p.map(x => x.id === s.id ? { ...x, status: newStatus } : x));
+                    try {
+                      await fetch('/api/masters', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: s.id, name: s.name, phone_number: s.mob, type: 'salesman', is_active: newStatus === 'active' })
+                      });
+                    } catch (e) { console.error('Failed to update status', e); }
+                  }}>{s.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setSalesmen(p => p.filter(x => x.id !== s.id))}>Remove</button>
                 </div>
               </div>
@@ -1338,7 +1348,17 @@ export default function App() {
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${j.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{j.status}</span>
                   <button className="btn btn-sm" onClick={() => editMaster(j)}>Edit</button>
-                  <button className="btn btn-sm" onClick={() => setJewelleries(p => p.map(x => x.id === j.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{j.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                  <button className="btn btn-sm" onClick={async () => { 
+                    const newStatus = j.status === 'active' ? 'inactive' : 'active';
+                    setJewelleries(p => p.map(x => x.id === j.id ? { ...x, status: newStatus } : x));
+                    try {
+                      await fetch('/api/masters', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: j.id, name: j.name, category: j.cat, type: 'jewellery', is_active: newStatus === 'active' })
+                      });
+                    } catch (e) { console.error('Failed to update status', e); }
+                  }}>{j.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setJewelleries(p => p.filter(x => x.id !== j.id))}>Remove</button>
                 </div>
               </div>
@@ -1369,7 +1389,17 @@ export default function App() {
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${m.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{m.status}</span>
                   <button className="btn btn-sm" onClick={() => editMaster(m)}>Edit</button>
-                  <button className="btn btn-sm" onClick={() => setMetals(p => p.map(x => x.id === m.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{m.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                  <button className="btn btn-sm" onClick={async () => { 
+                    const newStatus = m.status === 'active' ? 'inactive' : 'active';
+                    setMetals(p => p.map(x => x.id === m.id ? { ...x, status: newStatus } : x));
+                    try {
+                      await fetch('/api/masters', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: m.id, name: m.name, type: 'metal', karat: m.karat, is_active: newStatus === 'active' })
+                      });
+                    } catch (e) { console.error('Failed to update status', e); }
+                  }}>{m.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setMetals(p => p.filter(x => x.id !== m.id))}>Remove</button>
                 </div>
               </div>
@@ -1403,7 +1433,17 @@ export default function App() {
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${k.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{k.status}</span>
                   <button className="btn btn-sm" onClick={() => editMaster(k)}>Edit</button>
-                  <button className="btn btn-sm" onClick={() => setKaragirs(p => p.map(x => x.id === k.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{k.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                  <button className="btn btn-sm" onClick={async () => { 
+                    const newStatus = k.status === 'active' ? 'inactive' : 'active';
+                    setKaragirs(p => p.map(x => x.id === k.id ? { ...x, status: newStatus } : x));
+                    try {
+                      await fetch('/api/masters', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: k.id, name: k.name, phone_number: k.mob, specialty: k.spec, address: k.addr, type: 'karagir', is_active: newStatus === 'active' })
+                      });
+                    } catch (e) { console.error('Failed to update status', e); }
+                  }}>{k.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setKaragirs(p => p.filter(x => x.id !== k.id))}>Remove</button>
                 </div>
               </div>
