@@ -1308,7 +1308,7 @@ export default function App() {
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${s.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{s.status}</span>
                   <button className="btn btn-sm" onClick={() => editMaster(s)}>Edit</button>
-                  <span className="badge badge-active">Active</span>
+                  <button className="btn btn-sm" onClick={() => setSalesmen(p => p.map(x => x.id === s.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{s.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setSalesmen(p => p.filter(x => x.id !== s.id))}>Remove</button>
                 </div>
               </div>
@@ -1338,7 +1338,7 @@ export default function App() {
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${j.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{j.status}</span>
                   <button className="btn btn-sm" onClick={() => editMaster(j)}>Edit</button>
-                  <span className="badge badge-active">Active</span>
+                  <button className="btn btn-sm" onClick={() => setJewelleries(p => p.map(x => x.id === j.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{j.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setJewelleries(p => p.filter(x => x.id !== j.id))}>Remove</button>
                 </div>
               </div>
@@ -1369,7 +1369,7 @@ export default function App() {
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${m.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{m.status}</span>
                   <button className="btn btn-sm" onClick={() => editMaster(m)}>Edit</button>
-                  <span className="badge badge-active">Active</span>
+                  <button className="btn btn-sm" onClick={() => setMetals(p => p.map(x => x.id === m.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{m.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setMetals(p => p.filter(x => x.id !== m.id))}>Remove</button>
                 </div>
               </div>
@@ -1403,7 +1403,7 @@ export default function App() {
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <span className={`badge ${k.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>{k.status}</span>
                   <button className="btn btn-sm" onClick={() => editMaster(k)}>Edit</button>
-                  <span className="badge badge-active">Active</span>
+                  <button className="btn btn-sm" onClick={() => setKaragirs(p => p.map(x => x.id === k.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x))}>{k.status === 'active' ? 'Deactivate' : 'Activate'}</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setKaragirs(p => p.filter(x => x.id !== k.id))}>Remove</button>
                 </div>
               </div>
