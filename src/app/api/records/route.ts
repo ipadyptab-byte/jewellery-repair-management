@@ -44,6 +44,21 @@ export async function POST(request: NextRequest) {
 
     const pool = sql()
     
+    // Check if doc_num already exists, if so generate a new one
+    let finalDocNum = doc_num || '';
+    const existingCheck = await pool.query('SELECT doc_num FROM repair_records WHERE doc_num = $1', [finalDocNum]);
+    if (existingCheck.rows.length > 0) {
+      // Get max doc_num and increment
+      const maxResult = await pool.query("SELECT doc_num FROM repair_records ORDER BY id DESC LIMIT 1");
+      if (maxResult.rows.length > 0) {
+        const lastDoc = maxResult.rows[0].doc_num;
+        const lastNum = parseInt(lastDoc.replace(/\D/g, '') || '0');
+        finalDocNum = 'JR' + (lastNum + 1);
+      } else {
+        finalDocNum = 'JR1001';
+      }
+    }
+    
     // Map frontend field names to database column names
     // customer_name → name, phone_number → mobile, item_type → jewellery, estimated_cost → amount
     const result = await pool.query(
@@ -53,7 +68,7 @@ export async function POST(request: NextRequest) {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
       [
-        doc_num || 'JR' || Math.floor(Math.random() * 10000), 
+        finalDocNum, 
         customer_name || 'Customer', 
         phone_number || '0000000000', 
         metal || 'Gold', 
@@ -80,6 +95,8 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error) {
       if (error.message.includes('DATABASE_URL')) {
         detailedMessage = 'Database connection not configured';
+      } else if (error.message.includes('duplicate key') || error.message.includes('doc_num')) {
+        detailedMessage = 'Document number already exists. Please refresh and try again.';
       } else if (error.message.includes('null value')) {
         detailedMessage = 'A required field is missing: ' + error.message;
       } else {
