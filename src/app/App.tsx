@@ -1160,7 +1160,7 @@ export default function App() {
               </>
             ) : (
               <>
-                <button className="btn btn-primary" onClick={saveReceipt}><IcPdf />Save &amp; Generate Invoice PDF</button>
+                <button className="btn btn-primary" onClick={async () => { await saveReceipt(); if (savedRec) { setThermalRecord(savedRec); setThermalType('receipt'); setShowThermalPreview(true); } }}><IcPdf />Save & Generate Invoice Thermal</button>
                 <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
             )}
