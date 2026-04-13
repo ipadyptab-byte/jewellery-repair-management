@@ -71,11 +71,9 @@ export async function POST(request: NextRequest) {
     const record = result.rows[0];
     console.log('Record created successfully:', record);
     return NextResponse.json(record);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('=== Error creating record ===');
     console.error('Error details:', error);
-    console.error('Error message:', error?.message);
-    console.error('Error stack:', error?.stack);
     
     let detailedMessage = 'Failed to create record';
     
