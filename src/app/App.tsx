@@ -567,6 +567,16 @@ export default function App() {
         if (recordsResponse.ok) {
           const dbRecords = await recordsResponse.json();
           setRecords(dbRecords.map(convertFromDB));
+          
+          // Update docSeq based on existing records (get max doc_num)
+          if (dbRecords.length > 0) {
+            const docNums = dbRecords.map((r: any) => {
+              const match = String(r.doc_num || r.docNum || '').match(/JR(\d+)/);
+              return match ? parseInt(match[1]) : 0;
+            });
+            const maxSeq = Math.max(...docNums);
+            if (maxSeq > 0) setDocSeq(maxSeq);
+          }
         }
 
         // Load masters from API
