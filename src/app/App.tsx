@@ -376,32 +376,37 @@ export default function App() {
       }
     }
 
-    console.log('WhatsApp API Request:', { url, headers: { ...headers, Authorization: '[REDACTED]' }, body })
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
-    })
-
-    const responseText = await response.text()
-    let json
+    console.log('WhatsApp API Request:', { url, headers: { ...headers, Authorization: headers.Authorization ? '[SET]' : '[NOT SET]' }, body })
 
     try {
-      json = JSON.parse(responseText)
-    } catch (e) {
-      console.error('Failed to parse response:', responseText)
-      throw new Error(`API returned invalid JSON: ${responseText}`)
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body)
+      })
+
+      const responseText = await response.text()
+      let json
+
+      try {
+        json = JSON.parse(responseText)
+      } catch (e) {
+        console.error('Response:', responseText)
+        throw new Error(`API error ${response.status}: ${responseText.substring(0, 200)}`)
+      }
+
+      console.log('WhatsApp API Response:', { status: response.status, json })
+
+      if (!response.ok) {
+        const errorMessage = json?.error?.message || json?.message || json?.description || response.statusText
+        throw new Error(errorMessage || 'WhatsApp API request failed')
+      }
+
+      return json
+    } catch (error) {
+      console.error('WhatsApp Error:', error)
+      throw error
     }
-
-    console.log('WhatsApp API Response:', { status: response.status, json })
-
-    if (!response.ok) {
-      const errorMessage = json?.error?.message || json?.message || json?.description || response.statusText
-      throw new Error(errorMessage || 'WhatsApp API request failed')
-    }
-
-    return json
   }
 
   const sendTestWhatsApp = async () => {
