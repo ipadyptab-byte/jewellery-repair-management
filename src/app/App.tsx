@@ -120,7 +120,8 @@ const convertMasterFromDB = (master: any): Master => ({
   karat: master.karat,
   spec: master.specialty,
   addr: master.address,
-  status: master.is_active ? 'active' : 'inactive',
+  // Default to active if is_active is null or not set
+  status: (master.is_active === true || master.is_active === null || master.is_active === undefined) ? 'active' : 'inactive',
 });
 
 const convertMasterToDB = (master: Master) => ({
