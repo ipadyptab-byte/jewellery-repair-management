@@ -666,20 +666,20 @@ export default function App() {
 
       const recordData = {
         doc_num: docNum,
-        customer_name: rName,
-        phone_number: rMobile,
-        item_type: rType,
+        customer_name: rName || '',
+        phone_number: rMobile || '',
+        item_type: rType || '',
         description: rDesc || '',
-        estimated_cost: parseFloat(rAmount),
+        estimated_cost: parseFloat(rAmount) || 0,
         status: 'received',
-        master_id: null, // Will be set when assigned to karagir
+        master_id: null,
         notes: '',
         images: [],
         received_date: receivedDate,
         delivery_date: deliveryDate,
-        metal: rMetal,
-        weight: rWeight,
-        salesman: rSalesman,
+        metal: rMetal || '',
+        weight: rWeight || '0',
+        salesman: rSalesman || '',
       };
 
       const response = await fetch('/api/records', {

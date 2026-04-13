@@ -73,6 +73,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating record:', error);
     const message = error instanceof Error ? error.message : 'Failed to create record';
+    
+    // More detailed error for debugging
+    if (error instanceof Error && error.message.includes('null value')) {
+      return NextResponse.json({ error: 'Required field is missing: ' + error.message }, { status: 500 });
+    }
+    
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
