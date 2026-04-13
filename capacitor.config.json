@@ -1,0 +1,9 @@
+{
+  "appId": "com.devijewellers.repair",
+  "appName": "Devi Jewellers Repair",
+  "webDir": "out",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}
