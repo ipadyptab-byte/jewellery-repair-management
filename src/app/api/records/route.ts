@@ -75,7 +75,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating record:', error);
     const message = error instanceof Error ? error.message : 'Failed to create record';
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Return actual error for debugging
+    return NextResponse.json({ error: message, details: String(error) }, { status: 500 });
   }
 }
 

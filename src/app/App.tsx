@@ -726,7 +726,8 @@ export default function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save record');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save record');
       }
 
       const savedRecord = await response.json();
