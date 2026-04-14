@@ -266,7 +266,7 @@ function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shop
         .btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
         .btn { padding: 10px 20px; font-size: 14px; cursor: pointer; border: none; border-radius: 4px; }
         .btn-print { background: #25D366; color: white; }
-        .btn-new { background: #1976D2; color: white; }
+        .btn-dash { background: #666; color: white; }
         @media print {
           .btn-row { display: none; }
           body { padding: 0; }
@@ -303,7 +303,7 @@ function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shop
       <div class="footer">Thank you for trusting us!</div>
       <div class="btn-row">
         <button class="btn btn-print" onclick="window.print()">🖨️ Print</button>
-        <button class="btn btn-new" onclick="window.location.href=window.location.href">➕ New Entry</button>
+        <button class="btn btn-dash" onclick="window.location.href=window.location.href">🔙 Return to Dashboard</button>
       </div>
     </body>
     </html>
