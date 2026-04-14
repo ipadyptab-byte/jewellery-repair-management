@@ -1261,7 +1261,7 @@ export default function App() {
               </>
             ) : (
               <>
-                <button className="btn btn-primary" onClick={async () => { const rec = await saveReceipt(); if (rec) setPrintRec({ rec, type: 'received' }) }}><IcPdf />Save &amp; Print Thermal Invoice</button>
+                <button className="btn btn-primary" onClick={async () => { const rec = await saveReceipt(); if (rec) { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null); setPrintRec({ rec, type: 'received' }) } }}><IcPdf />Save &amp; Print Thermal Invoice</button>
                 <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
             )}
