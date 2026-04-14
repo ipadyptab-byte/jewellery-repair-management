@@ -418,9 +418,11 @@ export default function App() {
     
     // Route Mobile request body format
     
-   console.log('WhatsApp API Request:', {
+  console.log('WhatsApp API Request:', {
   endpoint: '/api/send-whatsapp',
-  body
+  mobile: toNumber,
+  templateName,
+  params
 })
 
     const response = await fetch('/api/send-whatsapp', {
