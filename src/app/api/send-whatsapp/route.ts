@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
       toNumber = `91${toNumber}`
     }
 
-    // 📦 Build request payload - Route Mobile format
+    // Build payload per Route Mobile documentation format
     const payload = {
       phone: toNumber,
       media: {
@@ -125,10 +125,11 @@ export async function POST(req: NextRequest) {
     console.log('➡️ Sending WhatsApp:', {
       to: toNumber,
       templateName,
-      params
+      params,
+      apiUrl: API_URL
     })
 
-    // 🚀 Call Route Mobile API
+    // 🚀 Call Route Mobile API with Bearer token
     let rmResponse
     try {
       rmResponse = await fetch(API_URL, {
