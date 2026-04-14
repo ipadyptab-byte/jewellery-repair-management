@@ -23,16 +23,29 @@ export async function POST(req: NextRequest) {
     } = body
 
     // 🔒 Basic validation
-    if (!mobile || !templateName || !params || !Array.isArray(params)) {
+    console.log('📥 Received body:', { mobile, templateName, params, hasToken: !!token })
+    
+    if (!mobile) {
       return NextResponse.json(
-        { error: 'Missing required fields (mobile, templateName, params)' },
+        { error: 'Missing required field: mobile', received: { mobile } },
         { status: 400 }
       )
     }
-
+    if (!templateName) {
+      return NextResponse.json(
+        { error: 'Missing required field: templateName', received: { templateName } },
+        { status: 400 }
+      )
+    }
+    if (!params || !Array.isArray(params)) {
+      return NextResponse.json(
+        { error: 'Missing required field: params (must be array)', received: { params, isArray: Array.isArray(params) } },
+        { status: 400 }
+      )
+    }
     if (!token) {
       return NextResponse.json(
-        { error: 'WhatsApp API token missing' },
+        { error: 'WhatsApp API token missing - check rmToken in Settings', received: { hasToken: !!token } },
         { status: 400 }
       )
     }
