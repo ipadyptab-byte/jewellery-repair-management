@@ -416,29 +416,29 @@ export default function App() {
 
     const toNumber = (rec.mobile || rec.phone_number || '').replace(/^\+/, '')
     
-    // Route Mobile request body format
-  // Fixed: changed shorthand 'body' to explicit keys (mobile, templateName, params)
+    // Build payload for Route Mobile
+    const payload = {
+      phone: toNumber,
+      media: {
+        type: 'media_template',
+        template_name: templateName,
+        lang_code: 'en',
+        body: params.slice(0, 4).map((p: string) => ({ text: p }))
+      }
+    }
     
-  console.log('WhatsApp API Request:', {
-  endpoint: '/api/send-whatsapp',
-  mobile: toNumber,
-  templateName,
-  params
-})
-
-    const response = await fetch('/api/send-whatsapp', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    mobile: toNumber,
-    templateName,
-    params,
-    token: rmToken,
-    apiUrl: rmApiUrl
-  })
-})
+    console.log('WhatsApp: Calling Route Mobile directly from browser')
+    
+    // Call Route Mobile directly from browser!
+    const response = await fetch('https://apis.rmlconnect.net/wba/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': rmToken
+      },
+      body: JSON.stringify(payload)
+    })
+    
     const responseText = await response.text()
     let json
 
@@ -452,7 +452,7 @@ export default function App() {
     console.log('WhatsApp API Response:', { status: response.status, json })
 
     if (!response.ok) {
-      const errorMessage = json?.error?.message || json?.message || json?.description || response.statusText
+      const errorMessage = json?.message || json?.error?.message || response.statusText
       throw new Error(errorMessage || 'WhatsApp API request failed')
     }
 
