@@ -119,7 +119,10 @@ export async function POST(req: NextRequest) {
       to: toNumber,
       templateName,
       params,
-      apiUrl: API_URL
+      tokenLen: token.length,
+      tokenPrefix: token.substring(0, 30),
+      apiUrl: API_URL,
+      hasHeader: !!header
     })
 
     // 🚀 Call Route Mobile API with Bearer token
