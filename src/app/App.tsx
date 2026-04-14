@@ -233,7 +233,7 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
 }
 
 /* ─── Thermal Print for 4" Printer ─── */
-function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shopName: string, shopAddress: string) {
+function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shopName: string, shopAddress: string, onComplete?: () => void) {
   // Use default address if not set
   const address = shopAddress || 'Nashik, Maharashtra'
   const isFinal = type === 'final'
@@ -263,6 +263,10 @@ function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shop
         .bold { font-weight: bold; }
         .big { font-size: 14px; }
         .footer { text-align: center; font-size: 10px; margin-top: 10px; }
+        .btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+        .btn { padding: 10px 20px; font-size: 14px; cursor: pointer; border: none; border-radius: 4px; }
+        .btn-print { background: #25D366; color: white; }
+        .btn-dash { background: #666; color: white; }
       </style>
     </head>
     <body>
@@ -293,7 +297,10 @@ function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shop
       </table>
       <div class="divider"></div>
       <div class="footer">Thank you for trusting us!</div>
-      <script>window.onload = function() { window.print(); }</script>
+      <div class="btn-row">
+        <button class="btn btn-print" onclick="window.print()">Print</button>
+        <button class="btn btn-dash" onclick="window.opener?.postMessage('thermalDone', '*'); window.close()">Return to Dashboard</button>
+      </div>
     </body>
     </html>
   `
@@ -512,6 +519,17 @@ export default function App() {
   const [editMasterId, setEditMasterId] = useState<number | null>(null)
 
   // Load data from APIs on mount
+  useEffect(() => {
+    // Listen for messages from print window
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data === 'thermalDone') {
+        setPage('dashboard')
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+  
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -1191,7 +1209,7 @@ export default function App() {
               </>
             ) : (
               <>
-                <button className="btn btn-primary" onClick={async () => { await saveReceipt(); if (savedRec) printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr) }}><IcPdf />Save &amp; Generate Thermal Invoice</button>
+                <button className="btn btn-primary" onClick={async () => { await saveReceipt(); if (savedRec) { printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr); setPage('dashboard') } }}><IcPdf />Save &amp; Generate Thermal Invoice</button>
                 <button className="btn" onClick={() => setPage('dashboard')}>Return to Dashboard</button>
                 <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
@@ -1267,7 +1285,7 @@ export default function App() {
                 <div className="field"><label>Final repair amount (₹) <span className="req">*</span></label><input type="number" value={kiAmount} onChange={e => setKiAmount(e.target.value)} placeholder="Actual amount" /></div>
                 <div className="field"><label>Quality</label><select value={kiQuality} onChange={e => setKiQuality(e.target.value)}><option>Good</option><option>Excellent</option><option>Needs touch-up</option></select></div>
               </div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { await saveKI(); if (finalRec) printThermalReceipt(finalRec, 'final', cfgShop, cfgAddr) }}><IcPdf />Confirm &amp; Generate Thermal Invoice</button><button className="btn" onClick={() => setPage('dashboard')}>Return to Dashboard</button></div>
+              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { await saveKI(); if (finalRec) { printThermalReceipt(finalRec, 'final', cfgShop, cfgAddr); setPage('dashboard') } }}><IcPdf />Confirm &amp; Generate Thermal Invoice</button><button className="btn" onClick={() => setPage('dashboard')}>Return to Dashboard</button></div>
             </>
           )}
           <Msg text={msg['ki']?.text || ''} ok={msg['ki']?.ok || false} />
