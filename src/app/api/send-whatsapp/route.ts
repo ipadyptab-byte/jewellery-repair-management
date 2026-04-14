@@ -129,12 +129,18 @@ export async function POST(req: NextRequest) {
     // 🚀 Call Route Mobile API with Bearer token
     let rmResponse
     try {
+      // Try with additional headers
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': token,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json'
+      }
+      console.log('📤 Request headers:', { authPrefix: headers['Authorization']?.substring(0, 20) })
+      
       rmResponse = await fetch(API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token  // No "Bearer " prefix
-        },
+        headers,
         body: JSON.stringify(payload)
       })
     } catch (fetchError: any) {
