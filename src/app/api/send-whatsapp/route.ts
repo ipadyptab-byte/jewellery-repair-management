@@ -67,28 +67,29 @@ export async function POST(req: NextRequest) {
     
     // Get fresh token via login if credentials provided
     let token = ''
+    console.log('📥 Request body:', { mobile, templateName, hasUsername: !!username, hasPassword: !!password })
+    
     if (username && password) {
-      // Use fixed auth endpoint, not derived from API_URL
       const authUrl = 'https://apis.rmlconnect.net/auth/v1/login/'
-      console.log('🔐 Attempting login:', authUrl, 'user:', username)
+      console.log('🔐 Attempting login to:', authUrl)
       try {
         const loginResp = await fetch(authUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         })
+        console.log('📥 Login response status:', loginResp.status)
         if (loginResp.ok) {
           const data = await loginResp.json()
           token = data.JWTAUTH || ''
-          console.log('🔐 Login result:', !!token, 'token prefix:', token.substring(0, 30))
-        } else {
-          console.log('❌ Login failed:', loginResp.status)
+          console.log('🔐 Got token:', !!token, 'prefix:', token.substring(0, 20))
         }
       } catch (err) {
         console.error('❌ Login error:', err)
       }
     } else {
       token = providedToken || dbCreds?.api_token || ''
+      console.log('📥 Using stored/provided token:', !!token)
     }
 
     // 🔒 Basic validation
