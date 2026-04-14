@@ -197,3 +197,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;f
   #printable,#printable *{visibility:visible}
   #printable{position:absolute;left:0;top:0;font-family:monospace;font-size:11px;width:280px}
 }
+
+/* Thermal Print Preview */
+.thermal-preview {
+  max-width: 100mm;
+  margin: 0 auto;
+  padding: 5mm;
+  border: 1px dashed #ccc;
+  background: #fff;
+}
+@media print {
+  .thermal-preview {
+    border: none;
+    padding: 0;
+  }
+}

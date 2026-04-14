@@ -407,6 +407,7 @@ export default function App() {
   const [settingsTab, setSettingsTab] = useState('creds')
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
+  const [printRec, setPrintRec] = useState<{rec: RepairRecord; type: 'received' | 'final'} | null>(null)
 
   const sendWhatsApp = async (rec: RepairRecord, type: 'received' | 'final') => {
     if (!rmToken && (!rmUser || !rmPass)) throw new Error('WhatsApp API key or username/password required.')
@@ -1125,6 +1126,56 @@ export default function App() {
         </div>
       </div>
 
+      {/* ── THERMAL PRINT PREVIEW ── */}
+      {printRec && (
+        <div className="page active">
+          <div className="card">
+            <div className="card-title">🖨️ Thermal Print Preview</div>
+            <div className="thermal-preview">
+              <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '16px', marginBottom: '5px' }}>{cfgShop || 'Devi Jewellers'}</div>
+              <div style={{ textAlign: 'center', fontSize: '10px', marginBottom: '10px' }}>{cfgAddr || 'Nashik, Maharashtra'}</div>
+              <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }}></div>
+              <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '14px', margin: '8px 0' }}>{printRec.type === 'final' ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div>
+              <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }}></div>
+              <table style={{ width: '100%', fontSize: '11px' }}>
+                <tbody>
+                  <tr><td>Doc No:</td><td style={{ textAlign: 'right' }}>{printRec.rec.docNum || printRec.rec.doc_num || ''}</td></tr>
+                  <tr><td>Date:</td><td style={{ textAlign: 'right' }}>{fmtDate(printRec.rec.receivedDate || printRec.rec.created_at || new Date().toISOString())}</td></tr>
+                  <tr><td>Customer:</td><td style={{ textAlign: 'right' }}>{printRec.rec.name || printRec.rec.customer_name || ''}</td></tr>
+                  <tr><td>Mobile:</td><td style={{ textAlign: 'right' }}>{printRec.rec.mobile || ''}</td></tr>
+                </tbody>
+              </table>
+              <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }}></div>
+              <table style={{ width: '100%', fontSize: '11px' }}>
+                <tbody>
+                  <tr><td>Item:</td><td style={{ textAlign: 'right' }}>{printRec.rec.jewellery || printRec.rec.item_type || ''}</td></tr>
+                  <tr><td>Metal:</td><td style={{ textAlign: 'right' }}>{printRec.rec.metal || ''}</td></tr>
+                </tbody>
+              </table>
+              <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }}></div>
+              <table style={{ width: '100%', fontSize: '11px' }}>
+                <tbody>
+                  {printRec.type === 'final' ? (
+                    <>
+                      <tr><td>Estimated:</td><td style={{ textAlign: 'right' }}>Rs {printRec.rec.amount || 0}</td></tr>
+                      <tr><td style={{ fontWeight: 'bold', fontSize: '14px' }}>Final:</td><td style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '14px' }}>Rs {printRec.rec.finalAmount || printRec.rec.final_amount || 0}</td></tr>
+                    </>
+                  ) : (
+                    <tr><td style={{ fontWeight: 'bold', fontSize: '14px' }}>Estimated:</td><td style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '14px' }}>Rs {printRec.rec.amount || printRec.rec.estimated_cost || 0}</td></tr>
+                  )}
+                </tbody>
+              </table>
+              <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }}></div>
+              <div style={{ textAlign: 'center', fontSize: '10px', marginTop: '10px' }}>Thank you for trusting us!</div>
+            </div>
+            <div className="btn-row" style={{ marginTop: '15px' }}>
+              <button className="btn btn-primary" onClick={() => { window.print(); setPrintRec(null) }}>🖨️ Print</button>
+              <button className="btn" onClick={() => setPrintRec(null)}>🔙 Return to Dashboard</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── DASHBOARD ── */}
       <div className={`page ${page === 'dashboard' ? 'active' : ''}`}>
         <div className="stats-row">
@@ -1206,7 +1257,7 @@ export default function App() {
               </>
             ) : (
               <>
-                <button className="btn btn-primary" onClick={async () => { await saveReceipt(); if (savedRec) printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr) }}><IcPdf />Save &amp; Generate Thermal Invoice</button>
+                <button className="btn btn-primary" onClick={async () => { await saveReceipt(); if (savedRec) setPrintRec({ rec: savedRec, type: 'received' }) }}><IcPdf />Save &amp; Generate Thermal Invoice</button>
                 <button className="btn" onClick={() => setPage('dashboard')}>Return to Dashboard</button>
                 <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
@@ -1282,7 +1333,7 @@ export default function App() {
                 <div className="field"><label>Final repair amount (₹) <span className="req">*</span></label><input type="number" value={kiAmount} onChange={e => setKiAmount(e.target.value)} placeholder="Actual amount" /></div>
                 <div className="field"><label>Quality</label><select value={kiQuality} onChange={e => setKiQuality(e.target.value)}><option>Good</option><option>Excellent</option><option>Needs touch-up</option></select></div>
               </div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { await saveKI(); if (finalRec) printThermalReceipt(finalRec, 'final', cfgShop, cfgAddr) }}><IcPdf />Confirm &amp; Generate Thermal Invoice</button><button className="btn" onClick={() => setPage('dashboard')}>Return to Dashboard</button></div>
+              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { await saveKI(); if (finalRec) setPrintRec({ rec: finalRec, type: 'final' }) }}><IcPdf />Confirm &amp; Generate Thermal Invoice</button><button className="btn" onClick={() => setPage('dashboard')}>Return to Dashboard</button></div>
             </>
           )}
           <Msg text={msg['ki']?.text || ''} ok={msg['ki']?.ok || false} />
