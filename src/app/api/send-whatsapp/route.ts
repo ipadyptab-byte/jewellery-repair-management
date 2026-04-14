@@ -100,9 +100,9 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify(payload)
       })
     } catch (fetchError: any) {
-      console.error('❌ Fetch error:', fetchError.message)
+      console.error('❌ Fetch error:', fetchError)
       return NextResponse.json(
-        { success: false, error: 'fetch failed: ' + fetchError.message },
+        { success: false, error: 'fetch failed', details: fetchError.message || String(fetchError), stack: fetchError.stack },
         { status: 500 }
       )
     }
