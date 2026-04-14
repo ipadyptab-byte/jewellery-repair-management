@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     })
 
     // 🚀 Call Route Mobile API
-    const response = await fetch(API_URL, {
+    const rmResponse = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -97,22 +97,27 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(payload)
     })
 
-    const text = await response.text()
+    const rmText = await rmResponse.text()
+    
+    console.log('⬅️ Route Mobile Response:', { 
+      status: rmResponse.status, 
+      text: rmText.substring(0, 500) 
+    })
 
     let data
     try {
-      data = JSON.parse(text)
+      data = JSON.parse(rmText)
     } catch {
-      data = { raw: text }
+      data = { raw: rmText }
     }
 
-    console.log('⬅️ WhatsApp Response:', {
-      status: response.status,
+    console.log('⬅️ Route Mobile Raw Response:', {
+      status: rmResponse.status,
       data
     })
 
     // ❌ Handle API error
-    if (!response.ok) {
+    if (!rmResponse.ok) {
       return NextResponse.json(
         {
           success: false,
@@ -123,7 +128,7 @@ export async function POST(req: NextRequest) {
             'WhatsApp API failed',
           full: data
         },
-        { status: response.status }
+        { status: rmResponse.status }
       )
     }
 
