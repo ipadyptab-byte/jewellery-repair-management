@@ -1136,41 +1136,41 @@ export default function App() {
           <div className="card">
             <div className="card-title">🖨️ Thermal Print Preview</div>
             <div className="thermal-preview">
-              <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '16px', marginBottom: '5px' }}>{cfgShop || 'Devi Jewellers'}</div>
-              <div style={{ textAlign: 'center', fontSize: '10px', marginBottom: '10px' }}>{cfgAddr || 'Nashik, Maharashtra'}</div>
-              <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }}></div>
-              <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '14px', margin: '8px 0' }}>{printRec.type === 'final' ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div>
-              <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }}></div>
-              <table style={{ width: '100%', fontSize: '11px' }}>
+              <div className="shop-name">{cfgShop || 'Devi Jewellers'}</div>
+              <div className="shop-addr">{cfgAddr || 'Nashik, Maharashtra'}</div>
+              <div className="divider"></div>
+              <div className="title">{printRec.type === 'final' ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div>
+              <div className="divider"></div>
+              <table>
                 <tbody>
-                  <tr><td>Doc No:</td><td style={{ textAlign: 'right' }}>{printRec.rec.docNum || printRec.rec.doc_num || ''}</td></tr>
-                  <tr><td>Date:</td><td style={{ textAlign: 'right' }}>{fmtDate(printRec.rec.receivedDate || printRec.rec.created_at || new Date().toISOString())}</td></tr>
-                  <tr><td>Customer:</td><td style={{ textAlign: 'right' }}>{printRec.rec.name || printRec.rec.customer_name || ''}</td></tr>
-                  <tr><td>Mobile:</td><td style={{ textAlign: 'right' }}>{printRec.rec.mobile || ''}</td></tr>
+                  <tr><td>Doc No:</td><td className="right">{printRec.rec.docNum || printRec.rec.doc_num || ''}</td></tr>
+                  <tr><td>Date:</td><td className="right">{fmtDate(printRec.rec.receivedDate || printRec.rec.created_at || new Date().toISOString())}</td></tr>
+                  <tr><td>Customer:</td><td className="right">{printRec.rec.name || printRec.rec.customer_name || ''}</td></tr>
+                  <tr><td>Mobile:</td><td className="right">{printRec.rec.mobile || ''}</td></tr>
                 </tbody>
               </table>
-              <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }}></div>
-              <table style={{ width: '100%', fontSize: '11px' }}>
+              <div className="divider"></div>
+              <table>
                 <tbody>
-                  <tr><td>Item:</td><td style={{ textAlign: 'right' }}>{printRec.rec.jewellery || printRec.rec.item_type || ''}</td></tr>
-                  <tr><td>Metal:</td><td style={{ textAlign: 'right' }}>{printRec.rec.metal || ''}</td></tr>
+                  <tr><td>Item:</td><td className="right">{printRec.rec.jewellery || printRec.rec.item_type || ''}</td></tr>
+                  <tr><td>Metal:</td><td className="right">{printRec.rec.metal || ''}</td></tr>
                 </tbody>
               </table>
-              <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }}></div>
-              <table style={{ width: '100%', fontSize: '11px' }}>
+              <div className="divider"></div>
+              <table>
                 <tbody>
                   {printRec.type === 'final' ? (
                     <>
-                      <tr><td>Estimated:</td><td style={{ textAlign: 'right' }}>Rs {printRec.rec.amount || 0}</td></tr>
-                      <tr><td style={{ fontWeight: 'bold', fontSize: '14px' }}>Final:</td><td style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '14px' }}>Rs {printRec.rec.finalAmount || printRec.rec.final_amount || 0}</td></tr>
+                      <tr><td>Estimated:</td><td className="right">Rs {printRec.rec.amount || 0}</td></tr>
+                      <tr><td className="bold big">Final:</td><td className="right bold big">Rs {printRec.rec.finalAmount || printRec.rec.final_amount || 0}</td></tr>
                     </>
                   ) : (
-                    <tr><td style={{ fontWeight: 'bold', fontSize: '14px' }}>Estimated:</td><td style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '14px' }}>Rs {printRec.rec.amount || printRec.rec.estimated_cost || 0}</td></tr>
+                    <tr><td className="bold big">Estimated:</td><td className="right bold big">Rs {printRec.rec.amount || printRec.rec.estimated_cost || 0}</td></tr>
                   )}
                 </tbody>
               </table>
-              <div style={{ borderTop: '1px dashed #000', margin: '8px 0' }}></div>
-              <div style={{ textAlign: 'center', fontSize: '10px', marginTop: '10px' }}>Thank you for trusting us!</div>
+              <div className="divider"></div>
+              <div className="footer">Thank you for trusting us!</div>
             </div>
             <div className="btn-row" style={{ marginTop: '15px' }}>
               <button className="btn btn-primary" onClick={() => { window.print(); setPrintRec(null); setPage('dashboard') }}>🖨️ Print</button>
