@@ -402,7 +402,7 @@ export default function App() {
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState('https://invoice.devijewellers.in'); const [cfgExpiry, setCfgExpiry] = useState(10)
-  const [tpl1Name, setTpl1Name] = useState('padm_sales_final_update'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update')
+  const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update')
   const [connStatus, setConnStatus] = useState<'no' | 'ok' | 'checking'>('no')
   const [settingsTab, setSettingsTab] = useState('creds')
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
