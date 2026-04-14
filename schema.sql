@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS repair_records (
 -- Create masters table (salesmen, jewelleries, metals, karagirs)
 CREATE TABLE IF NOT EXISTS masters (
   id SERIAL PRIMARY KEY,
-  type VARCHAR(50) NOT NULL, -- 'salesman', 'jewellery', 'metal', 'karagir'
+  type VARCHAR(50) NOT NULL, -- 'salesman', 'jewellery', 'metal', 'karagir', 'whatsapp_api'
   name VARCHAR(255) NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'active',
   mobile VARCHAR(15),
@@ -36,6 +36,9 @@ CREATE TABLE IF NOT EXISTS masters (
   karat VARCHAR(20), -- for metals
   speciality VARCHAR(255), -- for karagirs
   address TEXT, -- for karagirs
+  api_token TEXT, -- for whatsapp_api (long tokens)
+  api_url TEXT, -- for whatsapp_api
+  template_name VARCHAR(100), -- for whatsapp_api
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(type, name)
@@ -84,6 +87,21 @@ INSERT INTO masters (type, name, mobile, speciality, address, status) VALUES
 ('karagir', 'Ganesh Soni', '9765400001', 'Gold repair', 'Budhwar Peth', 'active'),
 ('karagir', 'Manoj Karekar', '9765400002', 'Silver polishing', 'Laxmi Road', 'active')
 ON CONFLICT (type, name) DO NOTHING;
+
+-- Default WhatsApp API configurations (will be populated by user)
+INSERT INTO masters (type, name, api_token, api_url, template_name, status) VALUES
+('whatsapp_api', 'Route Mobile', '', 'https://api.rmlconnect.net/wba/v1/messages', '', 'active')
+ON CONFLICT (type, name) DO NOTHING;
+
+-- Add new columns for WhatsApp API (if table exists and columns don't)
+ALTER TABLE IF NOT EXISTS masters ADD COLUMN IF NOT EXISTS api_token TEXT;
+ALTER TABLE IF NOT EXISTS masters ADD COLUMN IF NOT EXISTS api_url TEXT;
+ALTER TABLE IF NOT EXISTS masters ADD COLUMN IF NOT EXISTS template_name VARCHAR(100);
+
+-- Insert default WhatsApp API master if not exists
+INSERT INTO masters (type, name, api_token, api_url, template_name, status)
+SELECT 'whatsapp_api', 'Route Mobile', '', 'https://api.rmlconnect.net/wba/v1/messages', '', 'active'
+WHERE NOT EXISTS (SELECT 1 FROM masters WHERE type = 'whatsapp_api' AND name = 'Route Mobile');
 
 -- Insert default settings
 INSERT INTO settings (key, value) VALUES
