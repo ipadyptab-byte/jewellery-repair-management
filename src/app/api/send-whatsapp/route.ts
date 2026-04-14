@@ -19,8 +19,12 @@ export async function POST(req: NextRequest) {
       mobile,
       templateName,
       params,
-      token
+      token,
+      apiUrl
     } = body
+
+    // 🔧 Allow custom API URL or use default
+    const API_URL = apiUrl || 'https://api.routemobile.com/whatsapp/v1'
 
     // 🔒 Basic validation
     console.log('📥 Received body:', { mobile, templateName, params, hasToken: !!token })
@@ -55,9 +59,6 @@ export async function POST(req: NextRequest) {
     if (!toNumber.startsWith('91')) {
       toNumber = `91${toNumber}`
     }
-
-    // 🌐 Route Mobile API URL
-    const API_URL = 'https://api.rmlconnect.net/wba/v1/messages'
 
     // 📦 Build request payload
     const payload = {

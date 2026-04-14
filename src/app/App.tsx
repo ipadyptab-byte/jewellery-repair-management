@@ -435,7 +435,8 @@ export default function App() {
     mobile: toNumber,
     templateName,
     params,
-    token: rmToken
+    token: rmToken,
+    apiUrl: rmApiUrl
   })
 })
     const responseText = await response.text()
