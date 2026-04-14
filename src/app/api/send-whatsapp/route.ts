@@ -89,14 +89,23 @@ export async function POST(req: NextRequest) {
     })
 
     // 🚀 Call Route Mobile API
-    const rmResponse = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
-    })
+    let rmResponse
+    try {
+      rmResponse = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      })
+    } catch (fetchError: any) {
+      console.error('❌ Fetch error:', fetchError.message)
+      return NextResponse.json(
+        { success: false, error: 'fetch failed: ' + fetchError.message },
+        { status: 500 }
+      )
+    }
 
     const rmText = await rmResponse.text()
     
