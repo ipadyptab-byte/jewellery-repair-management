@@ -114,11 +114,15 @@ export async function POST(req: NextRequest) {
       text: rmText.substring(0, 500) 
     })
 
+    // Check if response is HTML error page (Route Mobile returns 404 HTML)
     let data
+    let isHtmlError = rmText.includes('<html>') || rmText.includes('<title>')
     try {
-      data = JSON.parse(rmText)
+      data = isHtmlError 
+        ? { error: 'Route Mobile API error', htmlMessage: rmText.substring(0, 200) }
+        : JSON.parse(rmText)
     } catch {
-      data = { raw: rmText }
+      data = { raw: rmText, parseError: true }
     }
 
     console.log('⬅️ Route Mobile Raw Response:', {
