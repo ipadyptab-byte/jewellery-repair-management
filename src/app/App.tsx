@@ -698,9 +698,9 @@ export default function App() {
   }
 
   /* ── Save Receipt ── */
-  const saveReceipt = async () => {
-    if (!rName || !rMobile || !rMetal || !rType || !rWeight || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields.', false); return }
-    if (!/^\d{10}$/.test(rMobile)) { showMessage('receive', 'Enter valid 10-digit mobile.', false); return }
+  const saveReceipt = async (): Promise<RepairRecord | null> => {
+    if (!rName || !rMobile || !rMetal || !rType || !rWeight || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields.', false); return null }
+    if (!/^\d{10}$/.test(rMobile)) { showMessage('receive', 'Enter valid 10-digit mobile.', false); return null }
 
     try {
       const seq = docSeq + 1;
@@ -742,9 +742,11 @@ export default function App() {
       setDocSeq(seq);
       setSavedRec(convertFromDB(savedRecord));
       showMessage('receive', `Saved! Document: ${docNum}`, true);
+      return convertFromDB(savedRecord);
     } catch (error) {
       console.error('Error saving receipt:', error);
       showMessage('receive', 'Failed to save receipt. Please try again.', false);
+      return null;
     }
   }
 
@@ -891,8 +893,8 @@ export default function App() {
 
   /* ── Karagir In ── */
   const kiRecord = records.find(r => r.docNum === kiDoc)
-  const saveKI = async () => {
-    if (!kiDoc || !kiAmount) { showMessage('ki', 'Enter final amount.', false); return }
+  const saveKI = async (): Promise<RepairRecord | null> => {
+    if (!kiDoc || !kiAmount) { showMessage('ki', 'Enter final amount.', false); return null }
 
     try {
       const updated = records.map(r => r.docNum === kiDoc ? {
@@ -909,9 +911,11 @@ export default function App() {
       setFinalRec(updated.find(r => r.docNum === kiDoc) || null);
       showMessage('ki', `Updated! Final invoice generated for ${kiDoc}`, true);
       setKiLoaded(false);
+      return updated.find(r => r.docNum === kiDoc) || null;
     } catch (error) {
       console.error('Error saving karagir in:', error);
       showMessage('ki', 'Failed to update record.', false);
+      return null;
     }
   }
 
@@ -1169,7 +1173,7 @@ export default function App() {
               <div style={{ textAlign: 'center', fontSize: '10px', marginTop: '10px' }}>Thank you for trusting us!</div>
             </div>
             <div className="btn-row" style={{ marginTop: '15px' }}>
-              <button className="btn btn-primary" onClick={() => { window.print(); setPrintRec(null) }}>🖨️ Print</button>
+              <button className="btn btn-primary" onClick={() => { window.print(); setPrintRec(null); setPage('dashboard') }}>🖨️ Print</button>
               <button className="btn" onClick={() => setPrintRec(null)}>🔙 Return to Dashboard</button>
             </div>
           </div>
@@ -1257,7 +1261,7 @@ export default function App() {
               </>
             ) : (
               <>
-                <button className="btn btn-primary" onClick={async () => { await saveReceipt(); if (savedRec) setPrintRec({ rec: savedRec, type: 'received' }) }}><IcPdf />Save &amp; Print Thermal Invoice</button>
+                <button className="btn btn-primary" onClick={async () => { const rec = await saveReceipt(); if (rec) setPrintRec({ rec, type: 'received' }) }}><IcPdf />Save &amp; Print Thermal Invoice</button>
                 <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
             )}
@@ -1332,7 +1336,7 @@ export default function App() {
                 <div className="field"><label>Final repair amount (₹) <span className="req">*</span></label><input type="number" value={kiAmount} onChange={e => setKiAmount(e.target.value)} placeholder="Actual amount" /></div>
                 <div className="field"><label>Quality</label><select value={kiQuality} onChange={e => setKiQuality(e.target.value)}><option>Good</option><option>Excellent</option><option>Needs touch-up</option></select></div>
               </div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { await saveKI(); if (finalRec) setPrintRec({ rec: finalRec, type: 'final' }) }}><IcPdf />Confirm &amp; Print Thermal Invoice</button></div>
+              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec) setPrintRec({ rec, type: 'final' }) }}><IcPdf />Confirm &amp; Print Thermal Invoice</button></div>
             </>
           )}
           <Msg text={msg['ki']?.text || ''} ok={msg['ki']?.ok || false} />
