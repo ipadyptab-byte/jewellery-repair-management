@@ -1191,8 +1191,8 @@ export default function App() {
               </>
             ) : (
               <>
-                <button className="btn btn-primary" onClick={saveReceipt}><IcPdf />Save &amp; Generate Invoice PDF</button>
-                {savedRec && <button className="btn" onClick={() => printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr)}>Thermal Print</button>}
+                <button className="btn btn-primary" onClick={async () => { await saveReceipt(); if (savedRec) printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr) }}><IcPdf />Save &amp; Generate Thermal Invoice</button>
+                <button className="btn" onClick={() => setPage('dashboard')}>Return to Dashboard</button>
                 <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
             )}
@@ -1267,7 +1267,7 @@ export default function App() {
                 <div className="field"><label>Final repair amount (₹) <span className="req">*</span></label><input type="number" value={kiAmount} onChange={e => setKiAmount(e.target.value)} placeholder="Actual amount" /></div>
                 <div className="field"><label>Quality</label><select value={kiQuality} onChange={e => setKiQuality(e.target.value)}><option>Good</option><option>Excellent</option><option>Needs touch-up</option></select></div>
               </div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={saveKI}><IcPdf />Confirm &amp; Generate Final Invoice PDF</button></div>
+              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { await saveKI(); if (finalRec) printThermalReceipt(finalRec, 'final', cfgShop, cfgAddr) }}><IcPdf />Confirm &amp; Generate Thermal Invoice</button><button className="btn" onClick={() => setPage('dashboard')}>Return to Dashboard</button></div>
             </>
           )}
           <Msg text={msg['ki']?.text || ''} ok={msg['ki']?.ok || false} />
