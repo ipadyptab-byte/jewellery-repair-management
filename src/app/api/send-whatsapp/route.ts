@@ -28,6 +28,25 @@ async function getWhatsAppCredentials() {
   return null
 }
 
+// Helper to login and get JWT token
+async function loginAndGetToken(username: string, password: string, apiUrl: string) {
+  try {
+    const loginUrl = apiUrl.replace('/wba/v1/messages', '/auth/v1/login/')
+    const response = await fetch(loginUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    })
+    if (response.ok) {
+      const data = await response.json()
+      return data.JWTAUTH
+    }
+  } catch (err) {
+    console.error('Login error:', err)
+  }
+  return null
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -37,13 +56,22 @@ export async function POST(req: NextRequest) {
       templateName,
       params,
       token: providedToken,
-      apiUrl
+      apiUrl,
+      username,
+      password
     } = body
 
     // Get credentials from database if not provided
     const dbCreds = await getWhatsAppCredentials()
-    const token = providedToken || dbCreds?.api_token || ''
-    const API_URL = apiUrl || dbCreds?.api_url || 'https://api.rmlconnect.net/wba/v1/messages'
+    const API_URL = apiUrl || dbCreds?.api_url || 'https://apis.rmlconnect.net/wba/v1/messages'
+    
+    // Login to get fresh token if username/password provided
+    let token = providedToken || dbCreds?.api_token || ''
+    if (!token && username && password) {
+      const freshToken = await loginAndGetToken(username, password, API_URL)
+      if (freshToken) token = freshToken
+      console.log('🔐 Got fresh token via login')
+    }
 
     // 🔒 Basic validation
     console.log('📥 Received body:', { mobile, templateName, params, hasToken: !!token, fromDb: !!dbCreds?.api_token })
