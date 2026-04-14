@@ -79,25 +79,14 @@ export async function POST(req: NextRequest) {
       toNumber = `91${toNumber}`
     }
 
-    // 📦 Build request payload
+    // 📦 Build request payload - Route Mobile format
     const payload = {
-      messaging_product: 'whatsapp',
-      to: toNumber,
-      type: 'template',
-      template: {
-        name: templateName,
-        language: {
-          code: 'en'
-        },
-        components: [
-          {
-            type: 'body',
-            parameters: params.map((p: string) => ({
-              type: 'text',
-              text: p
-            }))
-          }
-        ]
+      phone: toNumber,
+      media: {
+        type: 'media_template',
+        template_name: templateName,
+        lang_code: 'en',
+        body: params.map(p => ({ text: p }))
       }
     }
 
@@ -114,7 +103,7 @@ export async function POST(req: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `App ${token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       })

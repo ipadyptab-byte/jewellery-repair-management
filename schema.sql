@@ -90,7 +90,7 @@ ON CONFLICT (type, name) DO NOTHING;
 
 -- Default WhatsApp API configurations (will be populated by user)
 INSERT INTO masters (type, name, api_token, api_url, template_name, status) VALUES
-('whatsapp_api', 'Route Mobile', '', 'https://api.rmlconnect.net/wba/v1/messages', '', 'active')
+('whatsapp_api', 'Route Mobile', '', 'https://apis.rmlconnect.net/wba/v1/messages', '', 'active')
 ON CONFLICT (type, name) DO NOTHING;
 
 -- Add new columns for WhatsApp API (run each separately if needed)
@@ -100,7 +100,7 @@ ON CONFLICT (type, name) DO NOTHING;
 
 -- Try insert - will fail if already exists, which is fine
 INSERT INTO masters (type, name, api_token, api_url, template_name, status)
-VALUES ('whatsapp_api', 'Route Mobile', '', 'https://api.rmlconnect.net/wba/v1/messages', '', 'active')
+VALUES ('whatsapp_api', 'Route Mobile', '', 'https://apis.rmlconnect.net/wba/v1/messages', '', 'active')
 ON CONFLICT (type, name) DO NOTHING;
 
 -- Insert default settings
