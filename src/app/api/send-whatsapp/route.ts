@@ -118,17 +118,16 @@ export async function POST(req: NextRequest) {
 
     // ❌ Handle API error
     if (!rmResponse.ok) {
+      // Return data in response but always use 200 status to avoid routing confusion
+      const errorMsg = data?.error?.message || data?.message || data?.description || 'WhatsApp API failed'
       return NextResponse.json(
         {
           success: false,
-          error:
-            data?.error?.message ||
-            data?.message ||
-            data?.description ||
-            'WhatsApp API failed',
+          error: errorMsg,
+          rmStatus: rmResponse.status,
           full: data
         },
-        { status: rmResponse.status }
+        { status: 200 }  // Use 200 to avoid Next.js routing issues
       )
     }
 
