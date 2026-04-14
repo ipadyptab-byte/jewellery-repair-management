@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
       apiUrl
     } = body
 
-    // 🔧 Allow custom API URL or use default
-    const API_URL = apiUrl || 'https://api.routemobile.com/whatsapp/v1'
+    // 🔧 Allow custom API URL or use default (rmlconnect.net is reachable from Vercel)
+    const API_URL = apiUrl || 'https://api.rmlconnect.net/wba/v1/messages'
 
     // 🔒 Basic validation
     console.log('📥 Received body:', { mobile, templateName, params, hasToken: !!token })
