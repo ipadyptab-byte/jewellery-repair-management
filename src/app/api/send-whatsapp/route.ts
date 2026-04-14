@@ -129,9 +129,10 @@ export async function POST(req: NextRequest) {
     // 🚀 Call Route Mobile API with Bearer token
     let rmResponse
     try {
-      // Try with token as query param instead of header
-      const urlWithToken = `${API_URL}?key=${token}`
-      console.log('📤 Using URL with query param')
+      // Try with token encoded in query param
+      const encodedToken = encodeURIComponent(token)
+      const urlWithToken = `${API_URL}?key=${encodedToken}`
+      console.log('📤 Using encoded token in query param')
       
       const headers = {
         'Content-Type': 'application/json',
