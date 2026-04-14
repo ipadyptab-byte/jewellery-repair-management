@@ -222,12 +222,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;f
 .thermal-preview .footer { text-align: center; font-size: 9px; margin-top: 8px; }
 
 @media print {
+  @page {
+    size: 100mm auto;
+    margin: 0;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+  }
   .thermal-preview {
+    display: block !important;
     width: 100mm !important;
     max-width: 100mm !important;
     padding: 2mm !important;
     border: none !important;
     margin: 0 !important;
+    visibility: visible !important;
   }
   .thermal-preview .divider { margin: 4px 0 !important; }
   .thermal-preview .shop-name { font-size: 14px !important; }
@@ -236,15 +246,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;f
   .thermal-preview table { font-size: 10px !important; }
   .thermal-preview .big { font-size: 12px !important; }
   .thermal-preview .footer { font-size: 9px !important; }
-  .app > .header,
-  .app > .page:not(.active),
-  .app > .card {
+  .app, .header, .page, .card, .btn-row, .card-title {
     display: none !important;
-  }
-  .app > .page.active {
-    display: block !important;
-  }
-  .thermal-preview + .btn-row {
-    display: none !important;
+    visibility: hidden !important;
   }
 }
