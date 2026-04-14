@@ -418,8 +418,7 @@ export default function App() {
     const baseUrl = rmApiUrl.replace(/\/$/, '')
 
     // Route Mobile API endpoint
-    const url = `${baseUrl}/messages`
-
+    
     const headers: Record<string, string> = {
       'Content-Type': 'application/json'
     }
@@ -450,12 +449,18 @@ export default function App() {
 
     console.log('WhatsApp API Request:', { url, headers: { ...headers, Authorization: '[REDACTED]' }, body })
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
-    })
-
+    const response = await fetch('/api/send-whatsapp', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    mobile: toNumber,
+    templateName,
+    params,
+    token: rmToken
+  })
+})
     const responseText = await response.text()
     let json
 
