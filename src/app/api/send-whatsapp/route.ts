@@ -65,15 +65,16 @@ export async function POST(req: NextRequest) {
     const dbCreds = await getWhatsAppCredentials()
     const API_URL = apiUrl || dbCreds?.api_url || 'https://apis.rmlconnect.net/wba/v1/messages'
     
-    // Login to get fresh token if username/password provided, or always for whatsapp_api type
-    let token = providedToken || dbCreds?.api_token || ''
-    // Always get fresh token if credentials provided (old stored token may be expired)
+    // Always use fresh token if login credentials provided (bypass stored token)
+    let token = ''
     if (username && password) {
       const freshToken = await loginAndGetToken(username, password, API_URL)
       if (freshToken) {
         token = freshToken
         console.log('🔐 Got fresh token via login')
       }
+    } else {
+      token = providedToken || dbCreds?.api_token || ''
     }
 
     // 🔒 Basic validation
