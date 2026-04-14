@@ -421,14 +421,14 @@ export default function App() {
 
     const toNumber = (rec.mobile || rec.phone_number || '').replace(/^\+/, '')
     
-    // Build payload for Route Mobile
+    // Build payload for Route Mobile - use all 6 params for repair_receive template
     const payload = {
       phone: toNumber,
       media: {
         type: 'media_template',
         template_name: templateName,
         lang_code: 'en',
-        body: params.slice(0, 4).filter(Boolean).map(p => ({ text: p }))
+        body: params.filter(Boolean).map(p => ({ text: p }))
       }
     }
     
