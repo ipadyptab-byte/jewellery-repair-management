@@ -56,41 +56,16 @@ export async function POST(req: NextRequest) {
       templateName,
       params,
       token: providedToken,
-      apiUrl,
-      username,
-      password
+      apiUrl
     } = body
 
     // Get credentials from database if not provided
     const dbCreds = await getWhatsAppCredentials()
     const API_URL = apiUrl || dbCreds?.api_url || 'https://apis.rmlconnect.net/wba/v1/messages'
     
-    // Get fresh token via login if credentials provided
-    let token = ''
-    console.log('📥 Request body:', { mobile, templateName, hasUsername: !!username, hasPassword: !!password })
-    
-    if (username && password) {
-      const authUrl = 'https://apis.rmlconnect.net/auth/v1/login/'
-      console.log('🔐 Attempting login to:', authUrl)
-      try {
-        const loginResp = await fetch(authUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        })
-        console.log('📥 Login response status:', loginResp.status)
-        if (loginResp.ok) {
-          const data = await loginResp.json()
-          token = data.JWTAUTH || ''
-          console.log('🔐 Got token:', !!token, 'prefix:', token.substring(0, 20))
-        }
-      } catch (err) {
-        console.error('❌ Login error:', err)
-      }
-    } else {
-      token = providedToken || dbCreds?.api_token || ''
-      console.log('📥 Using stored/provided token:', !!token)
-    }
+    // Get token from body, DB, or credentials
+    let token = providedToken || dbCreds?.api_token || ''
+    console.log('📥 Using token:', !!token, 'fromDB:', !!dbCreds?.api_token)
 
     // 🔒 Basic validation
     console.log('📥 Received body:', { mobile, templateName, params, hasToken: !!token, fromDb: !!dbCreds?.api_token })
