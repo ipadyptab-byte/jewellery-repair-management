@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
+import { sql } from '@/lib/db'
 
 /**
  * Send WhatsApp Template Message via Route Mobile
@@ -11,6 +12,22 @@ export async function GET() {
   })
 }
 
+// Helper to get WhatsApp API credentials from database
+async function getWhatsAppCredentials() {
+  try {
+    const pool = sql()
+    const result = await pool.query(
+      `SELECT api_token, api_url, template_name FROM masters WHERE type = 'whatsapp_api' AND status = 'active' LIMIT 1`
+    )
+    if (result.rows.length > 0) {
+      return result.rows[0]
+    }
+  } catch (err) {
+    console.error('Error fetching WhatsApp credentials:', err)
+  }
+  return null
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -19,15 +36,17 @@ export async function POST(req: NextRequest) {
       mobile,
       templateName,
       params,
-      token,
+      token: providedToken,
       apiUrl
     } = body
 
-    // 🔧 Allow custom API URL or use default (rmlconnect.net is reachable from Vercel)
-    const API_URL = apiUrl || 'https://api.rmlconnect.net/wba/v1/messages'
+    // Get credentials from database if not provided
+    const dbCreds = await getWhatsAppCredentials()
+    const token = providedToken || dbCreds?.api_token || ''
+    const API_URL = apiUrl || dbCreds?.api_url || 'https://api.rmlconnect.net/wba/v1/messages'
 
     // 🔒 Basic validation
-    console.log('📥 Received body:', { mobile, templateName, params, hasToken: !!token })
+    console.log('📥 Received body:', { mobile, templateName, params, hasToken: !!token, fromDb: !!dbCreds?.api_token })
     
     if (!mobile) {
       return NextResponse.json(
