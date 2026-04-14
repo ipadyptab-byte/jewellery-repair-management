@@ -99,9 +99,9 @@ export async function POST(req: NextRequest) {
     // 📱 Format number - keep + prefix for Route Mobile
     let toNumber = mobile.toString()
 
-    // Build payload per Route Mobile documentation format
-    const payload: any = {
-      phone: toNumber, // Keep + prefix
+    // Build payload per Route Mobile - working format
+    const payload = {
+      phone: toNumber,
       media: {
         type: 'media_template',
         template_name: templateName,
@@ -110,8 +110,7 @@ export async function POST(req: NextRequest) {
       }
     }
     
-    // Add header if provided (for document/image/video templates)
-    // Format: {"document": {"link": "..."}} or {"document": {"file_name": "...", "link": "..."}}
+    // Add header if provided
     if (header) {
       payload.media.header = [header]
     }
@@ -130,7 +129,7 @@ export async function POST(req: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token  // No "Bearer " prefix
         },
         body: JSON.stringify(payload)
       })
