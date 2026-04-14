@@ -102,9 +102,10 @@ export async function POST(req: NextRequest) {
       toNumber = `91${toNumber}`
     }
 
-    // Build payload per Route Mobile documentation format
+    // Build payload - include token in body for auth
     const payload: any = {
       phone: toNumber,
+      auth: token, // include token in payload
       media: {
         type: 'media_template',
         template_name: templateName,
