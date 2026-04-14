@@ -93,15 +93,15 @@ INSERT INTO masters (type, name, api_token, api_url, template_name, status) VALU
 ('whatsapp_api', 'Route Mobile', '', 'https://api.rmlconnect.net/wba/v1/messages', '', 'active')
 ON CONFLICT (type, name) DO NOTHING;
 
--- Add new columns for WhatsApp API (if table exists and columns don't)
-ALTER TABLE IF NOT EXISTS masters ADD COLUMN IF NOT EXISTS api_token TEXT;
-ALTER TABLE IF NOT EXISTS masters ADD COLUMN IF NOT EXISTS api_url TEXT;
-ALTER TABLE IF NOT EXISTS masters ADD COLUMN IF NOT EXISTS template_name VARCHAR(100);
+-- Add new columns for WhatsApp API (run each separately if needed)
+-- ALTER TABLE masters ADD COLUMN IF NOT EXISTS api_token TEXT;
+-- ALTER TABLE masters ADD COLUMN IF NOT EXISTS api_url TEXT;
+-- ALTER TABLE masters ADD COLUMN IF NOT EXISTS template_name VARCHAR(100);
 
--- Insert default WhatsApp API master if not exists
+-- Try insert - will fail if already exists, which is fine
 INSERT INTO masters (type, name, api_token, api_url, template_name, status)
-SELECT 'whatsapp_api', 'Route Mobile', '', 'https://api.rmlconnect.net/wba/v1/messages', '', 'active'
-WHERE NOT EXISTS (SELECT 1 FROM masters WHERE type = 'whatsapp_api' AND name = 'Route Mobile');
+VALUES ('whatsapp_api', 'Route Mobile', '', 'https://api.rmlconnect.net/wba/v1/messages', '', 'active')
+ON CONFLICT (type, name) DO NOTHING;
 
 -- Insert default settings
 INSERT INTO settings (key, value) VALUES
