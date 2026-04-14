@@ -1538,7 +1538,7 @@ export default function App() {
                   setConnStatus('checking');
                   try {
                     // Actually verify by making a test API call
-                    const response = await fetch('/api/whatsapp', {
+                    const response = await fetch('/api/send-whatsapp', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
