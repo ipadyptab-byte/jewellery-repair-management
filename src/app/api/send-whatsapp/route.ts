@@ -48,6 +48,9 @@ async function loginAndGetToken(username: string, password: string, apiUrl: stri
 }
 
 export async function POST(req: NextRequest) {
+  // CORS headers for client-side calls
+  const origin = req.headers.get('origin') || '*'
+  
   try {
     const body = await req.json()
 
@@ -129,17 +132,14 @@ export async function POST(req: NextRequest) {
     // 🚀 Call Route Mobile API with Bearer token
     let rmResponse
     try {
-      // Try both header AND raw query param (not encoded)
-      const urlWithToken = `${API_URL}?key=${token}`
-      console.log('📤 Trying header + query param (raw)')
-      
+      // Use simple header auth (no query param)
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': token,
         'Accept': 'application/json'
       }
       
-      rmResponse = await fetch(urlWithToken, {
+      rmResponse = await fetch(API_URL, {
         method: 'POST',
         headers,
         body: JSON.stringify(payload)
