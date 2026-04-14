@@ -417,6 +417,7 @@ export default function App() {
     const toNumber = (rec.mobile || rec.phone_number || '').replace(/^\+/, '')
     
     // Route Mobile request body format
+  // Fixed: changed shorthand 'body' to explicit keys (mobile, templateName, params)
     
   console.log('WhatsApp API Request:', {
   endpoint: '/api/send-whatsapp',
