@@ -62,11 +62,12 @@ export async function POST(req: NextRequest) {
 
     // Get credentials from database if not provided
     const dbCreds = await getWhatsAppCredentials()
-    const API_URL = apiUrl || dbCreds?.api_url || 'https://apis.rmlconnect.net/wba/v1/messages'
+    // Always use the correct API URL - ignore stored URL
+    const API_URL = apiUrl || 'https://apis.rmlconnect.net/wba/v1/messages'
     
-    // Get token from body, DB, or credentials
-    let token = providedToken || dbCreds?.api_token || ''
-    console.log('📥 Using token:', !!token, 'fromDB:', !!dbCreds?.api_token)
+    // Get token from request body ONLY (not from DB - might be stale)
+    let token = providedToken
+    console.log('📥 Using token from request:', !!token)
 
     // 🔒 Basic validation
     console.log('📥 Received body:', { mobile, templateName, params, hasToken: !!token, fromDb: !!dbCreds?.api_token })
