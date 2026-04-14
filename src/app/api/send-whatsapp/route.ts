@@ -96,16 +96,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 📱 Format number
-    let toNumber = mobile.toString().replace(/^\+/, '')
-    if (!toNumber.startsWith('91')) {
-      toNumber = `91${toNumber}`
-    }
+    // 📱 Format number - keep + prefix for Route Mobile
+    let toNumber = mobile.toString()
 
-    // Build payload - include token in body for auth
+    // Build payload per Route Mobile documentation format
     const payload: any = {
-      phone: toNumber,
-      auth: token, // include token in payload
+      phone: toNumber, // Keep + prefix
       media: {
         type: 'media_template',
         template_name: templateName,
@@ -115,6 +111,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Add header if provided (for document/image/video templates)
+    // Format: {"document": {"link": "..."}} or {"document": {"file_name": "...", "link": "..."}}
     if (header) {
       payload.media.header = [header]
     }
