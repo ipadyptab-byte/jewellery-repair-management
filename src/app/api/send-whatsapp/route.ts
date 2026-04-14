@@ -68,14 +68,24 @@ export async function POST(req: NextRequest) {
     // Get fresh token via login if credentials provided
     let token = ''
     if (username && password) {
-      const loginUrl = API_URL.replace('/wba/v1/messages', '/auth/v1/login/')
-      console.log('🔐 Attempting login:', loginUrl, 'user:', username)
-      const freshToken = await loginAndGetToken(username, password, API_URL)
-      if (freshToken) {
-        token = freshToken
-        console.log('🔐 Got fresh token, len:', token.length)
-      } else {
-        console.log('❌ Login failed')
+      // Use fixed auth endpoint, not derived from API_URL
+      const authUrl = 'https://apis.rmlconnect.net/auth/v1/login/'
+      console.log('🔐 Attempting login:', authUrl, 'user:', username)
+      try {
+        const loginResp = await fetch(authUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        })
+        if (loginResp.ok) {
+          const data = await loginResp.json()
+          token = data.JWTAUTH || ''
+          console.log('🔐 Login result:', !!token, 'token prefix:', token.substring(0, 30))
+        } else {
+          console.log('❌ Login failed:', loginResp.status)
+        }
+      } catch (err) {
+        console.error('❌ Login error:', err)
       }
     } else {
       token = providedToken || dbCreds?.api_token || ''
