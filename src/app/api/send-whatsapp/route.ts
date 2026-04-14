@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
       mobile,
       templateName,
       params,
+      header,  // header parameter for document/image
       token: providedToken,
       apiUrl
     } = body
@@ -102,14 +103,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Build payload per Route Mobile documentation format
-    const payload = {
+    const payload: any = {
       phone: toNumber,
       media: {
         type: 'media_template',
         template_name: templateName,
         lang_code: 'en',
-        body: params.map(p => ({ text: p }))
+        body: params?.slice(0, 4).map((p: string) => ({ text: p })) || []
       }
+    }
+    
+    // Add header if provided (for document/image/video templates)
+    if (header) {
+      payload.media.header = [header]
     }
 
     console.log('➡️ Sending WhatsApp:', {
