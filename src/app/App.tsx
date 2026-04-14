@@ -423,7 +423,7 @@ export default function App() {
         type: 'media_template',
         template_name: templateName,
         lang_code: 'en',
-        body: params.slice(0, 4).map((p: string) => ({ text: p }))
+        body: params.slice(0, 4).filter(Boolean).map(p => ({ text: p }))
       }
     }
     
