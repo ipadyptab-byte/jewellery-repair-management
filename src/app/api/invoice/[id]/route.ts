@@ -96,7 +96,7 @@ export async function GET(
       ${shopPhone ? `<div class="shop-contact">Phone: ${shopPhone}</div>` : ''}
       ${shopGst ? `<div class="shop-contact">GST: ${shopGst}</div>` : ''}
     </div>
-    <div class="invoice-title">${isFinal ? 'FINAL INVOICE' : 'RECEIPT'}</div>
+    <div class="invoice-title">${isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div>
     <div class="info-grid">
       <div class="info-box">
         <div class="info-label">Document Number</div>
