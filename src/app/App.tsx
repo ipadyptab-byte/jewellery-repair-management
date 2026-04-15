@@ -903,6 +903,7 @@ export default function App() {
 
       showMessage('ko', koEditing ? `Updated: ${koDoc} → ${koKaragir}` : `Issued to ${koKaragir} for ${koDoc}`, true);
       setKoDoc(''); setKoLoaded(false); setKoKaragir(''); setKoNotes(''); setKoEditing(false);
+      if (koEditing) { setPage('dashboard'); }
     } catch (error) {
       console.error('Error saving karagir out:', error);
       showMessage('ko', 'Failed to update record.', false);
@@ -930,6 +931,7 @@ export default function App() {
       setFinalRec(updated.find(r => r.docNum === kiDoc) || null);
       showMessage('ki', kiEditing ? `Updated final amount for ${kiDoc}` : `Updated! Final invoice generated for ${kiDoc}`, true);
       setKiDoc(''); setKiLoaded(false); setKiAmount(''); setKiEditing(false);
+      if (kiEditing) { if (finalRec) { setPrintRec(null); } setPage('dashboard'); }
       return updated.find(r => r.docNum === kiDoc) || null;
     } catch (error) {
       console.error('Error saving karagir in:', error);
