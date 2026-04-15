@@ -1,27 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+import { sql } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { tpl1Name, tpl2Name, tpl1Body, tpl2Body, tpl1Lang, tpl2Lang } = body
 
-    const { error } = await supabase
-      .from('settings')
-      .upsert({ 
-        key: 'whatsapp_templates',
-        value: { tpl1Name, tpl2Name, tpl1Body, tpl2Body, tpl1Lang, tpl2Lang },
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'key' })
-
-    if (error) {
-      console.error('Supabase error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+    const pool = sql()
+    
+    const value = JSON.stringify({ tpl1Name, tpl2Name, tpl1Body, tpl2Body, tpl1Lang, tpl2Lang })
+    
+    await pool.query(
+      `INSERT INTO settings (key, value, updated_at) VALUES ('whatsapp_templates', $1, NOW()) 
+       ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()`,
+      [value]
+    )
 
     return NextResponse.json({ success: true, message: 'Templates saved successfully' })
   } catch (error) {
@@ -32,17 +25,17 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const { data, error } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', 'whatsapp_templates')
-      .single()
+    const pool = sql()
+    const result = await pool.query(
+      `SELECT value FROM settings WHERE key = 'whatsapp_templates'`
+    )
 
-    if (error) {
+    if (result.rows.length === 0) {
       return NextResponse.json({})
     }
 
-    return NextResponse.json(data?.value || {})
+    const value = result.rows[0].value
+    return NextResponse.json(typeof value === 'string' ? JSON.parse(value) : value)
   } catch (error) {
     console.error('Error fetching templates:', error)
     return NextResponse.json({})
