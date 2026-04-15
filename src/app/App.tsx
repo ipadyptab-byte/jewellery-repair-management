@@ -1318,8 +1318,8 @@ export default function App() {
               <select value={koDoc} onChange={e => { setKoDoc(e.target.value); setKoLoaded(false) }}>
                 <option value="">-- Select received order --</option>
                 {koEditing 
-                  ? records.filter(r => r.status === 'with_karagir').map(r => <option key={r.docNum} value={r.docNum}>{r.docNum} — {r.name} ({r.jewellery})</option>)
-                  : records.filter(r => r.status === 'received').map(r => <option key={r.docNum} value={r.docNum}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  ? records.filter(r => r.status === 'with_karagir').map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  : records.filter(r => r.status === 'received').map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
                 }
               </select>
             </div>
@@ -1367,14 +1367,14 @@ export default function App() {
               <select value={kiDoc} onChange={e => { setKiDoc(e.target.value); setKiLoaded(false); setFinalRec(null) }}>
                 <option value="">-- Select --</option>
                 {kiEditing 
-                  ? records.filter(r => r.status === 'ready').map(r => <option key={r.docNum} value={r.docNum}>{r.docNum} — {r.name} ({r.jewellery})</option>)
-                  : records.filter(r => r.status === 'with_karagir').map(r => <option key={r.docNum} value={r.docNum}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  ? records.filter(r => r.status === 'ready').map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  : records.filter(r => r.status === 'with_karagir').map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
                 }
               </select>
             </div>
             <button className="btn" onClick={() => { if (kiDoc && records.find(r => r.docNum === kiDoc)) setKiLoaded(true); else showMessage('ki', 'Select a document.', false) }}>Load</button>
           </div>
-          {kiLoaded && kiRecord && !finalRec && (
+          {kiLoaded && kiRecord && (kiEditing || !finalRec) && (
             <>
               <div className="meta-grid">
                 <div className="meta-item"><div className="meta-label">Customer</div><div className="meta-val">{kiRecord.name}</div></div>
