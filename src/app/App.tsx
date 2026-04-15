@@ -1303,18 +1303,24 @@ export default function App() {
       <div className={`page ${page === 'karagir-out' ? 'active' : ''}`}>
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
         <div className="card">
-          <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span><img src="/icon.png" alt="" />Issue jewellery to karagir</span>
-            {records.filter(r => r.status === 'with_karagir').length > 0 && (
-              <button className="btn" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { setKoDoc(records.find(r => r.status === 'with_karagir')?.docNum || ''); setKoLoaded(true); setKoEditing(true); setKoKaragir(records.find(r => r.status === 'with_karagir')?.karagir || ''); setKoNotes(records.find(r => r.status === 'with_karagir')?.notes || '') }}>✏️ Edit Issued</button>
-            )}
+          <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+            <span><img src="/icon.png" alt="" />{koEditing ? 'Edit Issued to Karagir' : 'Issue jewellery to karagir'}</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {koEditing && <button className="btn" style={{ fontSize: 11, padding: '4px 8px', background: '#6b7280' }} onClick={() => { setKoDoc(''); setKoLoaded(false); setKoEditing(false); setKoKaragir(''); setKoNotes('') }}>✕ Cancel</button>}
+              {records.filter(r => r.status === 'with_karagir').length > 0 && !koEditing && (
+                <button className="btn" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { const r = records.find(r => r.status === 'with_karagir'); if (r) { setKoDoc(r.docNum || ''); setKoLoaded(true); setKoEditing(true); setKoKaragir(r.karagir || ''); setKoNotes(r.notes || '') } }}>✏️ Edit Issued</button>
+              )}
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-end' }}>
             <div className="field" style={{ flex: 1, marginBottom: 0 }}>
               <label>Select document number</label>
               <select value={koDoc} onChange={e => { setKoDoc(e.target.value); setKoLoaded(false) }}>
                 <option value="">-- Select received order --</option>
-                {records.filter(r => r.status === 'received').map(r => <option key={r.docNum} value={r.docNum}>{r.docNum} — {r.name} ({r.jewellery})</option>)}
+                {koEditing 
+                  ? records.filter(r => r.status === 'with_karagir').map(r => <option key={r.docNum} value={r.docNum}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  : records.filter(r => r.status === 'received').map(r => <option key={r.docNum} value={r.docNum}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                }
               </select>
             </div>
             <button className="btn" onClick={() => { if (koDoc && records.find(r => r.docNum === koDoc)) setKoLoaded(true); else showMessage('ko', 'Select a document.', false) }}>Load</button>
@@ -1346,18 +1352,24 @@ export default function App() {
       <div className={`page ${page === 'karagir-in' ? 'active' : ''}`}>
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
         <div className="card">
-          <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span><img src="/icon.png" alt="" />Receive from karagir — Final invoice</span>
-            {records.filter(r => r.status === 'ready').length > 0 && (
-              <button className="btn" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { const r = records.find(r => r.status === 'ready'); if (r) { setKiDoc(r.docNum || ''); setKiLoaded(true); setKiEditing(true); setKiAmount(String(r.finalAmount || r.final_amount || '')) } }}>✏️ Edit Final Amount</button>
-            )}
+          <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+            <span><img src="/icon.png" alt="" />{kiEditing ? 'Edit Final Amount' : 'Receive from karagir — Final invoice'}</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {kiEditing && <button className="btn" style={{ fontSize: 11, padding: '4px 8px', background: '#6b7280' }} onClick={() => { setKiDoc(''); setKiLoaded(false); setKiEditing(false); setKiAmount('') }}>✕ Cancel</button>}
+              {records.filter(r => r.status === 'ready').length > 0 && !kiEditing && (
+                <button className="btn" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { const r = records.find(r => r.status === 'ready'); if (r) { setKiDoc(r.docNum || ''); setKiLoaded(true); setKiEditing(true); setKiAmount(String(r.finalAmount || r.final_amount || '')) } }}>✏️ Edit</button>
+              )}
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-end' }}>
             <div className="field" style={{ flex: 1, marginBottom: 0 }}>
               <label>Select document number</label>
               <select value={kiDoc} onChange={e => { setKiDoc(e.target.value); setKiLoaded(false); setFinalRec(null) }}>
                 <option value="">-- Select --</option>
-                {records.filter(r => r.status === 'with_karagir').map(r => <option key={r.docNum} value={r.docNum}>{r.docNum} — {r.name} ({r.jewellery})</option>)}
+                {kiEditing 
+                  ? records.filter(r => r.status === 'ready').map(r => <option key={r.docNum} value={r.docNum}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  : records.filter(r => r.status === 'with_karagir').map(r => <option key={r.docNum} value={r.docNum}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                }
               </select>
             </div>
             <button className="btn" onClick={() => { if (kiDoc && records.find(r => r.docNum === kiDoc)) setKiLoaded(true); else showMessage('ki', 'Select a document.', false) }}>Load</button>
