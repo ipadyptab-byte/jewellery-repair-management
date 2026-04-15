@@ -931,7 +931,7 @@ export default function App() {
       setFinalRec(updated.find(r => r.docNum === kiDoc) || null);
       showMessage('ki', kiEditing ? `Updated final amount for ${kiDoc}` : `Updated! Final invoice generated for ${kiDoc}`, true);
       setKiDoc(''); setKiLoaded(false); setKiAmount(''); setKiEditing(false);
-      if (kiEditing) { if (finalRec) { setPrintRec(null); } setPage('dashboard'); }
+      if (kiEditing) { if (finalRec) { setPrintRec(null); } setPage('dashboard'); return null; }
       return updated.find(r => r.docNum === kiDoc) || null;
     } catch (error) {
       console.error('Error saving karagir in:', error);
@@ -1389,13 +1389,13 @@ export default function App() {
                 {kiEditing && records.find(r => r.docNum === kiDoc && r.status === 'ready') && (
                   <button className="btn" style={{ background: '#dc2626' }} onClick={() => { if (confirm('Reset final invoice? Status will change back to "With Karagir".')) { setRecords(prev => prev.map(r => r.docNum === kiDoc ? { ...r, finalAmount: 0, final_amount: 0, completedDate: null, completed_date: null, quality: '', status: 'with_karagir' } : r)); showMessage('ki', `Reset final invoice for ${kiDoc}`, true); setKiDoc(''); setKiLoaded(false); setKiAmount(''); setKiEditing(false) } }}>🗑️ Delete / Reset</button>
                 )}
-                <button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec) { if (trReady) { sendWhatsApp(rec, 'final').catch(console.error); } setPrintRec({ rec, type: 'final' }) } }}>{kiEditing ? '💾 Update' : <><IcPdf />Confirm & Print Thermal Invoice</>}</button>
+                <button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec && !kiEditing) { if (trReady) { sendWhatsApp(rec, 'final').catch(console.error); } setPrintRec({ rec, type: 'final' }) } }}>{kiEditing ? '💾 Update' : <><IcPdf />Confirm & Print Thermal Invoice</>}</button>
               </div>
             </>
           )}
           <Msg text={msg['ki']?.text || ''} ok={msg['ki']?.ok || false} />
         </div>
-        {finalRec && (
+        {!kiEditing && finalRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Final Invoice — <span style={{ color: 'var(--brand)' }}>{finalRec.docNum}</span></div>
             <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} shopName={cfgShop} shopAddress={cfgAddr} />
