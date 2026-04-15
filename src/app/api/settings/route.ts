@@ -15,7 +15,8 @@ export async function GET() {
       whatsappApiUrl: '',
       currency: 'INR',
       taxRate: 0,
-      invoiceLinkBase: ''
+      invoiceLinkBase: '',
+      invoiceExpiry: 10
     };
 
     result.rows.forEach((row: any) => {
@@ -31,6 +32,9 @@ export async function GET() {
           break;
         case 'invoice_link_base':
           settings.invoiceLinkBase = row.value || '';
+          break;
+        case 'invoice_expiry':
+          settings.invoiceExpiry = parseInt(row.value) || 10;
           break;
         case 'currency':
           settings.currency = row.value || 'INR';
@@ -63,7 +67,8 @@ export async function POST(request: NextRequest) {
       whatsappApiUrl,
       currency,
       taxRate,
-      invoiceLinkBase
+      invoiceLinkBase,
+      invoiceExpiry
     } = body;
 
     const pool = sql();
@@ -74,6 +79,7 @@ export async function POST(request: NextRequest) {
       'whatsapp_rm_token': whatsappApiKey || '',
       'whatsapp_rm_api_url': whatsappApiUrl || '',
       'invoice_link_base': invoiceLinkBase || '',
+      'invoice_expiry': invoiceExpiry ? String(invoiceExpiry) : '10',
       'currency': currency || 'INR',
       'tax_rate': String(taxRate || 0)
     };

@@ -601,6 +601,7 @@ export default function App() {
           if (settings.whatsappApiKey) setRmToken(settings.whatsappApiKey);
           if (settings.whatsappApiUrl) setRmApiUrl(settings.whatsappApiUrl);
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
+          if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
         }
 
         // Load WhatsApp template settings from API
@@ -1622,6 +1623,7 @@ export default function App() {
                 <div className="field"><label>Link expiry (days)</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /><div className="hint">Invoice link expires after this many days. Default: 10 days.</div></div>
               </div>
               <div className="btn-row">
+                <button className="btn btn-primary" onClick={async () => { try { await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceLinkBase: cfgLinkBase, invoiceExpiry: cfgExpiry }) }); showMessage('creds', 'Invoice settings saved.', true); } catch { showMessage('creds', 'Failed to save.', false); } }}>Save invoice settings</button>
                 <button className="btn btn-wa" onClick={async () => { 
                   if (!rmToken) { showMessage('creds', 'API key required.', false); return }
                   setConnStatus('checking');
