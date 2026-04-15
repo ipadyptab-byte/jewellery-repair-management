@@ -1347,7 +1347,7 @@ export default function App() {
           <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span><img src="/icon.png" alt="" />Receive from karagir — Final invoice</span>
             {records.filter(r => r.status === 'ready').length > 0 && (
-              <button className="btn" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { const r = records.find(r => r.status === 'ready'); if (r) { setKiDoc(r.docNum); setKiLoaded(true); setKiEditing(true); setKiAmount(String(r.finalAmount || r.final_amount || '')) } }}>✏️ Edit Final Amount</button>
+              <button className="btn" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { const r = records.find(r => r.status === 'ready'); if (r) { setKiDoc(r.docNum || ''); setKiLoaded(true); setKiEditing(true); setKiAmount(String(r.finalAmount || r.final_amount || '')) } }}>✏️ Edit Final Amount</button>
             )}
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-end' }}>
