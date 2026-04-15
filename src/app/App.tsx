@@ -419,7 +419,7 @@ export default function App() {
     const invoiceLink = `${cfgLinkBase.replace(/\/$/, '')}/INV-${rec.docNum || rec.doc_num}${type === 'final' ? '-final' : ''}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
     const params = type === 'received'
       ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]
-      : [rec.name || rec.customer_name, rec.metal, String(rec.finalAmount || rec.final_amount || rec.amount || rec.estimated_cost), invoiceLink]
+      : [rec.name || rec.customer_name, rec.metal, String(rec.finalAmount || rec.final_amount || rec.amount || rec.estimated_cost)]
 
     const toNumber = (rec.mobile || rec.phone_number || '').replace(/^\+/, '')
     
@@ -1710,7 +1710,7 @@ export default function App() {
                 <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl2Name} onChange={e => setTpl2Name(e.target.value)} /></div>
                 <div className="field"><label>Language</label><select value={tpl2Lang} onChange={e => setTpl2Lang(e.target.value)}><option value="en_IN">en_IN</option><option value="en">en</option><option value="hi">hi</option><option value="mr">mr</option></select></div>
               </div>
-              <div className="field"><label>Template body</label><textarea rows={3} value={tpl2Body} onChange={e => setTpl2Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery is ready at Devi Jewellers. Final charges: Rs {{3}}. View final invoice: {{4}} (valid ${cfgExpiry} days). Please visit with receipt. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Final amount {'{{4}}'} Final invoice link</div></div>
+              <div className="field"><label>Template body</label><textarea rows={3} value={tpl2Body} onChange={e => setTpl2Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery is ready at Devi Jewellers. Final charges: Rs {{3}}. Please visit with receipt. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Final amount</div></div>
               <div className="btn-row"><button className="btn btn-primary" onClick={async () => { if (!tpl1Name || !tpl2Name) { showMessage('templates', 'Template names required.', false); return }; try { await fetch('/api/settings/templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tpl1Name, tpl2Name, tpl1Body: tpl1Body || null, tpl2Body: tpl2Body || null, tpl1Lang: tpl1Lang || 'en', tpl2Lang: tpl2Lang || 'en' }) }); showMessage('templates', 'Templates saved to database.', true); } catch { showMessage('templates', 'Failed to save templates.', false); } }}>Save templates</button></div>
               <Msg text={msg['templates']?.text || ''} ok={msg['templates']?.ok || false} />
             </>
