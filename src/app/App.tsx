@@ -390,10 +390,10 @@ export default function App() {
   const [isEditing, setIsEditing] = useState(false); const [editingRecord, setEditingRecord] = useState<RepairRecord | null>(null)
 
   // Karagir out
-  const [koDoc, setKoDoc] = useState(''); const [koKaragir, setKoKaragir] = useState(''); const [koNotes, setKoNotes] = useState(''); const [koLoaded, setKoLoaded] = useState(false)
+  const [koDoc, setKoDoc] = useState(''); const [koKaragir, setKoKaragir] = useState(''); const [koNotes, setKoNotes] = useState(''); const [koLoaded, setKoLoaded] = useState(false); const [koEditing, setKoEditing] = useState(false)
 
   // Karagir in
-  const [kiDoc, setKiDoc] = useState(''); const [kiAmount, setKiAmount] = useState(''); const [kiQuality, setKiQuality] = useState('Good'); const [kiLoaded, setKiLoaded] = useState(false); const [finalRec, setFinalRec] = useState<RepairRecord | null>(null)
+  const [kiDoc, setKiDoc] = useState(''); const [kiAmount, setKiAmount] = useState(''); const [kiQuality, setKiQuality] = useState('Good'); const [kiLoaded, setKiLoaded] = useState(false); const [finalRec, setFinalRec] = useState<RepairRecord | null>(null); const [kiEditing, setKiEditing] = useState(false)
 
   // Track
   const [trackQ, setTrackQ] = useState(''); const [trackResults, setTrackResults] = useState<RepairRecord[]>([]); const [showAll, setShowAll] = useState(true)
@@ -885,25 +885,24 @@ export default function App() {
     if (!koDoc || !koKaragir) { showMessage('ko', 'Select document and karagir.', false); return }
 
     try {
-      // Find the karagir master to get the ID
       const karagirMaster = karagirs.find(k => k.name === koKaragir);
       if (!karagirMaster) {
         showMessage('ko', 'Selected karagir not found.', false);
         return;
       }
 
-      // Update the record via API (we'll need to implement PUT/PATCH endpoint)
-      // For now, update local state and save to localStorage
+      // Update the record via API
       setRecords(prev => prev.map(r => r.docNum === koDoc ? {
         ...r,
         karagir: koKaragir,
-        karagirDate: new Date().toISOString(),
+        karagirDate: koEditing && r.karagirDate ? r.karagirDate : new Date().toISOString(),
         status: 'with_karagir',
-        master_id: karagirMaster.id
+        master_id: karagirMaster.id,
+        notes: koNotes || r.notes || ''
       } : r));
 
-      showMessage('ko', `Issued to ${koKaragir} for ${koDoc}`, true);
-      setKoDoc(''); setKoLoaded(false);
+      showMessage('ko', koEditing ? `Updated: ${koDoc} → ${koKaragir}` : `Issued to ${koKaragir} for ${koDoc}`, true);
+      setKoDoc(''); setKoLoaded(false); setKoKaragir(''); setKoNotes(''); setKoEditing(false);
     } catch (error) {
       console.error('Error saving karagir out:', error);
       showMessage('ko', 'Failed to update record.', false);
@@ -916,20 +915,21 @@ export default function App() {
     if (!kiDoc || !kiAmount) { showMessage('ki', 'Enter final amount.', false); return null }
 
     try {
+      const existing = records.find(r => r.docNum === kiDoc)
       const updated = records.map(r => r.docNum === kiDoc ? {
         ...r,
         finalAmount: parseFloat(kiAmount),
-        completedDate: new Date().toISOString(),
+        completedDate: kiEditing && r.completedDate ? r.completedDate : new Date().toISOString(),
         quality: kiQuality,
-        status: 'ready',
+        status: kiEditing && r.status === 'ready' ? 'ready' : 'ready',
         final_amount: parseFloat(kiAmount),
-        completed_date: new Date().toISOString()
+        completed_date: kiEditing && r.completed_date ? r.completed_date : new Date().toISOString()
       } : r);
 
       setRecords(updated);
       setFinalRec(updated.find(r => r.docNum === kiDoc) || null);
-      showMessage('ki', `Updated! Final invoice generated for ${kiDoc}`, true);
-      setKiLoaded(false);
+      showMessage('ki', kiEditing ? `Updated final amount for ${kiDoc}` : `Updated! Final invoice generated for ${kiDoc}`, true);
+      setKiDoc(''); setKiLoaded(false); setKiAmount(''); setKiEditing(false);
       return updated.find(r => r.docNum === kiDoc) || null;
     } catch (error) {
       console.error('Error saving karagir in:', error);
@@ -1301,7 +1301,12 @@ export default function App() {
       <div className={`page ${page === 'karagir-out' ? 'active' : ''}`}>
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
         <div className="card">
-          <div className="card-title"><img src="/icon.png" alt="" />Issue jewellery to karagir</div>
+          <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span><img src="/icon.png" alt="" />Issue jewellery to karagir</span>
+            {records.filter(r => r.status === 'with_karagir').length > 0 && (
+              <button className="btn" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { setKoDoc(records.find(r => r.status === 'with_karagir')?.docNum || ''); setKoLoaded(true); setKoEditing(true); setKoKaragir(records.find(r => r.status === 'with_karagir')?.karagir || ''); setKoNotes(records.find(r => r.status === 'with_karagir')?.notes || '') }}>✏️ Edit Issued</button>
+            )}
+          </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-end' }}>
             <div className="field" style={{ flex: 1, marginBottom: 0 }}>
               <label>Select document number</label>
@@ -1323,7 +1328,12 @@ export default function App() {
                 <div className="field"><label>Karagir <span className="req">*</span></label><select value={koKaragir} onChange={e => setKoKaragir(e.target.value)}><option value="">Select karagir</option>{karagirs.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
                 <div className="field"><label>Notes</label><input value={koNotes} onChange={e => setKoNotes(e.target.value)} placeholder="Special instructions" /></div>
               </div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={saveKO}>Confirm issue to karagir</button></div>
+              <div className="btn-row">
+                {koEditing && records.find(r => r.docNum === koDoc && r.status === 'with_karagir') && (
+                  <button className="btn" style={{ background: '#dc2626' }} onClick={() => { if (confirm('Unassign from karagir? This will change status back to "Received".')) { setRecords(prev => prev.map(r => r.docNum === koDoc ? { ...r, karagir: null, karagirDate: null, status: 'received', master_id: null } : r)); showMessage('ko', `Unassigned karagir for ${koDoc}`, true); setKoDoc(''); setKoLoaded(false); setKoKaragir(''); setKoNotes(''); setKoEditing(false) } }}>🗑️ Delete / Unassign</button>
+                )}
+                <button className="btn btn-primary" onClick={saveKO}>{koEditing ? '💾 Update' : 'Confirm issue to karagir'}</button>
+              </div>
             </>
           )}
           <Msg text={msg['ko']?.text || ''} ok={msg['ko']?.ok || false} />
@@ -1334,7 +1344,12 @@ export default function App() {
       <div className={`page ${page === 'karagir-in' ? 'active' : ''}`}>
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
         <div className="card">
-          <div className="card-title"><img src="/icon.png" alt="" />Receive from karagir — Final invoice</div>
+          <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span><img src="/icon.png" alt="" />Receive from karagir — Final invoice</span>
+            {records.filter(r => r.status === 'ready').length > 0 && (
+              <button className="btn" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => { const r = records.find(r => r.status === 'ready'); if (r) { setKiDoc(r.docNum); setKiLoaded(true); setKiEditing(true); setKiAmount(String(r.finalAmount || r.final_amount || '')) } }}>✏️ Edit Final Amount</button>
+            )}
+          </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-end' }}>
             <div className="field" style={{ flex: 1, marginBottom: 0 }}>
               <label>Select document number</label>
@@ -1356,7 +1371,12 @@ export default function App() {
                 <div className="field"><label>Final repair amount (&#8377;) <span className="req">*</span></label><input type="number" value={kiAmount} onChange={e => setKiAmount(e.target.value)} placeholder="Actual amount" /></div>
                 <div className="field"><label>Quality</label><select value={kiQuality} onChange={e => setKiQuality(e.target.value)}><option>Good</option><option>Excellent</option><option>Needs touch-up</option></select></div>
               </div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec) { if (trReady) { sendWhatsApp(rec, 'final').catch(console.error); } setPrintRec({ rec, type: 'final' }) } }}><IcPdf />Confirm &amp; Print Thermal Invoice</button></div>
+              <div className="btn-row">
+                {kiEditing && records.find(r => r.docNum === kiDoc && r.status === 'ready') && (
+                  <button className="btn" style={{ background: '#dc2626' }} onClick={() => { if (confirm('Reset final invoice? Status will change back to "With Karagir".')) { setRecords(prev => prev.map(r => r.docNum === kiDoc ? { ...r, finalAmount: 0, final_amount: 0, completedDate: null, completed_date: null, quality: '', status: 'with_karagir' } : r)); showMessage('ki', `Reset final invoice for ${kiDoc}`, true); setKiDoc(''); setKiLoaded(false); setKiAmount(''); setKiEditing(false) } }}>🗑️ Delete / Reset</button>
+                )}
+                <button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec) { if (trReady) { sendWhatsApp(rec, 'final').catch(console.error); } setPrintRec({ rec, type: 'final' }) } }}>{kiEditing ? '💾 Update' : <><IcPdf />Confirm & Print Thermal Invoice</>}</button>
+              </div>
             </>
           )}
           <Msg text={msg['ki']?.text || ''} ok={msg['ki']?.ok || false} />
