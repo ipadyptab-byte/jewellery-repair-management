@@ -52,7 +52,7 @@ export async function GET(
     })
     
     const shopName = settings.shop_name || 'Devi Jewellers'
-    const shopAddress = settings.shop_addr || 'Nashik, Maharashtra'
+    const shopAddress = settings.shop_addr || settings.shop_address || ''
     const shopPhone = settings.shop_phone || ''
     const shopGst = settings.shop_gst || ''
     
@@ -132,16 +132,12 @@ export async function GET(
           <td>${rec.metal || '-'}</td>
         </tr>
         <tr>
-          <td>Weight</td>
-          <td>${rec.weight || '-'} g</td>
-        </tr>
-        <tr>
           <td>Description</td>
           <td>${rec.description || '-'}</td>
         </tr>
         ${!isFinal ? `
         <tr>
-          <td>Delivery Date</td>
+          <td>Expected Delivery Date</td>
           <td>${rec.delivery_date ? new Date(rec.delivery_date).toLocaleDateString('en-IN') : '-'}</td>
         </tr>
         ` : ''}
