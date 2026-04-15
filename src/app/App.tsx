@@ -402,7 +402,7 @@ export default function App() {
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState('https://invoice.devijewellers.in'); const [cfgExpiry, setCfgExpiry] = useState(10)
-  const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update')
+  const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en')
   const [connStatus, setConnStatus] = useState<'no' | 'ok' | 'checking'>('no')
   const [settingsTab, setSettingsTab] = useState('creds')
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
@@ -414,6 +414,8 @@ export default function App() {
     if (!tpl1Name || !tpl2Name) throw new Error('WhatsApp template names are required.')
 
     const templateName = type === 'received' ? tpl1Name : tpl2Name
+    const templateLang = type === 'received' ? tpl1Lang : tpl2Lang
+    const templateBody = type === 'received' ? tpl1Body : tpl2Body
     const invoiceLink = `${cfgLinkBase.replace(/\/$/, '')}/INV-${rec.docNum || rec.doc_num}${type === 'final' ? '-final' : ''}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
     const params = type === 'received'
       ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]
@@ -427,7 +429,7 @@ export default function App() {
       media: {
         type: 'media_template',
         template_name: templateName,
-        lang_code: 'en',
+        lang_code: templateLang || 'en',
         body: params.filter(Boolean).map(p => ({ text: p }))
       }
     }
@@ -599,6 +601,22 @@ export default function App() {
           if (settings.whatsappApiKey) setRmToken(settings.whatsappApiKey);
           if (settings.whatsappApiUrl) setRmApiUrl(settings.whatsappApiUrl);
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
+        }
+
+        // Load WhatsApp template settings from API
+        try {
+          const tplResponse = await fetch('/api/settings/templates');
+          if (tplResponse.ok) {
+            const tplSettings = await tplResponse.json();
+            if (tplSettings.tpl1Name) setTpl1Name(tplSettings.tpl1Name);
+            if (tplSettings.tpl2Name) setTpl2Name(tplSettings.tpl2Name);
+            if (tplSettings.tpl1Body) setTpl1Body(tplSettings.tpl1Body);
+            if (tplSettings.tpl2Body) setTpl2Body(tplSettings.tpl2Body);
+            if (tplSettings.tpl1Lang) setTpl1Lang(tplSettings.tpl1Lang);
+            if (tplSettings.tpl2Lang) setTpl2Lang(tplSettings.tpl2Lang);
+          }
+        } catch (e) {
+          console.error('Error loading template settings:', e);
         }
 
         // Load docSeq from localStorage as fallback
@@ -1682,18 +1700,18 @@ export default function App() {
               <div className="sec-label">Template 1 — Jewellery received (with invoice link)</div>
               <div className="grid2">
                 <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl1Name} onChange={e => setTpl1Name(e.target.value)} /><div className="hint">Exact name as approved in Meta Business Manager</div></div>
-                <div className="field"><label>Language</label><select><option value="en_IN">en_IN — English (India)</option><option value="en">en</option><option value="hi">hi — Hindi</option><option value="mr">mr — Marathi</option></select></div>
+                <div className="field"><label>Language</label><select value={tpl1Lang} onChange={e => setTpl1Lang(e.target.value)}><option value="en_IN">en_IN — English (India)</option><option value="en">en</option><option value="hi">hi — Hindi</option><option value="mr">mr — Marathi</option></select></div>
               </div>
-              <div className="field"><label>Template body</label><textarea rows={3} defaultValue={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: Rs {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated, {cfgExpiry} day expiry)</div></div>
+              <div className="field"><label>Template body</label><textarea rows={3} value={tpl1Body} onChange={e => setTpl1Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: Rs {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated, {cfgExpiry} day expiry)</div></div>
               <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: Rs <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>{cfgLinkBase}/INV-JR1001-a3f9b2?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
               <div className="divider" />
               <div className="sec-label">Template 2 — Ready for delivery (with final invoice link)</div>
               <div className="grid2">
                 <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl2Name} onChange={e => setTpl2Name(e.target.value)} /></div>
-                <div className="field"><label>Language</label><select><option value="en_IN">en_IN</option><option value="en">en</option><option value="hi">hi</option><option value="mr">mr</option></select></div>
+                <div className="field"><label>Language</label><select value={tpl2Lang} onChange={e => setTpl2Lang(e.target.value)}><option value="en_IN">en_IN</option><option value="en">en</option><option value="hi">hi</option><option value="mr">mr</option></select></div>
               </div>
-              <div className="field"><label>Template body</label><textarea rows={3} defaultValue={`Dear {{1}}, Your {{2}} jewellery is ready at Devi Jewellers. Final charges: Rs {{3}}. View final invoice: {{4}} (valid ${cfgExpiry} days). Please visit with receipt. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Final amount {'{{4}}'} Final invoice link</div></div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={() => { if (!tpl1Name || !tpl2Name) { showMessage('templates', 'Template names required.', false); return }; showMessage('templates', 'Templates saved.', true) }}>Save templates</button></div>
+              <div className="field"><label>Template body</label><textarea rows={3} value={tpl2Body} onChange={e => setTpl2Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery is ready at Devi Jewellers. Final charges: Rs {{3}}. View final invoice: {{4}} (valid ${cfgExpiry} days). Please visit with receipt. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Final amount {'{{4}}'} Final invoice link</div></div>
+              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { if (!tpl1Name || !tpl2Name) { showMessage('templates', 'Template names required.', false); return }; try { await fetch('/api/settings/templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tpl1Name, tpl2Name, tpl1Body: tpl1Body || null, tpl2Body: tpl2Body || null, tpl1Lang: tpl1Lang || 'en', tpl2Lang: tpl2Lang || 'en' }) }); showMessage('templates', 'Templates saved to database.', true); } catch { showMessage('templates', 'Failed to save templates.', false); } }}>Save templates</button></div>
               <Msg text={msg['templates']?.text || ''} ok={msg['templates']?.ok || false} />
             </>
           )}
