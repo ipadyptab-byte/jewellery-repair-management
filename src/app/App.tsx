@@ -216,10 +216,10 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
 
   doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.text('Charges', pad, y); y += 5
   if (type === 'final') {
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFont('helvetica', 'normal'); doc.text(`₹ ${rec.amount}`, pad + 50, y); y += 5
-    doc.setFont('helvetica', 'bold'); doc.text('Final Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(`₹ ${rec.finalAmount}`, pad + 50, y); y += 5
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFont('helvetica', 'normal'); doc.text(`&#8377; ${rec.amount}`, pad + 50, y); y += 5
+    doc.setFont('helvetica', 'bold'); doc.text('Final Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(`&#8377; ${rec.finalAmount}`, pad + 50, y); y += 5
   } else {
-    doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(`₹ ${rec.amount}`, pad + 50, y); y += 5
+    doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(`&#8377; ${rec.amount}`, pad + 50, y); y += 5
     doc.setFontSize(8); doc.setTextColor(120, 120, 120); doc.text('(Final amount confirmed on delivery)', pad, y); doc.setTextColor(0, 0, 0); y += 5
   }
   y += 2; doc.line(pad, y, W - pad, y); y += 6
@@ -293,10 +293,10 @@ function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shop
       <div class="divider"></div>
       <table>
         ${isFinal ? `
-        <tr><td>Estimated:</td><td class="right">₹ ${rec.amount || 0}</td></tr>
-        <tr><td class="bold big">Final:</td><td class="right bold big">₹ ${rec.finalAmount || rec.final_amount || 0}</td></tr>
+        <tr><td>Estimated:</td><td class="right">&#8377; ${rec.amount || 0}</td></tr>
+        <tr><td class="bold big">Final:</td><td class="right bold big">&#8377; ${rec.finalAmount || rec.final_amount || 0}</td></tr>
         ` : `
-        <tr><td class="bold big">Estimated:</td><td class="right bold big">₹ ${rec.amount || rec.estimated_cost || 0}</td></tr>
+        <tr><td class="bold big">Estimated:</td><td class="right bold big">&#8377; ${rec.amount || rec.estimated_cost || 0}</td></tr>
         `}
       </table>
       <div class="divider"></div>
@@ -333,8 +333,8 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp, shopName, shopAddress }: { rec: RepairRecord; type: 'received' | 'final'; baseUrl: string; expDays: number; onMsg: (m: string, ok: boolean) => void; onSendWhatsApp: () => Promise<void>; shopName?: string; shopAddress?: string }) {
   const { url, expDate } = generateInvoiceLink(rec.docNum || rec.doc_num, type, baseUrl, expDays)
   const waMsg = type === 'received'
-    ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* ₹ ${rec.amount || rec.estimated_cost}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
-    : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* ₹ ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
+    ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* &#8377; ${rec.amount || rec.estimated_cost}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
+    : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* &#8377; ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
 
   const copy = () => navigator.clipboard.writeText(url).then(() => onMsg('Link copied!', true)).catch(() => onMsg('Copy failed', false))
   const download = () => buildAndDownloadPDF(rec, type, baseUrl, expDays, shopName || 'Devi Jewellers', shopAddress || '')
@@ -1091,10 +1091,10 @@ export default function App() {
     const daysLeft = Math.ceil((new Date(r.deliveryDate || addDays(new Date(), 7).toISOString()).getTime() - Date.now()) / 86400000)
     const daysText = es === 'ready' ? 'Completed' : es === 'overdue' ? `${Math.abs(daysLeft)} day(s) overdue` : daysLeft === 0 ? 'Due today' : `${daysLeft} day(s) left`
     const steps = [
-      { label: 'Jewellery received', sub: `${r.jewellery || r.item_type} · ${r.metal} · Est ₹${r.amount || r.estimated_cost}`, date: r.receivedDate || r.received_date, done: true },
+      { label: 'Jewellery received', sub: `${r.jewellery || r.item_type} · ${r.metal} · Est &#8377;${r.amount || r.estimated_cost}`, date: r.receivedDate || r.received_date, done: true },
       { label: r.karagir ? `Issued to karagir — ${r.karagir}` : 'Issued to karagir', sub: r.karagir ? 'In repair' : 'Pending', date: r.karagirDate || r.karagir_date, done: !!r.karagir },
-      { label: 'Received from karagir', sub: r.finalAmount || r.final_amount ? `Final: ₹${r.finalAmount || r.final_amount}` : 'Awaiting', date: r.completedDate || r.completed_date, done: !!(r.completedDate || r.completed_date) },
-      { label: 'Ready for delivery', sub: r.finalAmount || r.final_amount ? `Charges: ₹${r.finalAmount || r.final_amount}` : 'Pending', date: r.completedDate || r.completed_date, done: r.status === 'ready' },
+      { label: 'Received from karagir', sub: r.finalAmount || r.final_amount ? `Final: &#8377;${r.finalAmount || r.final_amount}` : 'Awaiting', date: r.completedDate || r.completed_date, done: !!(r.completedDate || r.completed_date) },
+      { label: 'Ready for delivery', sub: r.finalAmount || r.final_amount ? `Charges: &#8377;${r.finalAmount || r.final_amount}` : 'Pending', date: r.completedDate || r.completed_date, done: r.status === 'ready' },
     ]
     const ai = steps.filter(s => s.done).length
     return (
@@ -1180,11 +1180,11 @@ export default function App() {
                 <tbody>
                   {printRec.type === 'final' ? (
                     <>
-                      <tr><td>Estimated:</td><td className="right">₹ {printRec.rec.amount || 0}</td></tr>
-                      <tr><td className="bold big">Final:</td><td className="right bold big">₹ {printRec.rec.finalAmount || printRec.rec.final_amount || 0}</td></tr>
+                      <tr><td>Estimated:</td><td className="right">&#8377; {printRec.rec.amount || 0}</td></tr>
+                      <tr><td className="bold big">Final:</td><td className="right bold big">&#8377; {printRec.rec.finalAmount || printRec.rec.final_amount || 0}</td></tr>
                     </>
                   ) : (
-                    <tr><td className="bold big">Estimated:</td><td className="right bold big">₹ {printRec.rec.amount || printRec.rec.estimated_cost || 0}</td></tr>
+                    <tr><td className="bold big">Estimated:</td><td className="right bold big">&#8377; {printRec.rec.amount || printRec.rec.estimated_cost || 0}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -1192,7 +1192,7 @@ export default function App() {
               <div className="footer">Thank you for trusting us!</div>
             </div>
             <div className="btn-row" style={{ marginTop: '15px' }}>
-              <button className="btn btn-primary" onClick={() => { if (printRec) { const rec = printRec.rec; const type = printRec.type; const shopName = cfgShop || 'Devi Jewellers'; const address = cfgAddr || 'Nashik, Maharashtra'; const isFinal = type === 'final'; const printContent = `<!DOCTYPE html><html><head><title>Print Receipt</title><style>@page { size: 100mm auto; margin: 0; }body { font-family: Arial, sans-serif; width: 100mm; margin: 0; padding: 2mm; font-size: 11px; line-height: 1.3; }.header { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 3px; }.address { text-align: center; font-size: 9px; margin-bottom: 8px; }.divider { border-top: 1px dashed #000; margin: 6px 0; }.title { text-align: center; font-weight: bold; font-size: 12px; margin: 6px 0; }table { width: 100%; font-size: 10px; }td { padding: 1px 0; }.right { text-align: right; }.bold { font-weight: bold; }.big { font-size: 12px; }.footer { text-align: center; font-size: 9px; margin-top: 8px; }</style></head><body><div class="header">${shopName}</div><div class="address">${address}</div><div class="divider"></div><div class="title">${isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div><div class="divider"></div><table><tr><td>Doc No:</td><td class="right">${rec.docNum || rec.doc_num || ''}</td></tr><tr><td>Date:</td><td class="right">${fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString())}</td></tr><tr><td>Customer:</td><td class="right">${rec.name || rec.customer_name || ''}</td></tr><tr><td>Mobile:</td><td class="right">${rec.mobile || ''}</td></tr></table><div class="divider"></div><table><tr><td>Item:</td><td class="right">${rec.jewellery || rec.item_type || ''}</td></tr><tr><td>Metal:</td><td class="right">${rec.metal || ''}</td></tr></table><div class="divider"></div><table>${isFinal ? `<tr><td>Estimated:</td><td class="right">₹ ${rec.amount || 0}</td></tr><tr><td class="bold big">Final:</td><td class="right bold big">₹ ${rec.finalAmount || rec.final_amount || 0}</td></tr>` : `<tr><td class="bold big">Estimated:</td><td class="right bold big">₹ ${rec.amount || rec.estimated_cost || 0}</td></tr>`}</table><div class="divider"></div><div class="footer">Thank you for trusting us!</div><script>window.onload=function(){window.print();window.close()}</script></body></html>`; const printWindow = window.open('', '_blank'); if (printWindow) { printWindow.document.open(); printWindow.document.write(printContent); printWindow.document.close(); } setPrintRec(null); setPage('dashboard') } }}>🖨️ Print</button>
+              <button className="btn btn-primary" onClick={() => { if (printRec) { const rec = printRec.rec; const type = printRec.type; const shopName = cfgShop || 'Devi Jewellers'; const address = cfgAddr || 'Nashik, Maharashtra'; const isFinal = type === 'final'; const printContent = `<!DOCTYPE html><html><head><title>Print Receipt</title><style>@page { size: 100mm auto; margin: 0; }body { font-family: Arial, sans-serif; width: 100mm; margin: 0; padding: 2mm; font-size: 11px; line-height: 1.3; }.header { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 3px; }.address { text-align: center; font-size: 9px; margin-bottom: 8px; }.divider { border-top: 1px dashed #000; margin: 6px 0; }.title { text-align: center; font-weight: bold; font-size: 12px; margin: 6px 0; }table { width: 100%; font-size: 10px; }td { padding: 1px 0; }.right { text-align: right; }.bold { font-weight: bold; }.big { font-size: 12px; }.footer { text-align: center; font-size: 9px; margin-top: 8px; }</style></head><body><div class="header">${shopName}</div><div class="address">${address}</div><div class="divider"></div><div class="title">${isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div><div class="divider"></div><table><tr><td>Doc No:</td><td class="right">${rec.docNum || rec.doc_num || ''}</td></tr><tr><td>Date:</td><td class="right">${fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString())}</td></tr><tr><td>Customer:</td><td class="right">${rec.name || rec.customer_name || ''}</td></tr><tr><td>Mobile:</td><td class="right">${rec.mobile || ''}</td></tr></table><div class="divider"></div><table><tr><td>Item:</td><td class="right">${rec.jewellery || rec.item_type || ''}</td></tr><tr><td>Metal:</td><td class="right">${rec.metal || ''}</td></tr></table><div class="divider"></div><table>${isFinal ? `<tr><td>Estimated:</td><td class="right">&#8377; ${rec.amount || 0}</td></tr><tr><td class="bold big">Final:</td><td class="right bold big">&#8377; ${rec.finalAmount || rec.final_amount || 0}</td></tr>` : `<tr><td class="bold big">Estimated:</td><td class="right bold big">&#8377; ${rec.amount || rec.estimated_cost || 0}</td></tr>`}</table><div class="divider"></div><div class="footer">Thank you for trusting us!</div><script>window.onload=function(){window.print();window.close()}</script></body></html>`; const printWindow = window.open('', '_blank'); if (printWindow) { printWindow.document.open(); printWindow.document.write(printContent); printWindow.document.close(); } setPrintRec(null); setPage('dashboard') } }}>🖨️ Print</button>
               <button className="btn" style={{ backgroundColor: '#25D366', color: 'white' }} onClick={async () => { if (printRec) { try { await sendWhatsApp(printRec.rec, printRec.type); alert('WhatsApp sent!'); } catch { alert('Failed to send WhatsApp'); } } }}>💬 WhatsApp</button>
               <button className="btn" onClick={() => setPrintRec(null)}>🔙 Return to Dashboard</button>
             </div>
@@ -1267,7 +1267,7 @@ export default function App() {
           </div>
           <div className="grid3">
             <div className="field"><label>Est. days <span className="req">*</span></label><input type="number" min="1" value={rDays} onChange={e => setRDays(e.target.value)} placeholder="e.g. 7" /></div>
-            <div className="field"><label>Est. amount (₹) <span className="req">*</span></label><input type="number" value={rAmount} onChange={e => setRAmount(e.target.value)} placeholder="e.g. 500" /></div>
+            <div className="field"><label>Est. amount (&#8377;) <span className="req">*</span></label><input type="number" value={rAmount} onChange={e => setRAmount(e.target.value)} placeholder="e.g. 500" /></div>
             <div className="field"><label>Salesman <span className="req">*</span></label><select value={rSalesman} onChange={e => setRSalesman(e.target.value)}><option value="">Select salesman</option>{salesmen.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
           </div>
           <div className="field"><label>Repair description</label><textarea rows={2} value={rDesc} onChange={e => setRDesc(e.target.value)} placeholder="Describe the repair work..." /></div>
@@ -1353,7 +1353,7 @@ export default function App() {
                 <div className="meta-item"><div className="meta-label">Karagir</div><div className="meta-val">{kiRecord.karagir}</div></div>
               </div>
               <div className="grid2">
-                <div className="field"><label>Final repair amount (₹) <span className="req">*</span></label><input type="number" value={kiAmount} onChange={e => setKiAmount(e.target.value)} placeholder="Actual amount" /></div>
+                <div className="field"><label>Final repair amount (&#8377;) <span className="req">*</span></label><input type="number" value={kiAmount} onChange={e => setKiAmount(e.target.value)} placeholder="Actual amount" /></div>
                 <div className="field"><label>Quality</label><select value={kiQuality} onChange={e => setKiQuality(e.target.value)}><option>Good</option><option>Excellent</option><option>Needs touch-up</option></select></div>
               </div>
               <div className="btn-row"><button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec) { if (trReady) { sendWhatsApp(rec, 'final').catch(console.error); } setPrintRec({ rec, type: 'final' }) } }}><IcPdf />Confirm &amp; Print Thermal Invoice</button></div>
@@ -1704,15 +1704,15 @@ export default function App() {
                 <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl1Name} onChange={e => setTpl1Name(e.target.value)} /><div className="hint">Exact name as approved in Meta Business Manager</div></div>
                 <div className="field"><label>Language</label><select value={tpl1Lang} onChange={e => setTpl1Lang(e.target.value)}><option value="en_IN">en_IN — English (India)</option><option value="en">en</option><option value="hi">hi — Hindi</option><option value="mr">mr — Marathi</option></select></div>
               </div>
-              <div className="field"><label>Template body</label><textarea rows={3} value={tpl1Body} onChange={e => setTpl1Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: ₹ {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated, {cfgExpiry} day expiry)</div></div>
-              <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: ₹ <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>[your-app]/api/invoice/INV-JR1001-a3f9b2?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
+              <div className="field"><label>Template body</label><textarea rows={3} value={tpl1Body} onChange={e => setTpl1Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: &#8377; {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated, {cfgExpiry} day expiry)</div></div>
+              <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: &#8377; <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>[your-app]/api/invoice/INV-JR1001-a3f9b2?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
               <div className="divider" />
               <div className="sec-label">Template 2 — Ready for delivery (with final invoice link)</div>
               <div className="grid2">
                 <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl2Name} onChange={e => setTpl2Name(e.target.value)} /></div>
                 <div className="field"><label>Language</label><select value={tpl2Lang} onChange={e => setTpl2Lang(e.target.value)}><option value="en_IN">en_IN</option><option value="en">en</option><option value="hi">hi</option><option value="mr">mr</option></select></div>
               </div>
-              <div className="field"><label>Template body</label><textarea rows={3} value={tpl2Body} onChange={e => setTpl2Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery is ready at Devi Jewellers. Final charges: ₹ {{3}}. Please visit with receipt. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Final amount</div></div>
+              <div className="field"><label>Template body</label><textarea rows={3} value={tpl2Body} onChange={e => setTpl2Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery is ready at Devi Jewellers. Final charges: &#8377; {{3}}. Please visit with receipt. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Final amount</div></div>
               <div className="btn-row"><button className="btn btn-primary" onClick={async () => { if (!tpl1Name || !tpl2Name) { showMessage('templates', 'Template names required.', false); return }; try { await fetch('/api/settings/templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tpl1Name, tpl2Name, tpl1Body: tpl1Body || null, tpl2Body: tpl2Body || null, tpl1Lang: tpl1Lang || 'en', tpl2Lang: tpl2Lang || 'en' }) }); showMessage('templates', 'Templates saved to database.', true); } catch { showMessage('templates', 'Failed to save templates.', false); } }}>Save templates</button></div>
               <Msg text={msg['templates']?.text || ''} ok={msg['templates']?.ok || false} />
             </>

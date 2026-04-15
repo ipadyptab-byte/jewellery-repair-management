@@ -144,7 +144,7 @@ export async function GET(
       </tbody>
     </table>
     <div class="total">
-      ${isFinal ? 'Final Amount: ' : 'Estimated Amount: '} ₹${amount.toLocaleString('en-IN')}
+      ${isFinal ? 'Final Amount: ' : 'Estimated Amount: '} &#8377;${amount.toLocaleString('en-IN')}
     </div>
     <div class="footer">
       <p>Thank you for trusting ${shopName}!</p>
