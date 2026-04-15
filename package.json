@@ -15,6 +15,9 @@
     "react-dom": "^18"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",
