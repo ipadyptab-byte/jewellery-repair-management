@@ -10,8 +10,8 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const expParam = searchParams.get('exp')
     
-    // Extract doc number from ID (e.g., INV-JR1001-final-a3f9b2 -> JR1001, or INV-JR1001-final -> JR1001, or INV-JR1001 -> JR1001)
-    const docMatch = id.match(/^INV-(.+?)(?:-final)?(?:-[a-f0-9]+)?$/)
+    // Extract doc number from ID (e.g., INV-JR1001-final-a3f9b2 -> JR1001, or INV-JR1001 -> JR1001, or INV-JR1076 -> JR1076)
+    const docMatch = id.match(/^INV-(.+?)(?:-final)?(?:-(.+))?$/)
     if (!docMatch) {
       const errorHtml = `<!DOCTYPE html><html><head><title>Error</title></head><body style="font-family:Arial;padding:40px;text-align:center;"><h2>Invalid Invoice Link</h2><p>The invoice ID "${id}" is not valid.</p><p>Please contact the shop for help.</p></body></html>`
       return new NextResponse(errorHtml, { headers: { 'Content-Type': 'text/html' }, status: 400 })
@@ -25,7 +25,10 @@ export async function GET(
     
     // Check expiry if exp parameter provided
     if (expParam) {
-      const expDate = new Date(expParam.replace(/(\d{2})(\d{2})(\d{4})/, '$3-$2-$1'))
+      // Handle formats like 26Apr2026, 26apr2026, 26-04-2026
+      const normalizedExp = expParam.toLowerCase().replace(/-/g, '')
+      const expDateStr = normalizedExp.replace(/(\d{2})(\d{2})(\d{4})/, '$3-$2-$1')
+      const expDate = new Date(expDateStr)
       const now = new Date()
       if (now > expDate) {
         const expiredHtml = `<!DOCTYPE html><html><head><title>Expired</title></head><body style="font-family:Arial;padding:40px;text-align:center;"><h2>Invoice Link Expired</h2><p>This invoice link has expired. Please contact the shop for a new link.</p></body></html>`
