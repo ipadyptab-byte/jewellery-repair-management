@@ -168,10 +168,9 @@ const IcWA = ({ size = 14, color = '#fff' }: { size?: number; color?: string }) 
 declare global { interface Window { jspdf: { jsPDF: any } } }
 
 function generateInvoiceLink(docNum: string, type: string, baseUrl: string, expDays: number) {
-  const token = randTok(8)
-  const expDate = fmtDate(addDays(new Date(), expDays).toISOString())
+  // Use simple /r/ format: https://www.devi-jewellers.com/r/JR1077
   const suffix = type === 'final' ? '-final' : ''
-  return { url: `${baseUrl.replace(/\/$/, '')}/api/invoice/INV-${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`, expDate }
+  return { url: `${baseUrl.replace(/\/$/, '')}/r/JR${docNum}`, expDate: '' }
 }
 
 function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', baseUrl: string, expDays: number, shopName: string = 'Devi Jewellers', shopAddress: string = '') {
@@ -343,8 +342,8 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp, shopName, shopAddress }: { rec: RepairRecord; type: 'received' | 'final'; baseUrl: string; expDays: number; onMsg: (m: string, ok: boolean) => void; onSendWhatsApp: () => Promise<void>; shopName?: string; shopAddress?: string }) {
   const { url, expDate } = generateInvoiceLink(rec.docNum || rec.doc_num, type, baseUrl, expDays)
   const waMsg = type === 'received'
-    ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* &#8377; ${rec.amount || rec.estimated_cost}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
-    : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* &#8377; ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
+    ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* &#8377; ${rec.amount || rec.estimated_cost}\n\n📄 *View your invoice:* ${url}\n\nThank you! *Devi Jewellers* 🌟`
+    : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* &#8377; ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:* ${url}\n\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
 
   const copy = () => navigator.clipboard.writeText(url).then(() => onMsg('Link copied!', true)).catch(() => onMsg('Copy failed', false))
   const download = () => buildAndDownloadPDF(rec, type, baseUrl, expDays, shopName || 'Devi Jewellers', shopAddress || '')
@@ -1659,7 +1658,7 @@ export default function App() {
                 <div className="field" style={{ width: 100 }}><label>Days</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /></div>
               </div>
               <div className="btn-row">
-                <button className="btn btn-primary" onClick={async () => { try { const res = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceLinkBase: cfgLinkBase || 'https://www.devi-jewellers.com', invoiceExpiry: cfgExpiry }) }); if (res.ok) { showMessage('creds', 'Settings saved! Link will be: https://www.devi-jewellers.com/api/invoice/...', true); } else { showMessage('creds', 'Failed to save.', false); } } catch { showMessage('creds', 'Failed to save.', false); } }}>Save</button>
+                <button className="btn btn-primary" onClick={async () => { try { const res = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceLinkBase: cfgLinkBase || 'https://www.devi-jewellers.com', invoiceExpiry: cfgExpiry }) }); if (res.ok) { showMessage('creds', 'Settings saved! Link will be: https://www.devi-jewellers.com/r/JRxxxx', true); } else { showMessage('creds', 'Failed to save.', false); } } catch { showMessage('creds', 'Failed to save.', false); } }}>Save</button>
                 <button className="btn" onClick={() => setCfgLinkBase('https://www.devi-jewellers.com')}>Use devi-jewellers.com</button>
                 <button className="btn btn-wa" onClick={async () => { 
                   if (!rmToken) { showMessage('creds', 'API key required.', false); return }
@@ -1741,8 +1740,8 @@ export default function App() {
                 <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl1Name} onChange={e => setTpl1Name(e.target.value)} /><div className="hint">Exact name as approved in Meta Business Manager</div></div>
                 <div className="field"><label>Language</label><select value={tpl1Lang} onChange={e => setTpl1Lang(e.target.value)}><option value="en_IN">en_IN — English (India)</option><option value="en">en</option><option value="hi">hi — Hindi</option><option value="mr">mr — Marathi</option></select></div>
               </div>
-              <div className="field"><label>Template body</label><textarea rows={3} value={tpl1Body} onChange={e => setTpl1Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: &#8377; {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated, {cfgExpiry} day expiry)</div></div>
-              <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: &#8377; <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>[your-app]/api/invoice/INV-JR1001-a3f9b2?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
+              <div className="field"><label>Template body</label><textarea rows={3} value={tpl1Body} onChange={e => setTpl1Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: &#8377; {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated)</div></div>
+              <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: &#8377; <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>https://www.devi-jewellers.com/r/JR1001</span> Thank you!</div>
               <div className="divider" />
               <div className="sec-label">Template 2 — Ready for delivery (with final invoice link)</div>
               <div className="grid2">
