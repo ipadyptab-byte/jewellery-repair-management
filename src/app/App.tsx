@@ -426,7 +426,7 @@ export default function App() {
     const templateName = type === 'received' ? tpl1Name : tpl2Name
     const templateLang = type === 'received' ? tpl1Lang : tpl2Lang
     const templateBody = type === 'received' ? tpl1Body : tpl2Body
-    // Always use vercel URL
+    // Force Vercel URL - ignore saved setting
     const invoiceLinkBase = 'https://jewellery-repair-management.vercel.app'
     // Generate link with /api/invoice/ path
     const token = randTok(8)
