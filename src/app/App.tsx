@@ -262,29 +262,30 @@ function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shop
           width: 72mm;
           margin: 0;
           padding: 1mm;
-          font-family: Arial, Helvetica, sans-serif;
-          font-size: 11px;
-          line-height: 1.1;
+          font-family: Arial Black, Arial, Helvetica, sans-serif;
+          font-size: 14px;
+          line-height: 1.2;
           color: #000;
           background: #fff;
+          -webkit-font-smoothing: none;
         }
-        .header { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 2px; color: #000; }
-        .address { text-align: center; font-size: 8px; margin-bottom: 4px; color: #000; }
-        .divider { border-top: 1px dashed #000; margin: 3px 0; }
-        .title { text-align: center; font-weight: bold; font-size: 12px; margin: 3px 0; color: #000; }
-        .row { display: flex; justify-content: space-between; padding: 1px 0; color: #000; }
-        .label { color: #000; }
-        .value { font-weight: bold; color: #000; }
-        .bold { font-weight: bold; }
-        .big { font-size: 12px; }
-        .footer { text-align: center; font-size: 8px; margin-top: 4px; color: #000; }
+        .header { text-align: center; font-weight: 900; font-size: 18px; margin-bottom: 2px; color: #000; }
+        .address { text-align: center; font-weight: bold; font-size: 10px; margin-bottom: 4px; color: #000; }
+        .divider { border-top: 2px solid #000; margin: 4px 0; }
+        .title { text-align: center; font-weight: 900; font-size: 16px; margin: 4px 0; color: #000; }
+        .row { display: flex; justify-content: space-between; padding: 2px 0; color: #000; font-weight: bold; }
+        .label { color: #000; font-weight: bold; }
+        .value { font-weight: 900; color: #000; }
+        .bold { font-weight: 900; }
+        .big { font-size: 16px; }
+        .footer { text-align: center; font-weight: bold; font-size: 10px; margin-top: 5px; color: #000; }
         .btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
         .btn { padding: 10px 20px; font-size: 14px; cursor: pointer; border: none; border-radius: 4px; }
         .btn-print { background: #25D366; color: white; }
         .btn-dash { background: #666; color: white; }
         @media print {
           .btn-row { display: none !important; }
-          html, body { padding: 0; }
+          html, body { padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
       </style>
     </head>
@@ -1191,7 +1192,7 @@ export default function App() {
               <div className="footer">Thank you for trusting us!</div>
             </div>
             <div className="btn-row" style={{ marginTop: '15px' }}>
-              <button className="btn btn-primary" onClick={() => { if (printRec) { const rec = printRec.rec; const type = printRec.type; const shopName = cfgShop || 'Devi Jewellers'; const address = cfgAddr || 'Nashik, Maharashtra'; const isFinal = type === 'final'; const docNo = rec.docNum || rec.doc_num || ''; const dateVal = fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString()); const customer = rec.name || rec.customer_name || ''; const mobile = rec.mobile || ''; const item = rec.jewellery || rec.item_type || ''; const metal = rec.metal || ''; const amount = rec.amount || rec.estimated_cost || 0; const finalAmount = rec.finalAmount || rec.final_amount || 0; const printContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Print Receipt</title><style>*{box-sizing:border-box;margin:0;padding:0}@page{size:76mm 150mm;margin:0}html,body{width:72mm;margin:0;padding:1mm;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.1;color:#000;background:#fff}.header{text-align:center;font-weight:bold;font-size:14px;margin-bottom:2px;color:#000}.address{text-align:center;font-size:8px;margin-bottom:4px;color:#000}.divider{border-top:1px dashed #000;margin:3px 0}.title{text-align:center;font-weight:bold;font-size:12px;margin:3px 0;color:#000}.row{display:flex;justify-content:space-between;padding:1px 0;color:#000}.label{color:#000}.value{font-weight:bold;color:#000}.bold{font-weight:bold}.big{font-size:12px}.footer{text-align:center;font-size:8px;margin-top:4px;color:#000}</style></head><body><div class="header">${shopName}</div><div class="address">${address}</div><div class="divider"></div><div class="title">${isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div><div class="divider"></div><div class="row"><span class="label">Doc No:</span><span class="value">${docNo}</span></div><div class="row"><span class="label">Date:</span><span class="value">${dateVal}</span></div><div class="row"><span class="label">Customer:</span><span class="value">${customer}</span></div><div class="row"><span class="label">Mobile:</span><span class="value">${mobile}</span></div><div class="divider"></div><div class="row"><span class="label">Item:</span><span class="value">${item}</span></div><div class="row"><span class="label">Metal:</span><span class="value">${metal}</span></div><div class="divider"></div>${isFinal ? `<div class="row"><span class="label">Estimated:</span><span class="value">Rs ${amount}</span></div><div class="row bold big"><span class="label">Final:</span><span class="value">Rs ${finalAmount}</span></div>` : `<div class="row bold big"><span class="label">Estimated:</span><span class="value">Rs ${amount}</span></div>`}<div class="divider"></div><div class="footer">Thank you for trusting us!</div><script>window.onload=function(){window.print();window.close()}</script></body></html>`; const printWindow = window.open('', '_blank'); if (printWindow) { printWindow.document.open(); printWindow.document.write(printContent); printWindow.document.close(); } setPrintRec(null); setPage('dashboard') } }}>🖨️ Print</button>
+              <button className="btn btn-primary" onClick={() => { if (printRec) { const rec = printRec.rec; const type = printRec.type; const shopName = cfgShop || 'Devi Jewellers'; const address = cfgAddr || 'Nashik, Maharashtra'; const isFinal = type === 'final'; const docNo = rec.docNum || rec.doc_num || ''; const dateVal = fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString()); const customer = rec.name || rec.customer_name || ''; const mobile = rec.mobile || ''; const item = rec.jewellery || rec.item_type || ''; const metal = rec.metal || ''; const amount = rec.amount || rec.estimated_cost || 0; const finalAmount = rec.finalAmount || rec.final_amount || 0; const printContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Print Receipt</title><style>*{box-sizing:border-box;margin:0;padding:0}@page{size:76mm 150mm;margin:0}html,body{width:72mm;margin:0;padding:1mm;font-family:Arial Black,Arial,Helvetica,sans-serif;font-size:14px;line-height:1.2;color:#000;background:#fff;-webkit-font-smoothing:none}.header{text-align:center;font-weight:900;font-size:18px;margin-bottom:2px;color:#000}.address{text-align:center;font-weight:bold;font-size:10px;margin-bottom:4px;color:#000}.divider{border-top:2px solid #000;margin:4px 0}.title{text-align:center;font-weight:900;font-size:16px;margin:4px 0;color:#000}.row{display:flex;justify-content:space-between;padding:2px 0;color:#000;font-weight:bold}.label{color:#000;font-weight:bold}.value{font-weight:900;color:#000}.bold{font-weight:900}.big{font-size:16px}.footer{text-align:center;font-weight:bold;font-size:10px;margin-top:5px;color:#000}</style></head><body><div class="header">${shopName}</div><div class="address">${address}</div><div class="divider"></div><div class="title">${isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div><div class="divider"></div><div class="row"><span class="label">Doc No:</span><span class="value">${docNo}</span></div><div class="row"><span class="label">Date:</span><span class="value">${dateVal}</span></div><div class="row"><span class="label">Customer:</span><span class="value">${customer}</span></div><div class="row"><span class="label">Mobile:</span><span class="value">${mobile}</span></div><div class="divider"></div><div class="row"><span class="label">Item:</span><span class="value">${item}</span></div><div class="row"><span class="label">Metal:</span><span class="value">${metal}</span></div><div class="divider"></div>${isFinal ? `<div class="row"><span class="label">Estimated:</span><span class="value">Rs ${amount}</span></div><div class="row bold big"><span class="label">Final:</span><span class="value">Rs ${finalAmount}</span></div>` : `<div class="row bold big"><span class="label">Estimated:</span><span class="value">Rs ${amount}</span></div>`}<div class="divider"></div><div class="footer">Thank you for trusting us!</div><script>window.onload=function(){window.print();window.close()}</script></body></html>`; const printWindow = window.open('', '_blank'); if (printWindow) { printWindow.document.open(); printWindow.document.write(printContent); printWindow.document.close(); } setPrintRec(null); setPage('dashboard') } }}>🖨️ Print</button>
               <button className="btn" style={{ backgroundColor: '#25D366', color: 'white' }} onClick={async () => { if (printRec) { try { await sendWhatsApp(printRec.rec, printRec.type); alert('WhatsApp sent!'); } catch { alert('Failed to send WhatsApp'); } } }}>💬 WhatsApp</button>
               <button className="btn" onClick={() => setPrintRec(null)}>🔙 Return to Dashboard</button>
             </div>
