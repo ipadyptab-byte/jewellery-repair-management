@@ -426,13 +426,13 @@ export default function App() {
     const templateName = type === 'received' ? tpl1Name : tpl2Name
     const templateLang = type === 'received' ? tpl1Lang : tpl2Lang
     const templateBody = type === 'received' ? tpl1Body : tpl2Body
-    // Force Vercel URL - ignore saved setting
-    const invoiceLinkBase = 'https://jewellery-repair-management.vercel.app'
-    // Generate link with /api/invoice/ path
-    const token = randTok(8)
-    const suffix = type === 'final' ? '-final' : ''
-    const expDate = fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')
-    const invoiceLink = `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
+    // Default to Vercel URL for /api/invoice/, can switch to devi-jewellers.com for /r/
+    const invoiceLinkBase = cfgLinkBase || 'https://jewellery-repair-management.vercel.app'
+    // Use /api/invoice/ format for Vercel, or /r/ format for custom domain
+    const isCustomDomain = invoiceLinkBase.includes('devi-jewellers')
+    const invoiceLink = isCustomDomain 
+      ? `${invoiceLinkBase}/r/INV-JR${rec.docNum || rec.doc_num}`
+      : `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
     const params = type === 'received'
       ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]
       : [rec.name || rec.customer_name, rec.metal, String(rec.finalAmount || rec.final_amount || rec.amount || rec.estimated_cost)]
@@ -1286,7 +1286,7 @@ export default function App() {
             {isEditing ? (
               <>
                 <button className="btn btn-primary" onClick={updateReceipt}><IcPdf />Update Record</button>
-                <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', 'https://jewellery-repair-management.vercel.app', cfgExpiry, cfgShop, cfgAddr)}>Print PDF</button>
+                <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', cfgLinkBase || 'https://jewellery-repair-management.vercel.app', cfgExpiry, cfgShop, cfgAddr)}>Print PDF</button>
                 <button className="btn" onClick={() => savedRec && printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr)}>Thermal Print</button>
                 <button className="btn" onClick={cancelEdit}>Cancel Edit</button>
               </>
@@ -1302,7 +1302,7 @@ export default function App() {
         {savedRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Invoice PDF &amp; WhatsApp — <span style={{ color: 'var(--brand)' }}>{savedRec.docNum || savedRec.doc_num}</span></div>
-            <InvoicePanel rec={savedRec} type="received" baseUrl="https://jewellery-repair-management.vercel.app" expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} onSendWhatsApp={() => sendWhatsApp(savedRec, 'received')} shopName={cfgShop} shopAddress={cfgAddr} />
+            <InvoicePanel rec={savedRec} type="received" baseUrl={cfgLinkBase || 'https://jewellery-repair-management.vercel.app'} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} onSendWhatsApp={() => sendWhatsApp(savedRec, 'received')} shopName={cfgShop} shopAddress={cfgAddr} />
             <Msg text={msg['wa-recv']?.text || ''} ok={msg['wa-recv']?.ok || false} />
           </div>
         )}
@@ -1407,7 +1407,7 @@ export default function App() {
         {!kiEditing && finalRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Final Invoice — <span style={{ color: 'var(--brand)' }}>{finalRec.docNum}</span></div>
-            <InvoicePanel rec={finalRec} type="final" baseUrl="https://jewellery-repair-management.vercel.app" expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} shopName={cfgShop} shopAddress={cfgAddr} />
+            <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase || 'https://jewellery-repair-management.vercel.app'} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} shopName={cfgShop} shopAddress={cfgAddr} />
             <Msg text={msg['wa-final']?.text || ''} ok={msg['wa-final']?.ok || false} />
           </div>
         )}
@@ -1658,7 +1658,7 @@ export default function App() {
               <div className="divider" />
               <div className="sec-label">Invoice PDF link settings</div>
               <div className="grid2">
-                <div className="field" style={{ flex: 2 }}><label>Invoice link base URL</label><input value={cfgLinkBase} onChange={e => setCfgLinkBase(e.target.value)} placeholder="https://jewellery-repair-management.vercel.app" /><div className="hint">Your Vercel app URL for invoice links</div></div>
+                <div className="field" style={{ flex: 2 }}><label>Invoice link base URL</label><input value={cfgLinkBase} onChange={e => setCfgLinkBase(e.target.value)} placeholder="https://jewellery-repair-management.vercel.app" /><div className="hint">Vercel: /api/invoice/..., Custom domain: /r/ (e.g., https://www.devi-jewellers.com)</div></div>
                 <div className="field" style={{ width: 100 }}><label>Days</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /></div>
               </div>
               <div className="btn-row">
