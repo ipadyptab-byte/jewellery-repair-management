@@ -426,7 +426,8 @@ export default function App() {
     const templateName = type === 'received' ? tpl1Name : tpl2Name
     const templateLang = type === 'received' ? tpl1Lang : tpl2Lang
     const templateBody = type === 'received' ? tpl1Body : tpl2Body
-    const invoiceLinkBase = cfgLinkBase || 'https://www.devi-jewellers.com'
+    // Always use your custom domain - default to devi-jewellers.com
+    const invoiceLinkBase = 'https://www.devi-jewellers.com'
     const invoiceLink = `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}${type === 'final' ? '-final' : ''}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
     const params = type === 'received'
       ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]
@@ -1653,11 +1654,12 @@ export default function App() {
               <div className="divider" />
               <div className="sec-label">Invoice PDF link settings</div>
               <div className="grid2">
-                <div className="field"><label>Invoice link base URL</label><input value={cfgLinkBase} onChange={e => setCfgLinkBase(e.target.value)} placeholder="https://www.devi-jewellers.com" /><div className="hint">Enter your custom domain (e.g., https://www.devi-jewellers.com). Leave empty to use default.</div></div>
-                <div className="field"><label>Link expiry (days)</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /><div className="hint">Invoice link expires after this many days. Default: 10 days.</div></div>
+                <div className="field" style={{ flex: 2 }}><label>Invoice link base URL</label><input value={cfgLinkBase} onChange={e => setCfgLinkBase(e.target.value)} placeholder="https://www.devi-jewellers.com" /><div className="hint">Custom domain - defaults to https://www.devi-jewellers.com</div></div>
+                <div className="field" style={{ width: 100 }}><label>Days</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /></div>
               </div>
               <div className="btn-row">
-                <button className="btn btn-primary" onClick={async () => { try { await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceLinkBase: cfgLinkBase, invoiceExpiry: cfgExpiry }) }); showMessage('creds', 'Invoice settings saved.', true); } catch { showMessage('creds', 'Failed to save.', false); } }}>Save invoice settings</button>
+                <button className="btn btn-primary" onClick={async () => { try { const res = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceLinkBase: cfgLinkBase || 'https://www.devi-jewellers.com', invoiceExpiry: cfgExpiry }) }); if (res.ok) { showMessage('creds', 'Settings saved! Link will be: https://www.devi-jewellers.com/api/invoice/...', true); } else { showMessage('creds', 'Failed to save.', false); } } catch { showMessage('creds', 'Failed to save.', false); } }}>Save</button>
+                <button className="btn" onClick={() => setCfgLinkBase('https://www.devi-jewellers.com')}>Use devi-jewellers.com</button>
                 <button className="btn btn-wa" onClick={async () => { 
                   if (!rmToken) { showMessage('creds', 'API key required.', false); return }
                   setConnStatus('checking');
