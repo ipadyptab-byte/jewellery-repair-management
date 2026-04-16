@@ -4,7 +4,11 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Devi Jewellers — Repair Management',
   description: 'Jewellery Repair Management System — Gold | Silver | Diamonds | Pearls',
-  icons: { icon: '/icon.png' },
+  icons: { 
+    icon: '/favicon.ico',
+    apple: '/favicon.png',
+    shortcut: '/favicon.ico'
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
