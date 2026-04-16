@@ -51,8 +51,8 @@ export async function GET(
       settings[row.key] = row.value
     })
     
-    const shopName = settings.shop_name || 'Devi Jewellers'
-    const shopAddress = settings.shop_addr || settings.shop_address || ''
+    const shopName = settings.shop_name || settings.businessName || 'Devi Jewellers'
+    const shopAddress = settings.shop_address || ''
     const shopPhone = settings.shop_phone || ''
     const shopGst = settings.shop_gst || ''
     
