@@ -976,7 +976,7 @@ export default function App() {
           name: msName.trim(),
           phone_number: msMob.trim(),
           type: 'salesman',
-          is_active: msStatus === 'active'
+          is_active: true // Always save as active
         };
       } else if (type === 'jewellery') {
         if (!mjName.trim()) { showMessage('master-jewellery', 'Name required.', false); return }
@@ -985,7 +985,7 @@ export default function App() {
           name: mjName.trim(),
           category: mjCat,
           type: 'jewellery',
-          is_active: mjStatus === 'active'
+          is_active: true // Always save as active
         };
       } else if (type === 'metal') {
         if (!mmName.trim()) { showMessage('master-metal', 'Name required.', false); return }
@@ -994,7 +994,7 @@ export default function App() {
           name: mmName.trim(),
           type: 'metal',
           karat: mmKarat.trim(),
-          is_active: mmStatus === 'active'
+          is_active: true // Always save as active
         };
       } else if (type === 'karagir') {
         if (!mkName.trim() || !mkMob.trim()) { showMessage('master-karagir', 'Name and mobile required.', false); return }
@@ -1006,7 +1006,7 @@ export default function App() {
           specialty: mkSpec.trim(),
           address: mkAddr.trim(),
           type: 'karagir',
-          is_active: mkStatus === 'active'
+          is_active: true // Always save as active
         };
       }
 
@@ -1474,7 +1474,6 @@ export default function App() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
               <div className="field" style={{ flex: 2, minWidth: 130, marginBottom: 0 }}><label>Name *</label><input value={msName} onChange={e => setMsName(e.target.value)} placeholder="Salesman name" /></div>
               <div className="field" style={{ flex: 1, minWidth: 110, marginBottom: 0 }}><label>Mobile</label><input value={msMob} onChange={e => setMsMob(e.target.value)} placeholder="Mobile" maxLength={10} /></div>
-              <div className="field" style={{ width: 110, marginBottom: 0 }}><label>Status</label><select value={msStatus} onChange={e => setMsStatus(e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
               {editMasterId ? (
                 <>
                   <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('salesman')}>Update</button>
@@ -1504,7 +1503,6 @@ export default function App() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
               <div className="field" style={{ flex: 2, minWidth: 130, marginBottom: 0 }}><label>Type name *</label><input value={mjName} onChange={e => setMjName(e.target.value)} placeholder="e.g. Mangalsutra" /></div>
               <div className="field" style={{ flex: 1, minWidth: 100, marginBottom: 0 }}><label>Category</label><select value={mjCat} onChange={e => setMjCat(e.target.value)}>{['Necklace', 'Ring', 'Bracelet', 'Earring', 'Chain', 'Anklet', 'Bangle', 'Other'].map(c => <option key={c}>{c}</option>)}</select></div>
-              <div className="field" style={{ width: 110, marginBottom: 0 }}><label>Status</label><select value={mjStatus} onChange={e => setMjStatus(e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
               {editMasterId ? (
                 <>
                   <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('jewellery')}>Update</button>
@@ -1535,7 +1533,6 @@ export default function App() {
               <div className="field" style={{ flex: 2, minWidth: 120, marginBottom: 0 }}><label>Metal name *</label><input value={mmName} onChange={e => setMmName(e.target.value)} placeholder="e.g. Gold 22K" /></div>
               <div className="field" style={{ flex: 1, minWidth: 90, marginBottom: 0 }}><label>Type</label><select value={mmType} onChange={e => setMmType(e.target.value)}><option>Gold</option><option>Silver</option><option>Platinum</option><option>Other</option></select></div>
               <div className="field" style={{ flex: 1, minWidth: 80, marginBottom: 0 }}><label>Purity</label><input value={mmKarat} onChange={e => setMmKarat(e.target.value)} placeholder="22K" /></div>
-              <div className="field" style={{ width: 110, marginBottom: 0 }}><label>Status</label><select value={mmStatus} onChange={e => setMmStatus(e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
               {editMasterId ? (
                 <>
                   <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('metal')}>Update</button>
@@ -1569,7 +1566,6 @@ export default function App() {
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
               <div className="field" style={{ flex: 3, minWidth: 160, marginBottom: 0 }}><label>Address</label><input value={mkAddr} onChange={e => setMkAddr(e.target.value)} placeholder="Workshop address" /></div>
-              <div className="field" style={{ width: 110, marginBottom: 0 }}><label>Status</label><select value={mkStatus} onChange={e => setMkStatus(e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
               {editMasterId ? (
                 <>
                   <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('karagir')}>Update</button>
