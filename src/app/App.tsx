@@ -1292,7 +1292,7 @@ export default function App() {
               </>
             ) : (
               <>
-                <button className="btn btn-primary" onClick={async () => { const rec = await saveReceipt(); if (rec) { if (trRecv) { sendWhatsApp(rec, 'received').catch(console.error); } setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null); setPrintRec({ rec, type: 'received' }) } }}><IcPdf />Save &amp; Print Thermal Invoice</button>
+                <button className="btn btn-primary" onClick={async () => { const rec = await saveReceipt(); if (rec) { if (trRecv) { sendWhatsApp(rec, 'received').catch(console.error); } setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(rec); setPrintRec(null); } }}><IcPdf />Save &amp; Print Thermal Invoice</button>
                 <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
             )}
@@ -1398,7 +1398,7 @@ export default function App() {
                 {kiEditing && records.find(r => r.docNum === kiDoc && r.status === 'ready') && (
                   <button className="btn" style={{ background: '#dc2626' }} onClick={() => { if (confirm('Reset final invoice? Status will change back to "With Karagir".')) { setRecords(prev => prev.map(r => r.docNum === kiDoc ? { ...r, finalAmount: 0, final_amount: 0, completedDate: null, completed_date: null, quality: '', status: 'with_karagir' } : r)); showMessage('ki', `Reset final invoice for ${kiDoc}`, true); setKiDoc(''); setKiLoaded(false); setKiAmount(''); setKiEditing(false) } }}>🗑️ Delete / Reset</button>
                 )}
-                <button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec && !kiEditing) { if (trReady) { sendWhatsApp(rec, 'final').catch(console.error); } setPrintRec({ rec, type: 'final' }) } }}>{kiEditing ? '💾 Update' : <><IcPdf />Confirm & Print Thermal Invoice</>}</button>
+                <button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec && !kiEditing) { if (trReady) { sendWhatsApp(rec, 'final').catch(console.error); } setSavedRec(rec); setPrintRec(null); } }}>{kiEditing ? '💾 Update' : <><IcPdf />Confirm & Print Thermal Invoice</>}</button>
               </div>
             </>
           )}
