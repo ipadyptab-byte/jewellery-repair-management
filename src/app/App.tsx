@@ -607,7 +607,12 @@ export default function App() {
         if (settingsResponse.ok) {
           const settings = await settingsResponse.json();
           // Only override if API returned non-empty values
-          if (settings.businessName && settings.businessName !== 'Devi Jewellers') setCfgShop(settings.businessName);
+          if (settings.businessName) setCfgShop(settings.businessName);
+          if (settings.shopOwner) setCfgOwner(settings.shopOwner);
+          if (settings.shopPhone) setCfgPhone(settings.shopPhone);
+          if (settings.shopGst) setCfgGst(settings.shopGst);
+          if (settings.shopCity) setCfgCity(settings.shopCity);
+          if (settings.shopAddress) setCfgAddr(settings.shopAddress);
           if (settings.whatsappApiKey) setRmToken(settings.whatsappApiKey);
           if (settings.whatsappApiUrl) setRmApiUrl(settings.whatsappApiUrl);
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
@@ -1605,7 +1610,7 @@ export default function App() {
             <div className="field"><label>City</label><input value={cfgCity} onChange={e => setCfgCity(e.target.value)} placeholder="City" /></div>
           </div>
           <div className="field"><label>Address</label><input value={cfgAddr} onChange={e => setCfgAddr(e.target.value)} placeholder="Full address" /></div>
-          <div className="btn-row"><button className="btn btn-primary" onClick={() => showMessage('shop', 'Shop info saved.', true)}>Save</button></div>
+          <div className="btn-row"><button className="btn btn-primary" onClick={async () => { try { const response = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ businessName: cfgShop, shopOwner: cfgOwner, shopPhone: cfgPhone, shopGst: cfgGst, shopCity: cfgCity, shopAddress: cfgAddr }) }); if (response.ok) { showMessage('shop', 'Shop info saved to database!', true); } else { showMessage('shop', 'Failed to save.', false); } } catch { showMessage('shop', 'Failed to save.', false); } }}>Save</button></div>
           <Msg text={msg['shop']?.text || ''} ok={msg['shop']?.ok || false} />
         </div>
 

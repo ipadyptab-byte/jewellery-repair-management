@@ -11,6 +11,11 @@ export async function GET() {
     // Convert key-value pairs to structured object - use keys from schema
     const settings: any = {
       businessName: 'Devi Jewellers',
+      shopOwner: '',
+      shopPhone: '',
+      shopGst: '',
+      shopCity: '',
+      shopAddress: '',
       whatsappApiKey: '',
       whatsappApiUrl: '',
       currency: 'INR',
@@ -24,6 +29,21 @@ export async function GET() {
         case 'shop_name':
           settings.businessName = row.value || 'Devi Jewellers';
           break;
+        case 'shop_owner':
+          settings.shopOwner = row.value || '';
+          break;
+        case 'shop_phone':
+          settings.shopPhone = row.value || '';
+          break;
+        case 'shop_gst':
+          settings.shopGst = row.value || '';
+          break;
+        case 'shop_city':
+          settings.shopCity = row.value || '';
+          break;
+        case 'shop_address':
+          settings.shopAddress = row.value || '';
+          break;
         case 'whatsapp_rm_token':
           settings.whatsappApiKey = row.value || '';
           break;
@@ -33,7 +53,7 @@ export async function GET() {
         case 'invoice_link_base':
           settings.invoiceLinkBase = row.value || '';
           break;
-        case 'invoice_expiry':
+        case 'invoice_expiry_days':
           settings.invoiceExpiry = parseInt(row.value) || 10;
           break;
         case 'currency':
@@ -50,6 +70,11 @@ export async function GET() {
     console.error('Error fetching settings:', error);
     return NextResponse.json({ 
       businessName: 'Devi Jewellers',
+      shopOwner: '',
+      shopPhone: '',
+      shopGst: '',
+      shopCity: '',
+      shopAddress: '',
       whatsappApiKey: '',
       whatsappApiUrl: '',
       currency: 'INR',
@@ -63,6 +88,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       businessName,
+      shopOwner,
+      shopPhone,
+      shopGst,
+      shopCity,
+      shopAddress,
       whatsappApiKey,
       whatsappApiUrl,
       currency,
@@ -76,10 +106,15 @@ export async function POST(request: NextRequest) {
     // Map to keys from schema.sql
     const settingsMap: Record<string, string> = {
       'shop_name': businessName || 'Devi Jewellers',
+      'shop_owner': shopOwner || '',
+      'shop_phone': shopPhone || '',
+      'shop_gst': shopGst || '',
+      'shop_city': shopCity || '',
+      'shop_address': shopAddress || '',
       'whatsapp_rm_token': whatsappApiKey || '',
       'whatsapp_rm_api_url': whatsappApiUrl || '',
       'invoice_link_base': invoiceLinkBase || '',
-      'invoice_expiry': invoiceExpiry ? String(invoiceExpiry) : '10',
+      'invoice_expiry_days': invoiceExpiry ? String(invoiceExpiry) : '10',
       'currency': currency || 'INR',
       'tax_rate': String(taxRate || 0)
     };
