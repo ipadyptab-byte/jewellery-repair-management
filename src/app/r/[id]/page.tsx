@@ -4,47 +4,37 @@ import { sql } from '@/lib/db'
 import { notFound } from 'next/navigation'
 
 interface PageProps {
-  params: Promise<{ id: string }>
-  searchParams?: Promise<{ exp?: string }>
+  params: { id: string }
+  searchParams?: { exp?: string }
 }
 
 export default async function InvoicePage({ params, searchParams }: PageProps) {
-  const { id } = await params
-  const resolvedSearchParams = await searchParams || {}
+  const { id } = params
 
   // ✅ Extract only numbers from ID (works for INV-JR1081, JR1081, 1081)
   const docNum = id.replace(/[^0-9]/g, '')
 
   // 🔐 Expiry check
-  if (resolvedSearchParams?.exp) {
-    const expiryStr = resolvedSearchParams.exp
-    // Parse date like "26Apr2026" or "26 Apr 2026"
-    const months: Record<string, number> = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 }
-    const match = expiryStr.toLowerCase().match(/(\d+)([a-z]+)(\d+)/)
-    if (match) {
-      const day = parseInt(match[1])
-      const month = months[match[2].substring(0, 3)]
-      const year = parseInt(match[3])
-      const expiryDate = new Date(year, month, day)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      if (today > expiryDate) {
-        return (
-          <html>
-            <head>
-              <title>Link Expired</title>
-              <meta name="viewport" content="width=device-width, initial-scale=1" />
-            </head>
-            <body style={{ fontFamily: 'Arial', textAlign: 'center', padding: '40px', background: '#f5f5f5' }}>
-              <div style={{ background: '#fff', padding: '30px', borderRadius: '10px', maxWidth: '400px', margin: 'auto' }}>
-                <h2 style={{ color: '#c62828' }}>Link Expired</h2>
-                <p>This invoice link is no longer valid.</p>
-                <p>Please contact the shop.</p>
-              </div>
-            </body>
-          </html>
-        )
-      }
+  if (searchParams?.exp) {
+    const expiryDate = new Date(searchParams.exp)
+    const today = new Date()
+
+    if (today > expiryDate) {
+      return (
+        <html>
+          <head>
+            <title>Link Expired</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+          </head>
+          <body style={{ fontFamily: 'Arial', textAlign: 'center', padding: '40px', background: '#f5f5f5' }}>
+            <div style={{ background: '#fff', padding: '30px', borderRadius: '10px', maxWidth: '400px', margin: 'auto' }}>
+              <h2 style={{ color: '#c62828' }}>Link Expired</h2>
+              <p>This invoice link is no longer valid.</p>
+              <p>Please contact the shop.</p>
+            </div>
+          </body>
+        </html>
+      )
     }
   }
 
@@ -56,21 +46,7 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
     )
 
     if (result.rows.length === 0) {
-      return (
-        <html>
-          <head>
-            <title>Not Found</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1" />
-          </head>
-          <body style={{ fontFamily: 'Arial', textAlign: 'center', padding: '40px', background: '#f5f5f5' }}>
-            <div style={{ background: '#fff', padding: '30px', borderRadius: '10px', maxWidth: '400px', margin: 'auto' }}>
-              <h2 style={{ color: '#c62828' }}>Invoice Not Found</h2>
-              <p>No record found for document: {docNum}</p>
-              <p>Please contact the shop.</p>
-            </div>
-          </body>
-        </html>
-      )
+      notFound()
     }
 
     const rec = result.rows[0]
