@@ -411,7 +411,7 @@ export default function App() {
   // Settings
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
-  const [cfgLinkBase, setCfgLinkBase] = useState('https://invoice.devijewellers.in'); const [cfgExpiry, setCfgExpiry] = useState(10)
+  const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en')
   const [connStatus, setConnStatus] = useState<'no' | 'ok' | 'checking'>('no')
   const [settingsTab, setSettingsTab] = useState('creds')
@@ -426,7 +426,8 @@ export default function App() {
     const templateName = type === 'received' ? tpl1Name : tpl2Name
     const templateLang = type === 'received' ? tpl1Lang : tpl2Lang
     const templateBody = type === 'received' ? tpl1Body : tpl2Body
-    const invoiceLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/invoice/INV-${rec.docNum || rec.doc_num}${type === 'final' ? '-final' : ''}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
+    const invoiceLinkBase = cfgLinkBase || 'https://www.devi-jewellers.com'
+    const invoiceLink = `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}${type === 'final' ? '-final' : ''}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
     const params = type === 'received'
       ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]
       : [rec.name || rec.customer_name, rec.metal, String(rec.finalAmount || rec.final_amount || rec.amount || rec.estimated_cost)]
@@ -1652,7 +1653,7 @@ export default function App() {
               <div className="divider" />
               <div className="sec-label">Invoice PDF link settings</div>
               <div className="grid2">
-                <div className="field"><label>Invoice link base URL</label><input value={cfgLinkBase} onChange={e => setCfgLinkBase(e.target.value)} /><div className="hint">Your app URL is auto-used for invoice links. Links format: [your-app]/api/invoice/INV-JR1001-abc123</div></div>
+                <div className="field"><label>Invoice link base URL</label><input value={cfgLinkBase} onChange={e => setCfgLinkBase(e.target.value)} placeholder="https://www.devi-jewellers.com" /><div className="hint">Enter your custom domain (e.g., https://www.devi-jewellers.com). Leave empty to use default.</div></div>
                 <div className="field"><label>Link expiry (days)</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /><div className="hint">Invoice link expires after this many days. Default: 10 days.</div></div>
               </div>
               <div className="btn-row">
