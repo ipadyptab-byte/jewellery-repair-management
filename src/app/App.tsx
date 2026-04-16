@@ -171,7 +171,7 @@ function generateInvoiceLink(docNum: string, type: string, baseUrl: string, expD
   const token = randTok(8)
   const expDate = fmtDate(addDays(new Date(), expDays).toISOString())
   const suffix = type === 'final' ? '-final' : ''
-  return { url: `${baseUrl.replace(/\/$/, '')}/INV-${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`, expDate }
+  return { url: `${baseUrl.replace(/\/$/, '')}/api/invoice/INV-${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`, expDate }
 }
 
 function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', baseUrl: string, expDays: number, shopName: string = 'Devi Jewellers', shopAddress: string = '') {
@@ -428,7 +428,11 @@ export default function App() {
     const templateBody = type === 'received' ? tpl1Body : tpl2Body
     // Always use your custom domain - default to devi-jewellers.com
     const invoiceLinkBase = 'https://www.devi-jewellers.com'
-    const invoiceLink = `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}${type === 'final' ? '-final' : ''}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
+    // Generate link with /api/invoice/ path
+    const token = randTok(8)
+    const suffix = type === 'final' ? '-final' : ''
+    const expDate = fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')
+    const invoiceLink = `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
     const params = type === 'received'
       ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]
       : [rec.name || rec.customer_name, rec.metal, String(rec.finalAmount || rec.final_amount || rec.amount || rec.estimated_cost)]
