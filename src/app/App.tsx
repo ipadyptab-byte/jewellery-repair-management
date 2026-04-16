@@ -428,11 +428,8 @@ export default function App() {
     const templateBody = type === 'received' ? tpl1Body : tpl2Body
     // Always use your custom domain - default to devi-jewellers.com
     const invoiceLinkBase = 'https://www.devi-jewellers.com'
-    // Generate link with /api/invoice/ path
-    const token = randTok(8)
-    const suffix = type === 'final' ? '-final' : ''
-    const expDate = fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')
-    const invoiceLink = `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
+    // Use simple /r/ format: https://www.devi-jewellers.com/r/JR1077
+    const invoiceLink = `${invoiceLinkBase}/r/JR${rec.docNum || rec.doc_num}`
     const params = type === 'received'
       ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]
       : [rec.name || rec.customer_name, rec.metal, String(rec.finalAmount || rec.final_amount || rec.amount || rec.estimated_cost)]
