@@ -232,44 +232,59 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
   return { url: '', expDate: '' }
 }
 
-/* ─── Thermal Print for 4" Printer ─── */
+/* ─── Thermal Print for 3" Printer ─── */
 function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shopName: string, shopAddress: string) {
   // Use default address if not set
   const address = shopAddress || 'Nashik, Maharashtra'
   const isFinal = type === 'final'
+  
+  // Get data values
+  const docNo = rec.docNum || rec.doc_num || ''
+  const dateVal = fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString())
+  const customer = rec.name || rec.customer_name || ''
+  const mobile = rec.mobile || ''
+  const item = rec.jewellery || rec.item_type || ''
+  const metal = rec.metal || ''
+  const amount = rec.amount || rec.estimated_cost || 0
+  const finalAmount = rec.finalAmount || rec.final_amount || 0
   
   // Create print-friendly HTML in current window
   const printContent = `
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="utf-8">
       <title>Print Receipt</title>
       <style>
-        @page { size: 100mm; margin: 0; }
-        body { 
-          font-family: Arial, sans-serif; 
-          width: 100mm; 
-          margin: 0; 
-          padding: 5mm; 
-          font-size: 12px;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @page { size: 76mm 150mm; margin: 0; }
+        html, body {
+          width: 72mm;
+          margin: 0;
+          padding: 1mm;
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 11px;
+          line-height: 1.1;
+          color: #000;
+          background: #fff;
         }
-        .header { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 5px; }
-        .address { text-align: center; font-size: 10px; margin-bottom: 10px; }
-        .divider { border-top: 1px dashed #000; margin: 8px 0; }
-        .title { text-align: center; font-weight: bold; font-size: 14px; margin: 8px 0; }
-        table { width: 100%; font-size: 11px; }
-        td { padding: 2px 0; }
-        .right { text-align: right; }
+        .header { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 2px; color: #000; }
+        .address { text-align: center; font-size: 8px; margin-bottom: 4px; color: #000; }
+        .divider { border-top: 1px dashed #000; margin: 3px 0; }
+        .title { text-align: center; font-weight: bold; font-size: 12px; margin: 3px 0; color: #000; }
+        .row { display: flex; justify-content: space-between; padding: 1px 0; color: #000; }
+        .label { color: #000; }
+        .value { font-weight: bold; color: #000; }
         .bold { font-weight: bold; }
-        .big { font-size: 14px; }
-        .footer { text-align: center; font-size: 10px; margin-top: 10px; }
+        .big { font-size: 12px; }
+        .footer { text-align: center; font-size: 8px; margin-top: 4px; color: #000; }
         .btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
         .btn { padding: 10px 20px; font-size: 14px; cursor: pointer; border: none; border-radius: 4px; }
         .btn-print { background: #25D366; color: white; }
         .btn-dash { background: #666; color: white; }
         @media print {
-          .btn-row { display: none; }
-          body { padding: 0; }
+          .btn-row { display: none !important; }
+          html, body { padding: 0; }
         }
       </style>
     </head>
@@ -279,31 +294,25 @@ function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shop
       <div class="divider"></div>
       <div class="title">${isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div>
       <div class="divider"></div>
-      <table>
-        <tr><td>Doc No:</td><td class="right">${rec.docNum || rec.doc_num || ''}</td></tr>
-        <tr><td>Date:</td><td class="right">${fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString())}</td></tr>
-        <tr><td>Customer:</td><td class="right">${rec.name || rec.customer_name || ''}</td></tr>
-        <tr><td>Mobile:</td><td class="right">${rec.mobile || ''}</td></tr>
-      </table>
+      <div class="row"><span class="label">Doc No:</span><span class="value">${docNo}</span></div>
+      <div class="row"><span class="label">Date:</span><span class="value">${dateVal}</span></div>
+      <div class="row"><span class="label">Customer:</span><span class="value">${customer}</span></div>
+      <div class="row"><span class="label">Mobile:</span><span class="value">${mobile}</span></div>
       <div class="divider"></div>
-      <table>
-        <tr><td>Item:</td><td class="right">${rec.jewellery || rec.item_type || ''}</td></tr>
-        <tr><td>Metal:</td><td class="right">${rec.metal || ''}</td></tr>
-      </table>
+      <div class="row"><span class="label">Item:</span><span class="value">${item}</span></div>
+      <div class="row"><span class="label">Metal:</span><span class="value">${metal}</span></div>
       <div class="divider"></div>
-      <table>
-        ${isFinal ? `
-        <tr><td>Estimated:</td><td class="right">&#8377; ${rec.amount || 0}</td></tr>
-        <tr><td class="bold big">Final:</td><td class="right bold big">&#8377; ${rec.finalAmount || rec.final_amount || 0}</td></tr>
-        ` : `
-        <tr><td class="bold big">Estimated:</td><td class="right bold big">&#8377; ${rec.amount || rec.estimated_cost || 0}</td></tr>
-        `}
-      </table>
+      ${isFinal ? `
+      <div class="row"><span class="label">Estimated:</span><span class="value">Rs ${amount}</span></div>
+      <div class="row bold big"><span class="label">Final:</span><span class="value">Rs ${finalAmount}</span></div>
+      ` : `
+      <div class="row bold big"><span class="label">Estimated:</span><span class="value">Rs ${amount}</span></div>
+      `}
       <div class="divider"></div>
       <div class="footer">Thank you for trusting us!</div>
       <div class="btn-row">
-        <button class="btn btn-print" onclick="window.print()">🖨️ Print</button>
-        <button class="btn btn-dash" onclick="window.location.href=window.location.href">🔙 Return to Dashboard</button>
+        <button class="btn btn-print" onclick="window.print()">Print</button>
+        <button class="btn btn-dash" onclick="window.location.href=window.location.href">Back</button>
       </div>
     </body>
     </html>
@@ -1162,39 +1171,27 @@ export default function App() {
               <div className="divider"></div>
               <div className="title">{printRec.type === 'final' ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div>
               <div className="divider"></div>
-              <table>
-                <tbody>
-                  <tr><td>Doc No:</td><td className="right">{printRec.rec.docNum || printRec.rec.doc_num || ''}</td></tr>
-                  <tr><td>Date:</td><td className="right">{fmtDate(printRec.rec.receivedDate || printRec.rec.created_at || new Date().toISOString())}</td></tr>
-                  <tr><td>Customer:</td><td className="right">{printRec.rec.name || printRec.rec.customer_name || ''}</td></tr>
-                  <tr><td>Mobile:</td><td className="right">{printRec.rec.mobile || ''}</td></tr>
-                </tbody>
-              </table>
+              <div className="row"><span className="label">Doc No:</span><span className="value">{printRec.rec.docNum || printRec.rec.doc_num || ''}</span></div>
+              <div className="row"><span className="label">Date:</span><span className="value">{fmtDate(printRec.rec.receivedDate || printRec.rec.created_at || new Date().toISOString())}</span></div>
+              <div className="row"><span className="label">Customer:</span><span className="value">{printRec.rec.name || printRec.rec.customer_name || ''}</span></div>
+              <div className="row"><span className="label">Mobile:</span><span className="value">{printRec.rec.mobile || ''}</span></div>
               <div className="divider"></div>
-              <table>
-                <tbody>
-                  <tr><td>Item:</td><td className="right">{printRec.rec.jewellery || printRec.rec.item_type || ''}</td></tr>
-                  <tr><td>Metal:</td><td className="right">{printRec.rec.metal || ''}</td></tr>
-                </tbody>
-              </table>
+              <div className="row"><span className="label">Item:</span><span className="value">{printRec.rec.jewellery || printRec.rec.item_type || ''}</span></div>
+              <div className="row"><span className="label">Metal:</span><span className="value">{printRec.rec.metal || ''}</span></div>
               <div className="divider"></div>
-              <table>
-                <tbody>
-                  {printRec.type === 'final' ? (
-                    <>
-                      <tr><td>Estimated:</td><td className="right">&#8377; {printRec.rec.amount || 0}</td></tr>
-                      <tr><td className="bold big">Final:</td><td className="right bold big">&#8377; {printRec.rec.finalAmount || printRec.rec.final_amount || 0}</td></tr>
-                    </>
-                  ) : (
-                    <tr><td className="bold big">Estimated:</td><td className="right bold big">&#8377; {printRec.rec.amount || printRec.rec.estimated_cost || 0}</td></tr>
-                  )}
-                </tbody>
-              </table>
+              {printRec.type === 'final' ? (
+                <>
+                  <div className="row"><span className="label">Estimated:</span><span className="value">Rs {printRec.rec.amount || 0}</span></div>
+                  <div className="row bold big"><span className="label">Final:</span><span className="value">Rs {printRec.rec.finalAmount || printRec.rec.final_amount || 0}</span></div>
+                </>
+              ) : (
+                <div className="row bold big"><span className="label">Estimated:</span><span className="value">Rs {printRec.rec.amount || printRec.rec.estimated_cost || 0}</span></div>
+              )}
               <div className="divider"></div>
               <div className="footer">Thank you for trusting us!</div>
             </div>
             <div className="btn-row" style={{ marginTop: '15px' }}>
-              <button className="btn btn-primary" onClick={() => { if (printRec) { const rec = printRec.rec; const type = printRec.type; const shopName = cfgShop || 'Devi Jewellers'; const address = cfgAddr || 'Nashik, Maharashtra'; const isFinal = type === 'final'; const printContent = `<!DOCTYPE html><html><head><title>Print Receipt</title><style>@page { size: 100mm auto; margin: 0; }body { font-family: Arial, sans-serif; width: 100mm; margin: 0; padding: 2mm; font-size: 11px; line-height: 1.3; }.header { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 3px; }.address { text-align: center; font-size: 9px; margin-bottom: 8px; }.divider { border-top: 1px dashed #000; margin: 6px 0; }.title { text-align: center; font-weight: bold; font-size: 12px; margin: 6px 0; }table { width: 100%; font-size: 10px; }td { padding: 1px 0; }.right { text-align: right; }.bold { font-weight: bold; }.big { font-size: 12px; }.footer { text-align: center; font-size: 9px; margin-top: 8px; }</style></head><body><div class="header">${shopName}</div><div class="address">${address}</div><div class="divider"></div><div class="title">${isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div><div class="divider"></div><table><tr><td>Doc No:</td><td class="right">${rec.docNum || rec.doc_num || ''}</td></tr><tr><td>Date:</td><td class="right">${fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString())}</td></tr><tr><td>Customer:</td><td class="right">${rec.name || rec.customer_name || ''}</td></tr><tr><td>Mobile:</td><td class="right">${rec.mobile || ''}</td></tr></table><div class="divider"></div><table><tr><td>Item:</td><td class="right">${rec.jewellery || rec.item_type || ''}</td></tr><tr><td>Metal:</td><td class="right">${rec.metal || ''}</td></tr></table><div class="divider"></div><table>${isFinal ? `<tr><td>Estimated:</td><td class="right">&#8377; ${rec.amount || 0}</td></tr><tr><td class="bold big">Final:</td><td class="right bold big">&#8377; ${rec.finalAmount || rec.final_amount || 0}</td></tr>` : `<tr><td class="bold big">Estimated:</td><td class="right bold big">&#8377; ${rec.amount || rec.estimated_cost || 0}</td></tr>`}</table><div class="divider"></div><div class="footer">Thank you for trusting us!</div><script>window.onload=function(){window.print();window.close()}</script></body></html>`; const printWindow = window.open('', '_blank'); if (printWindow) { printWindow.document.open(); printWindow.document.write(printContent); printWindow.document.close(); } setPrintRec(null); setPage('dashboard') } }}>🖨️ Print</button>
+              <button className="btn btn-primary" onClick={() => { if (printRec) { const rec = printRec.rec; const type = printRec.type; const shopName = cfgShop || 'Devi Jewellers'; const address = cfgAddr || 'Nashik, Maharashtra'; const isFinal = type === 'final'; const docNo = rec.docNum || rec.doc_num || ''; const dateVal = fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString()); const customer = rec.name || rec.customer_name || ''; const mobile = rec.mobile || ''; const item = rec.jewellery || rec.item_type || ''; const metal = rec.metal || ''; const amount = rec.amount || rec.estimated_cost || 0; const finalAmount = rec.finalAmount || rec.final_amount || 0; const printContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Print Receipt</title><style>*{box-sizing:border-box;margin:0;padding:0}@page{size:76mm 150mm;margin:0}html,body{width:72mm;margin:0;padding:1mm;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.1;color:#000;background:#fff}.header{text-align:center;font-weight:bold;font-size:14px;margin-bottom:2px;color:#000}.address{text-align:center;font-size:8px;margin-bottom:4px;color:#000}.divider{border-top:1px dashed #000;margin:3px 0}.title{text-align:center;font-weight:bold;font-size:12px;margin:3px 0;color:#000}.row{display:flex;justify-content:space-between;padding:1px 0;color:#000}.label{color:#000}.value{font-weight:bold;color:#000}.bold{font-weight:bold}.big{font-size:12px}.footer{text-align:center;font-size:8px;margin-top:4px;color:#000}</style></head><body><div class="header">${shopName}</div><div class="address">${address}</div><div class="divider"></div><div class="title">${isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div><div class="divider"></div><div class="row"><span class="label">Doc No:</span><span class="value">${docNo}</span></div><div class="row"><span class="label">Date:</span><span class="value">${dateVal}</span></div><div class="row"><span class="label">Customer:</span><span class="value">${customer}</span></div><div class="row"><span class="label">Mobile:</span><span class="value">${mobile}</span></div><div class="divider"></div><div class="row"><span class="label">Item:</span><span class="value">${item}</span></div><div class="row"><span class="label">Metal:</span><span class="value">${metal}</span></div><div class="divider"></div>${isFinal ? `<div class="row"><span class="label">Estimated:</span><span class="value">Rs ${amount}</span></div><div class="row bold big"><span class="label">Final:</span><span class="value">Rs ${finalAmount}</span></div>` : `<div class="row bold big"><span class="label">Estimated:</span><span class="value">Rs ${amount}</span></div>`}<div class="divider"></div><div class="footer">Thank you for trusting us!</div><script>window.onload=function(){window.print();window.close()}</script></body></html>`; const printWindow = window.open('', '_blank'); if (printWindow) { printWindow.document.open(); printWindow.document.write(printContent); printWindow.document.close(); } setPrintRec(null); setPage('dashboard') } }}>🖨️ Print</button>
               <button className="btn" style={{ backgroundColor: '#25D366', color: 'white' }} onClick={async () => { if (printRec) { try { await sendWhatsApp(printRec.rec, printRec.type); alert('WhatsApp sent!'); } catch { alert('Failed to send WhatsApp'); } } }}>💬 WhatsApp</button>
               <button className="btn" onClick={() => setPrintRec(null)}>🔙 Return to Dashboard</button>
             </div>

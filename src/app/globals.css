@@ -198,54 +198,61 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;f
   #printable{position:absolute;left:0;top:0;font-family:monospace;font-size:11px;width:280px}
 }
 
-/* Thermal Print Preview - 4" (100mm) thermal paper */
+/* Thermal Print Preview - 3" (76mm) thermal paper */
 .thermal-preview {
-  width: 100mm;
-  max-width: 100mm;
+  width: 72mm;
+  max-width: 72mm;
   margin: 0 auto;
-  padding: 3mm;
+  padding: 1mm;
   border: 1px dashed #ccc;
   background: #fff;
-  font-family: Arial, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   font-size: 11px;
-  line-height: 1.3;
+  line-height: 1.1;
+  color: #000;
+  box-sizing: border-box;
 }
-.thermal-preview .shop-name { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 3px; }
-.thermal-preview .shop-addr { text-align: center; font-size: 9px; margin-bottom: 8px; }
-.thermal-preview .divider { border-top: 1px dashed #000; margin: 6px 0; }
-.thermal-preview .title { text-align: center; font-weight: bold; font-size: 12px; margin: 6px 0; }
-.thermal-preview table { width: 100%; font-size: 10px; }
-.thermal-preview td { padding: 1px 0; }
-.thermal-preview .right { text-align: right; }
+.thermal-preview * { box-sizing: border-box; }
+.thermal-preview .shop-name { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 2px; color: #000; }
+.thermal-preview .shop-addr { text-align: center; font-size: 8px; margin-bottom: 4px; color: #000; }
+.thermal-preview .divider { border-top: 1px dashed #000; margin: 3px 0; }
+.thermal-preview .title { text-align: center; font-weight: bold; font-size: 12px; margin: 3px 0; color: #000; }
+.thermal-preview .row { display: flex; justify-content: space-between; padding: 1px 0; color: #000; }
+.thermal-preview .label { color: #000; }
+.thermal-preview .value { font-weight: bold; color: #000; }
 .thermal-preview .bold { font-weight: bold; }
 .thermal-preview .big { font-size: 12px; }
-.thermal-preview .footer { text-align: center; font-size: 9px; margin-top: 8px; }
+.thermal-preview .footer { text-align: center; font-size: 8px; margin-top: 4px; color: #000; }
 
 @media print {
   @page {
-    size: 100mm auto;
+    size: 76mm 150mm;
     margin: 0;
   }
-  body {
+  html, body {
     margin: 0;
     padding: 0;
   }
   .thermal-preview {
     display: block !important;
-    width: 100mm !important;
-    max-width: 100mm !important;
-    padding: 2mm !important;
+    width: 72mm !important;
+    max-width: 72mm !important;
+    padding: 0.5mm !important;
     border: none !important;
     margin: 0 !important;
     visibility: visible !important;
+    color: #000 !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
   }
-  .thermal-preview .divider { margin: 4px 0 !important; }
-  .thermal-preview .shop-name { font-size: 14px !important; }
-  .thermal-preview .shop-addr { font-size: 9px !important; }
-  .thermal-preview .title { font-size: 12px !important; }
-  .thermal-preview table { font-size: 10px !important; }
-  .thermal-preview .big { font-size: 12px !important; }
-  .thermal-preview .footer { font-size: 9px !important; }
+  .thermal-preview .divider { margin: 2px 0 !important; }
+  .thermal-preview .shop-name { font-size: 13px !important; color: #000 !important; margin-bottom: 1px !important; }
+  .thermal-preview .shop-addr { font-size: 7px !important; color: #000 !important; margin-bottom: 2px !important; }
+  .thermal-preview .title { font-size: 11px !important; color: #000 !important; margin: 2px 0 !important; }
+  .thermal-preview .row { padding: 0.5px 0 !important; }
+  .thermal-preview .value { color: #000 !important; }
+  .thermal-preview .big { font-size: 11px !important; }
+  .thermal-preview .footer { font-size: 7px !important; color: #000 !important; margin-top: 2px !important; }
   .app, .header, .page, .card, .btn-row, .card-title {
     display: none !important;
     visibility: hidden !important;
