@@ -10,10 +10,11 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const expParam = searchParams.get('exp')
     
-    // Extract doc number from ID (e.g., INV-JR1001-final -> JR1001)
-    const docMatch = id.match(/INV-(.+?)(?:-final)?$/)
+    // Extract doc number from ID (e.g., INV-JR1001-final-a3f9b2 -> JR1001, or INV-JR1001-final -> JR1001, or INV-JR1001 -> JR1001)
+    const docMatch = id.match(/^INV-(.+?)(?:-final)?(?:-[a-f0-9]+)?$/)
     if (!docMatch) {
-      return NextResponse.json({ error: 'Invalid invoice ID' }, { status: 400 })
+      const errorHtml = `<!DOCTYPE html><html><head><title>Error</title></head><body style="font-family:Arial;padding:40px;text-align:center;"><h2>Invalid Invoice Link</h2><p>The invoice ID "${id}" is not valid.</p><p>Please contact the shop for help.</p></body></html>`
+      return new NextResponse(errorHtml, { headers: { 'Content-Type': 'text/html' }, status: 400 })
     }
     
     const docNum = docMatch[1]
@@ -27,7 +28,8 @@ export async function GET(
       const expDate = new Date(expParam.replace(/(\d{2})(\d{2})(\d{4})/, '$3-$2-$1'))
       const now = new Date()
       if (now > expDate) {
-        return NextResponse.json({ error: 'Invoice link has expired' }, { status: 410 })
+        const expiredHtml = `<!DOCTYPE html><html><head><title>Expired</title></head><body style="font-family:Arial;padding:40px;text-align:center;"><h2>Invoice Link Expired</h2><p>This invoice link has expired. Please contact the shop for a new link.</p></body></html>`
+        return new NextResponse(expiredHtml, { headers: { 'Content-Type': 'text/html' }, status: 410 })
       }
     }
     
@@ -38,7 +40,8 @@ export async function GET(
     )
     
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+      const notFoundHtml = `<!DOCTYPE html><html><head><title>Not Found</title></head><body style="font-family:Arial;padding:40px;text-align:center;"><h2>Invoice Not Found</h2><p>No invoice found for document: ${docNum}</p><p>Please contact the shop for help.</p></body></html>`
+      return new NextResponse(notFoundHtml, { headers: { 'Content-Type': 'text/html' }, status: 404 })
     }
     
     const rec = result.rows[0]
@@ -161,6 +164,7 @@ export async function GET(
     })
   } catch (error) {
     console.error('Error generating invoice:', error)
-    return NextResponse.json({ error: 'Failed to generate invoice' }, { status: 500 })
+    const errorHtml = `<!DOCTYPE html><html><head><title>Error</title></head><body style="font-family:Arial;padding:40px;text-align:center;"><h2>Error Loading Invoice</h2><p>Something went wrong. Please try again later or contact the shop.</p></body></html>`
+    return new NextResponse(errorHtml, { headers: { 'Content-Type': 'text/html' }, status: 500 })
   }
 }
