@@ -1286,7 +1286,7 @@ export default function App() {
             {isEditing ? (
               <>
                 <button className="btn btn-primary" onClick={updateReceipt}><IcPdf />Update Record</button>
-                <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', cfgLinkBase, cfgExpiry, cfgShop, cfgAddr)}>Print PDF</button>
+                <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', 'https://jewellery-repair-management.vercel.app', cfgExpiry, cfgShop, cfgAddr)}>Print PDF</button>
                 <button className="btn" onClick={() => savedRec && printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr)}>Thermal Print</button>
                 <button className="btn" onClick={cancelEdit}>Cancel Edit</button>
               </>
@@ -1302,7 +1302,7 @@ export default function App() {
         {savedRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Invoice PDF &amp; WhatsApp — <span style={{ color: 'var(--brand)' }}>{savedRec.docNum || savedRec.doc_num}</span></div>
-            <InvoicePanel rec={savedRec} type="received" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} onSendWhatsApp={() => sendWhatsApp(savedRec, 'received')} shopName={cfgShop} shopAddress={cfgAddr} />
+            <InvoicePanel rec={savedRec} type="received" baseUrl="https://jewellery-repair-management.vercel.app" expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} onSendWhatsApp={() => sendWhatsApp(savedRec, 'received')} shopName={cfgShop} shopAddress={cfgAddr} />
             <Msg text={msg['wa-recv']?.text || ''} ok={msg['wa-recv']?.ok || false} />
           </div>
         )}
@@ -1407,7 +1407,7 @@ export default function App() {
         {!kiEditing && finalRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Final Invoice — <span style={{ color: 'var(--brand)' }}>{finalRec.docNum}</span></div>
-            <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} shopName={cfgShop} shopAddress={cfgAddr} />
+            <InvoicePanel rec={finalRec} type="final" baseUrl="https://jewellery-repair-management.vercel.app" expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} shopName={cfgShop} shopAddress={cfgAddr} />
             <Msg text={msg['wa-final']?.text || ''} ok={msg['wa-final']?.ok || false} />
           </div>
         )}
