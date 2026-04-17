@@ -621,6 +621,14 @@ export default function App() {
           if (settings.shopAddress) setCfgAddr(settings.shopAddress);
           if (settings.whatsappApiKey) setRmToken(settings.whatsappApiKey);
           if (settings.whatsappApiUrl) setRmApiUrl(settings.whatsappApiUrl);
+          if (settings.whatsappRmUser) setRmUser(settings.whatsappRmUser);
+          if (settings.whatsappRmPass) setRmPass(settings.whatsappRmPass);
+          if (settings.whatsappRmWaba) setRmWaba(settings.whatsappRmWaba);
+          if (settings.whatsappRmPhoneid) setRmPhoneid(settings.whatsappRmPhoneid);
+          if (settings.whatsappRmWaphone) setRmWaphone(settings.whatsappRmWaphone);
+          if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
+          if (settings.whatsappRmApiUrl) setRmApiUrl(settings.whatsappRmApiUrl);
+          if (settings.whatsappRmApiVersion) setRmApiver(settings.whatsappRmApiVersion);
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
           if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
         }
@@ -1713,11 +1721,20 @@ export default function App() {
                         whatsappApiUrl: rmApiUrl,
                         invoiceLinkBase: cfgLinkBase,
                         currency: 'INR',
-                        taxRate: 0
+                        taxRate: 0,
+                        // WhatsApp Route Mobile credentials
+                        whatsappRmUser: rmUser,
+                        whatsappRmPass: rmPass,
+                        whatsappRmWaba: rmWaba,
+                        whatsappRmPhoneid: rmPhoneid,
+                        whatsappRmWaphone: rmWaphone,
+                        whatsappRmToken: rmToken,
+                        whatsappRmApiUrl: rmApiUrl,
+                        whatsappRmApiVersion: rmApiver
                       })
                     });
                     if (response.ok) {
-                      showMessage('creds', 'Credentials saved.', true);
+                      showMessage('creds', 'Credentials saved to database!', true);
                     } else {
                       // API failed but localStorage saved
                       const err = await response.json();

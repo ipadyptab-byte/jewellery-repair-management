@@ -21,7 +21,16 @@ export async function GET() {
       currency: 'INR',
       taxRate: 0,
       invoiceLinkBase: '',
-      invoiceExpiry: 10
+      invoiceExpiry: 10,
+      // WhatsApp Route Mobile credentials
+      whatsappRmUser: '',
+      whatsappRmPass: '',
+      whatsappRmWaba: '',
+      whatsappRmPhoneid: '',
+      whatsappRmWaphone: '',
+      whatsappRmToken: '',
+      whatsappRmApiUrl: '',
+      whatsappRmApiVersion: 'v17.0'
     };
 
     result.rows.forEach((row: any) => {
@@ -46,9 +55,29 @@ export async function GET() {
           break;
         case 'whatsapp_rm_token':
           settings.whatsappApiKey = row.value || '';
+          settings.whatsappRmToken = row.value || '';
           break;
         case 'whatsapp_rm_api_url':
           settings.whatsappApiUrl = row.value || '';
+          settings.whatsappRmApiUrl = row.value || '';
+          break;
+        case 'whatsapp_rm_user':
+          settings.whatsappRmUser = row.value || '';
+          break;
+        case 'whatsapp_rm_pass':
+          settings.whatsappRmPass = row.value || '';
+          break;
+        case 'whatsapp_rm_waba':
+          settings.whatsappRmWaba = row.value || '';
+          break;
+        case 'whatsapp_rm_phoneid':
+          settings.whatsappRmPhoneid = row.value || '';
+          break;
+        case 'whatsapp_rm_waphone':
+          settings.whatsappRmWaphone = row.value || '';
+          break;
+        case 'whatsapp_rm_api_version':
+          settings.whatsappRmApiVersion = row.value || 'v17.0';
           break;
         case 'invoice_link_base':
           settings.invoiceLinkBase = row.value || '';
@@ -98,7 +127,16 @@ export async function POST(request: NextRequest) {
       currency,
       taxRate,
       invoiceLinkBase,
-      invoiceExpiry
+      invoiceExpiry,
+      // WhatsApp Route Mobile credentials
+      whatsappRmUser,
+      whatsappRmPass,
+      whatsappRmWaba,
+      whatsappRmPhoneid,
+      whatsappRmWaphone,
+      whatsappRmToken,
+      whatsappRmApiUrl,
+      whatsappRmApiVersion
     } = body;
 
     const pool = sql();
@@ -111,8 +149,14 @@ export async function POST(request: NextRequest) {
       'shop_gst': shopGst || '',
       'shop_city': shopCity || '',
       'shop_address': shopAddress || '',
-      'whatsapp_rm_token': whatsappApiKey || '',
-      'whatsapp_rm_api_url': whatsappApiUrl || '',
+      'whatsapp_rm_token': whatsappApiKey || whatsappRmToken || '',
+      'whatsapp_rm_api_url': whatsappApiUrl || whatsappRmApiUrl || '',
+      'whatsapp_rm_user': whatsappRmUser || '',
+      'whatsapp_rm_pass': whatsappRmPass || '',
+      'whatsapp_rm_waba': whatsappRmWaba || '',
+      'whatsapp_rm_phoneid': whatsappRmPhoneid || '',
+      'whatsapp_rm_waphone': whatsappRmWaphone || '',
+      'whatsapp_rm_api_version': whatsappRmApiVersion || 'v17.0',
       'invoice_link_base': invoiceLinkBase || '',
       'invoice_expiry_days': invoiceExpiry ? String(invoiceExpiry) : '10',
       'currency': currency || 'INR',
