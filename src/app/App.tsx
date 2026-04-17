@@ -171,7 +171,12 @@ function generateInvoiceLink(docNum: string, type: string, baseUrl: string, expD
   const token = randTok(8)
   const expDate = fmtDate(addDays(new Date(), expDays).toISOString())
   const suffix = type === 'final' ? '-final' : ''
-  return { url: `${baseUrl.replace(/\/$/, '')}/api/invoice/INV-${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`, expDate }
+  // Use /r/ format for custom domain (devi-jewellers.com), /api/invoice/ for Vercel
+  const isCustomDomain = baseUrl.includes('devi-jewellers')
+  const url = isCustomDomain
+    ? `${baseUrl.replace(/\/$/, '')}/r/INV-JR${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`
+    : `${baseUrl.replace(/\/$/, '')}/api/invoice/INV-${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`
+  return { url, expDate }
 }
 
 function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', baseUrl: string, expDays: number, shopName: string = 'Devi Jewellers', shopAddress: string = '') {
@@ -430,9 +435,12 @@ export default function App() {
     const invoiceLinkBase = cfgLinkBase || 'https://jewellery-repair-management.vercel.app'
     // Use /api/invoice/ format for Vercel, or /r/ format for custom domain
     const isCustomDomain = invoiceLinkBase.includes('devi-jewellers')
+    const token = randTok(8)
+    const expDate = fmtDate(addDays(new Date(), cfgExpiry).toISOString()).replace(/ /g, '')
+    const suffix = type === 'final' ? '-final' : ''
     const invoiceLink = isCustomDomain 
-      ? `${invoiceLinkBase}/r/INV-JR${rec.docNum || rec.doc_num}`
-      : `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}?exp=${fmtDate(addDays(new Date(), cfgExpiry)).replace(/ /g, '')}`
+      ? `${invoiceLinkBase}/r/INV-JR${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
+      : `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
     const params = type === 'received'
       ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]
       : [rec.name || rec.customer_name, rec.metal, String(rec.finalAmount || rec.final_amount || rec.amount || rec.estimated_cost)]
