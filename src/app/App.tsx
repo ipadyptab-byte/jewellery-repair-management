@@ -1673,8 +1673,7 @@ export default function App() {
                     <button className="btn btn-primary" onClick={async () => { 
                           printThermalReceipt(deliverRec, 'final', cfgShop || 'Devi Jewellers', cfgAddr || '');
                           // Update local state
-                          const updatedRecords = prev => prev.map((r: RepairRecord) => (r.docNum || r.doc_num) === (deliverRec?.docNum || deliverRec?.doc_num) ? { ...r, status: 'delivered', deliveryDate: new Date().toISOString() } : r);
-                          setRecords(updatedRecords);
+                          setRecords((prev: RepairRecord[]) => prev.map((r: RepairRecord) => (r.docNum || r.doc_num) === (deliverRec?.docNum || deliverRec?.doc_num) ? { ...r, status: 'delivered', deliveryDate: new Date().toISOString() } : r));
                           // Save to database
                           try {
                             const docNum = deliverRec?.docNum || deliverRec?.doc_num;
