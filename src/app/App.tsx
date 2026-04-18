@@ -1222,10 +1222,11 @@ export default function App() {
 
       // Save to database
       try {
-        const response = await fetch('/api/records/' + koDoc, {
+        const response = await fetch('/api/records', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            doc_num: koDoc,
             karagir: koKaragir,
             karagir_date: new Date().toISOString(),
             status: 'with_karagir',
@@ -1267,10 +1268,11 @@ export default function App() {
 
       // Save to database
       try {
-        const response = await fetch('/api/records/' + kiDoc, {
+        const response = await fetch('/api/records', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            doc_num: kiDoc,
             final_amount: parseFloat(kiAmount),
             completed_date: new Date().toISOString(),
             quality: kiQuality,
@@ -1677,10 +1679,10 @@ export default function App() {
                           // Save to database
                           try {
                             const docNum = deliverRec?.docNum || deliverRec?.doc_num;
-                            const response = await fetch('/api/records/' + docNum, {
+                            const response = await fetch('/api/records', {
                               method: 'PUT',
                               headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ status: 'delivered', delivery_date: new Date().toISOString() })
+                              body: JSON.stringify({ doc_num: docNum, status: 'delivered', delivery_date: new Date().toISOString() })
                             });
                             if (!response.ok) console.error('Failed to save delivery status to DB', response.status);
                           } catch (e) { console.error('Error saving delivery:', e); }
