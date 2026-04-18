@@ -41,17 +41,18 @@ export async function POST(req: NextRequest) {
       phone = '91' + phone; // Add India country code if not present
     }
 
-    // Build OTP template payload for Route Mobile - Using media_template format with template_name
-    // Template: delivery_otp (ID: 970657965616814)
+    // Build OTP template payload - Using the same format that works in browser
+    // Template: delivery_otp
     const payload = {
       phone: phone,
       media: {
         type: 'media_template',
-        template_name: 'delivery_otp', // Use template_name not template_id
+        template_name: 'delivery_otp',
         lang_code: 'en',
-        body: [],
-        button: [
-          { type: 'OTP', otp_type: 'COPY_CODE' }
+        body: [
+          { text: customerName || 'Customer' },
+          { text: otp || '0000' },
+          { text: '10 mins' }
         ]
       }
     }
@@ -59,12 +60,12 @@ export async function POST(req: NextRequest) {
     // Use the correct Route Mobile API URL
     const rmApiUrl = 'https://apis.rmlconnect.net/wba/v1/messages';
     
-    console.log('📱 Sending OTP via Route Mobile API...');
+    console.log('📱 Sending OTP via Route Mobile API (same as browser)...');
     console.log('📱 URL:', rmApiUrl);
     console.log('📱 Payload:', JSON.stringify(payload, null, 2));
     
     try {
-      // Route Mobile uses API key in Authorization header
+      // Use same format as browser - works!
       const response = await fetch(rmApiUrl, {
         method: 'POST',
         headers: {
@@ -77,47 +78,21 @@ export async function POST(req: NextRequest) {
       const responseText = await response.text();
       console.log('📱 Route Mobile response:', response.status, responseText);
 
-      if (response.ok) {
+      // Check for success
+      if (response.ok || response.status === 202) {
+        let json;
+        try { json = JSON.parse(responseText); } catch {}
         return NextResponse.json({ 
           success: true, 
-          message: 'OTP sent successfully via WhatsApp!',
+          message: json?.message || 'OTP sent successfully!',
+          request_id: json?.request_id,
           response: responseText
         });
       } else {
-        // Try simple text message format
-        console.log('📱 Trying simple text message format...');
-        
-        const textPayload = {
-          phone: phone,
-          type: 'text',
-          message: 'Your OTP for jewellery delivery is: ' + (otp || '0000') + '. Valid for 10 minutes. - Devi Jewellers'
-        };
-        
-        const textResponse = await fetch(rmApiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token
-          },
-          body: JSON.stringify(textPayload)
-        });
-        
-        const textText = await textResponse.text();
-        console.log('📱 Text response:', textResponse.status, textText);
-        
-        if (textResponse.ok) {
-          return NextResponse.json({ 
-            success: true, 
-            message: 'OTP sent as text message!',
-            response: textText
-          });
-        }
-        
         return NextResponse.json({ 
           success: false, 
           error: 'Route Mobile API error',
           details: responseText,
-          text_error: textText,
           status: response.status
         }, { status: response.status });
       }
