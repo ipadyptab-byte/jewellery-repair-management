@@ -41,13 +41,13 @@ export async function POST(req: NextRequest) {
       phone = '91' + phone; // Add India country code if not present
     }
 
-    // Build OTP template payload for Route Mobile - Using media_template format
+    // Build OTP template payload for Route Mobile - Using media_template format with template_name
     // Template: delivery_otp (ID: 970657965616814)
     const payload = {
       phone: phone,
       media: {
         type: 'media_template',
-        template_id: '970657965616814',
+        template_name: 'delivery_otp', // Use template_name not template_id
         lang_code: 'en',
         body: [],
         button: [
@@ -84,35 +84,32 @@ export async function POST(req: NextRequest) {
           response: responseText
         });
       } else {
-        // Try alternative format if first fails
-        console.log('📱 Trying alternative payload format...');
+        // Try simple text message format
+        console.log('📱 Trying simple text message format...');
         
-        const altPayload = {
+        const textPayload = {
           phone: phone,
-          type: 'template',
-          template: {
-            id: '970657965616814',
-            language: 'en'
-          }
+          type: 'text',
+          message: 'Your OTP for jewellery delivery is: ' + (otp || '0000') + '. Valid for 10 minutes. - Devi Jewellers'
         };
         
-        const altResponse = await fetch(rmApiUrl, {
+        const textResponse = await fetch(rmApiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': token
           },
-          body: JSON.stringify(altPayload)
+          body: JSON.stringify(textPayload)
         });
         
-        const altText = await altResponse.text();
-        console.log('📱 Alt response:', altResponse.status, altText);
+        const textText = await textResponse.text();
+        console.log('📱 Text response:', textResponse.status, textText);
         
-        if (altResponse.ok) {
+        if (textResponse.ok) {
           return NextResponse.json({ 
             success: true, 
-            message: 'OTP sent successfully!',
-            response: altText
+            message: 'OTP sent as text message!',
+            response: textText
           });
         }
         
@@ -120,7 +117,7 @@ export async function POST(req: NextRequest) {
           success: false, 
           error: 'Route Mobile API error',
           details: responseText,
-          alt_details: altText,
+          text_error: textText,
           status: response.status
         }, { status: response.status });
       }
