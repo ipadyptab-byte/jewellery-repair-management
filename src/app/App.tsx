@@ -441,7 +441,7 @@ export default function App() {
         // Use server-side proxy to avoid CORS issues
         console.log('📱 Sending OTP via server proxy...', { mobile, customerName, otp, apiUrl: rmApiUrl });
         
-        const response = await fetch('/api/send-whatsapp', {
+        const response = await fetch('/api/send-whatsapp/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -2028,7 +2028,7 @@ export default function App() {
                   setConnStatus('checking');
                   try {
                     // Actually verify by making a test API call
-                    const response = await fetch('/api/send-whatsapp', {
+                    const response = await fetch('/api/send-whatsapp/', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
