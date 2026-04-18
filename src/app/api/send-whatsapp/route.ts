@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       phone: phone,
       media: {
         type: 'media_template',
-        template_name: 'delivery_otp', // Your approved template
+        template_name: 'delivery_otp',
         lang_code: 'en',
         body: [
           { text: customerName || 'Customer' },
@@ -58,41 +58,64 @@ export async function POST(req: NextRequest) {
           { text: shopName || 'Devi Jewellers' }
         ],
         button: [
-          { type: 'OTP',otp_type:'COPY_CODE',text:'COPY CODE' }
+          { type: 'OTP', otp_type: 'COPY_CODE', text: 'COPY CODE' }
         ]
       }
     }
 
-    console.log('📱 Sending OTP via server proxy to:', apiUrl)
-    console.log('📱 Payload:', JSON.stringify(payload, null, 2))
+    // Try multiple API URLs in case the main one is deprecated
+    const apiUrls = [
+      apiUrl,
+      'https://api.rmlconnect.net/wba/v1/messages',
+      'https://apis.rmlconnect.net/wba/v1/messages',
+      'https://wapi.rmlconnect.net/messages'
+    ];
+    
+    let responseText = '';
+    let responseStatus = 0;
+    let lastError = '';
+    
+    for (const url of apiUrls) {
+      if (!url) continue;
+      
+      console.log('📱 Trying API URL:', url);
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token
+          },
+          body: JSON.stringify(payload)
+        });
 
-    // Make the actual call to Route Mobile from server
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token
-      },
-      body: JSON.stringify(payload)
-    })
-
-    const responseText = await response.text()
-    console.log('📱 Route Mobile response:', response.status, responseText)
-
-    if (response.ok) {
-      return NextResponse.json({ 
-        success: true, 
-        message: 'OTP sent successfully',
-        response: responseText
-      })
-    } else {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Route Mobile API error',
-        details: responseText,
-        status: response.status
-      }, { status: response.status })
+        responseText = await response.text();
+        responseStatus = response.status;
+        
+        console.log('📱 Response from', url, ':', responseStatus, responseText.substring(0, 200));
+        
+        if (response.ok) {
+          return NextResponse.json({ 
+            success: true, 
+            message: 'OTP sent successfully',
+            response: responseText
+          });
+        }
+        
+        lastError = responseText;
+      } catch (e: any) {
+        lastError = e.message;
+        console.log('📱 Failed:', url, e.message);
+      }
     }
+
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Route Mobile API error - tried multiple endpoints',
+      details: lastError,
+      tried: apiUrls
+    }, { status: 404 });
   } catch (error: any) {
     console.error('❌ WhatsApp proxy error:', error)
     return NextResponse.json({ 
