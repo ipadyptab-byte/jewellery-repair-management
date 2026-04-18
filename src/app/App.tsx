@@ -792,8 +792,11 @@ export default function App() {
   
   // Fresh fetch from Supabase when navigating to Settings page => ensures instant sync across all devices
   useEffect(() => {
-    console.log('📋 Page changed to:', page);
-    if (page !== 'settings') return;
+    console.log('📋 useEffect triggered. page =', page, 'settingsTab =', settingsTab);
+    if (page !== 'settings') {
+      console.log('⏭️ Not settings page, skipping fetch');
+      return;
+    }
     
     console.log('🔄 Fetching fresh settings from Supabase for Settings page...');
     
@@ -802,6 +805,7 @@ export default function App() {
       try {
         // Fetch settings directly from API (Supabase) - no localStorage
         const settingsRes = await fetch('/api/settings');
+        console.log('📥 /api/settings response:', settingsRes.status, settingsRes.ok);
         if (settingsRes.ok) {
           const settings = await settingsRes.json();
           console.log('⚡ Settings loaded from DB:', settings);
