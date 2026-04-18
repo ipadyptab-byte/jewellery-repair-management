@@ -419,6 +419,12 @@ export default function App() {
   const [deliverDoc, setDeliverDoc] = useState(''); const [deliverRec, setDeliverRec] = useState<RepairRecord | null>(null); const [deliverSelected, setDeliverSelected] = useState(false); const [deliverOtp, setDeliverOtp] = useState(''); const [deliverOtpSent, setDeliverOtpSent] = useState(false); const [deliverOtpVerified, setDeliverOtpVerified] = useState(false); const [deliverOtpInput, setDeliverOtpInput] = useState('')
 
   const deliverSendOtp = async () => {
+    // First check if WhatsApp credentials are configured
+    if (!rmToken) {
+      showMessage('deliver', 'Please add WhatsApp API token in Settings → WhatsApp API → Credentials and click Save', false);
+      return;
+    }
+    
     const otp = String(Math.floor(1000 + Math.random() * 9000)); // 4-digit OTP
     const mobile = deliverRec?.mobile || deliverRec?.phone_number;
     const customerName = deliverRec?.name || deliverRec?.customer_name || 'Customer';
@@ -792,11 +798,18 @@ export default function App() {
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
           if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
           
-          // WhatsApp settings from DB
+          // WhatsApp settings - load from multiple possible sources for robustness
           if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
+          else if (settings.whatsappApiKey) setRmToken(settings.whatsappApiKey);
           if (settings.whatsappRmApiUrl) setRmApiUrl(settings.whatsappRmApiUrl);
+          else if (settings.whatsappApiUrl) setRmApiUrl(settings.whatsappApiUrl);
           if (settings.whatsappRmUser) setRmUser(settings.whatsappRmUser);
           if (settings.whatsappRmApiVersion) setRmApiver(settings.whatsappRmApiVersion);
+          
+          console.log('📱 WhatsApp settings loaded:', { 
+            hasToken: !!settings.whatsappRmToken || !!settings.whatsappApiKey, 
+            apiUrl: settings.whatsappRmApiUrl || settings.whatsappApiUrl 
+          });
         }
         
         // Also fetch fresh templates
@@ -849,16 +862,21 @@ export default function App() {
           if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
           
           // WhatsApp settings
-          if (settings.whatsappApiKey) setRmToken(settings.whatsappApiKey);
-          if (settings.whatsappApiUrl) setRmApiUrl(settings.whatsappApiUrl);
+          if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
+          else if (settings.whatsappApiKey) setRmToken(settings.whatsappApiKey);
+          if (settings.whatsappRmApiUrl) setRmApiUrl(settings.whatsappRmApiUrl);
+          else if (settings.whatsappApiUrl) setRmApiUrl(settings.whatsappApiUrl);
           if (settings.whatsappRmUser) setRmUser(settings.whatsappRmUser);
           if (settings.whatsappRmPass) setRmPass(settings.whatsappRmPass);
           if (settings.whatsappRmWaba) setRmWaba(settings.whatsappRmWaba);
           if (settings.whatsappRmPhoneid) setRmPhoneid(settings.whatsappRmPhoneid);
           if (settings.whatsappRmWaphone) setRmWaphone(settings.whatsappRmWaphone);
-          if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
-          if (settings.whatsappRmApiUrl) setRmApiUrl(settings.whatsappRmApiUrl);
           if (settings.whatsappRmApiVersion) setRmApiver(settings.whatsappRmApiVersion);
+          
+          console.log('📱 WhatsApp settings loaded (initial):', { 
+            hasToken: !!settings.whatsappRmToken || !!settings.whatsappApiKey, 
+            apiUrl: settings.whatsappRmApiUrl || settings.whatsappApiUrl 
+          });
           
           // Also save to localStorage as backup after loading from DB
           if (settings.businessName) localStorage.setItem('devi-jewellers-cfgShop', settings.businessName);
