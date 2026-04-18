@@ -509,6 +509,60 @@ export default function App() {
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
   const [printRec, setPrintRec] = useState<{rec: RepairRecord; type: 'received' | 'final'} | null>(null)
 
+  // Save shop info to Supabase - separate function (only shop info)
+  const saveShopInfo = async () => {
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName: cfgShop,
+          shopOwner: cfgOwner,
+          shopPhone: cfgPhone,
+          shopGst: cfgGst,
+          shopCity: cfgCity,
+          shopAddress: cfgAddr
+        })
+      });
+      if (response.ok) {
+        showMessage('shop', 'Shop info saved to database!', true);
+      } else {
+        showMessage('shop', 'Failed to save.', false);
+      }
+    } catch {
+      showMessage('shop', 'Failed to save.', false);
+    }
+  };
+
+  // Save WhatsApp/Route Mobile credentials to Supabase - separate function
+  const saveWhatsAppCreds = async () => {
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          whatsappRmUser: rmUser,
+          whatsappRmPass: rmPass,
+          whatsappRmWaba: rmWaba,
+          whatsappRmPhoneid: rmPhoneid,
+          whatsappRmWaphone: rmWaphone,
+          whatsappRmToken: rmToken,
+          whatsappRmApiUrl: rmApiUrl,
+          whatsappRmApiVersion: rmApiver,
+          invoiceLinkBase: cfgLinkBase || 'https://jewellery-repair-management.vercel.app',
+          invoiceExpiry: cfgExpiry
+        })
+      });
+      if (response.ok) {
+        showMessage('creds', 'WhatsApp credentials & settings saved!', true);
+      } else {
+        showMessage('creds', 'Failed to save.', false);
+      }
+    } catch {
+      showMessage('creds', 'Failed to save.', false);
+    }
+  };
+
   const sendWhatsApp = async (rec: RepairRecord, type: 'received' | 'final') => {
     if (!rmToken && (!rmUser || !rmPass)) throw new Error('WhatsApp API key or username/password required.')
     if (!tpl1Name || !tpl2Name) throw new Error('WhatsApp template names are required.')
@@ -1864,8 +1918,9 @@ export default function App() {
             <div className="field"><label>City</label><input value={cfgCity} onChange={e => setCfgCity(e.target.value)} placeholder="City" /></div>
           </div>
           <div className="field"><label>Address</label><input value={cfgAddr} onChange={e => setCfgAddr(e.target.value)} placeholder="Full address" /></div>
-          <div className="btn-row"><button className="btn btn-primary" onClick={async () => { try { const response = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ businessName: cfgShop, shopOwner: cfgOwner, shopPhone: cfgPhone, shopGst: cfgGst, shopCity: cfgCity, shopAddress: cfgAddr }) }); if (response.ok) { showMessage('shop', 'Shop info saved to database!', true); } else { showMessage('shop', 'Failed to save.', false); } } catch { showMessage('shop', 'Failed to save.', false); } }}>Save</button></div>
-          <Msg text={msg['shop']?.text || ''} ok={msg['shop']?.ok || false} />
+          <div className="btn-row">
+            <button className="btn btn-primary" onClick={saveShopInfo}>Save Shop Info</button>
+          </div>
         </div>
 
         <div className="card">
@@ -1914,7 +1969,7 @@ export default function App() {
                 <div className="field" style={{ width: 100 }}><label>Days</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /></div>
               </div>
               <div className="btn-row">
-                <button className="btn btn-primary" onClick={async () => { try { const res = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceLinkBase: cfgLinkBase || 'https://jewellery-repair-management.vercel.app', invoiceExpiry: cfgExpiry }) }); if (res.ok) { showMessage('creds', 'Settings saved! Link: https://jewellery-repair-management.vercel.app/api/invoice/...', true); } else { showMessage('creds', 'Failed to save.', false); } } catch { showMessage('creds', 'Failed to save.', false); } }}>Save</button>
+                <button className="btn btn-primary" onClick={saveWhatsAppCreds}>Save</button>
                 <button className="btn" onClick={() => setCfgLinkBase('https://jewellery-repair-management.vercel.app')}>Use Vercel URL</button>
                 <button className="btn btn-wa" onClick={async () => { 
                   if (!rmToken) { showMessage('creds', 'API key required.', false); return }
