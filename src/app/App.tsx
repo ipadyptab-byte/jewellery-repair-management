@@ -593,9 +593,12 @@ export default function App() {
 
   // Save all settings (Shop Info + WhatsApp Credentials + Invoice Settings) - single button
   const saveAllSettings = async () => {
+    console.log('💾 Starting save all settings...');
+    console.log('📦 Shop:', { businessName: cfgShop, shopOwner: cfgOwner, shopPhone: cfgPhone, shopGst: cfgGst, shopCity: cfgCity, shopAddress: cfgAddr });
+    
     try {
       // Save shop info
-      await fetch('/api/settings', {
+      const shopRes = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -607,9 +610,10 @@ export default function App() {
           shopAddress: cfgAddr
         })
       });
+      console.log('🏪 Shop save response:', shopRes.status, shopRes.ok);
       
       // Save WhatsApp + Invoice settings
-      await fetch('/api/settings', {
+      const waRes = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -625,9 +629,10 @@ export default function App() {
           invoiceExpiry: cfgExpiry
         })
       });
+      console.log('📱 WhatsApp save response:', waRes.status, waRes.ok);
       
       // Save templates
-      await fetch('/api/settings/templates', {
+      const tplRes = await fetch('/api/settings/templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -640,10 +645,18 @@ export default function App() {
           tpl3Lang: tpl3Lang || 'en'
         })
       });
+      console.log('📝 Templates save response:', tplRes.status, tplRes.ok);
       
-      showMessage('creds', 'All settings saved successfully!', true);
-    } catch {
-      showMessage('creds', 'Failed to save settings.', false);
+      if (shopRes.ok && waRes.ok && tplRes.ok) {
+        showMessage('creds', 'All settings saved successfully!', true);
+        console.log('✅ All settings saved!');
+      } else {
+        showMessage('creds', 'Some settings failed to save. Check console.', false);
+        console.error('❌ Some saves failed');
+      }
+    } catch (err) {
+      console.error('❌ Save error:', err);
+      showMessage('creds', 'Failed to save settings: ' + err, false);
     }
   };
 
@@ -779,7 +792,10 @@ export default function App() {
   
   // Fresh fetch from Supabase when navigating to Settings page => ensures instant sync across all devices
   useEffect(() => {
+    console.log('📋 Page changed to:', page);
     if (page !== 'settings') return;
+    
+    console.log('🔄 Fetching fresh settings from Supabase for Settings page...');
     
     const fetchFreshSettings = async () => {
       console.log('⚡ Fetching fresh settings from Supabase...');
