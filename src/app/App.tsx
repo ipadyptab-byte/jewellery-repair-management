@@ -591,10 +591,11 @@ export default function App() {
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
   const [printRec, setPrintRec] = useState<{rec: RepairRecord; type: 'received' | 'final'} | null>(null)
 
-  // Save shop info to Supabase - separate function (only shop info)
-  const saveShopInfo = async () => {
+  // Save all settings (Shop Info + WhatsApp Credentials + Invoice Settings) - single button
+  const saveAllSettings = async () => {
     try {
-      const response = await fetch('/api/settings', {
+      // Save shop info
+      await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -606,20 +607,9 @@ export default function App() {
           shopAddress: cfgAddr
         })
       });
-      if (response.ok) {
-        showMessage('shop', 'Shop info saved to database!', true);
-      } else {
-        showMessage('shop', 'Failed to save.', false);
-      }
-    } catch {
-      showMessage('shop', 'Failed to save.', false);
-    }
-  };
-
-  // Save WhatsApp/Route Mobile credentials to Supabase - separate function
-  const saveWhatsAppCreds = async () => {
-    try {
-      const response = await fetch('/api/settings', {
+      
+      // Save WhatsApp + Invoice settings
+      await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -635,13 +625,25 @@ export default function App() {
           invoiceExpiry: cfgExpiry
         })
       });
-      if (response.ok) {
-        showMessage('creds', 'WhatsApp credentials & settings saved!', true);
-      } else {
-        showMessage('creds', 'Failed to save.', false);
-      }
+      
+      // Save templates
+      await fetch('/api/settings/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tpl1Name, tpl2Name, tpl3Name,
+          tpl1Body: tpl1Body || null,
+          tpl2Body: tpl2Body || null,
+          tpl3Body: tpl3Body || null,
+          tpl1Lang: tpl1Lang || 'en',
+          tpl2Lang: tpl2Lang || 'en',
+          tpl3Lang: tpl3Lang || 'en'
+        })
+      });
+      
+      showMessage('creds', 'All settings saved successfully!', true);
     } catch {
-      showMessage('creds', 'Failed to save.', false);
+      showMessage('creds', 'Failed to save settings.', false);
     }
   };
 
@@ -2012,9 +2014,7 @@ export default function App() {
             <div className="field"><label>City</label><input value={cfgCity} onChange={e => setCfgCity(e.target.value)} placeholder="City" /></div>
           </div>
           <div className="field"><label>Address</label><input value={cfgAddr} onChange={e => setCfgAddr(e.target.value)} placeholder="Full address" /></div>
-          <div className="btn-row">
-            <button className="btn btn-primary" onClick={saveShopInfo}>Save Shop Info</button>
-          </div>
+          
         </div>
 
         <div className="card">
@@ -2063,7 +2063,7 @@ export default function App() {
                 <div className="field" style={{ width: 100 }}><label>Days</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /></div>
               </div>
               <div className="btn-row">
-                <button className="btn btn-primary" onClick={saveWhatsAppCreds}>Save</button>
+                <button className="btn btn-primary" onClick={saveAllSettings}>💾 Save All Settings</button>
                 <button className="btn" onClick={() => setCfgLinkBase('https://jewellery-repair-management.vercel.app')}>Use Vercel URL</button>
                 <button className="btn btn-wa" onClick={async () => { 
                   if (!rmToken) { showMessage('creds', 'API key required.', false); return }
@@ -2170,7 +2170,6 @@ export default function App() {
                 <div className="field"><label>Language</label><select value={tpl3Lang} onChange={e => setTpl3Lang(e.target.value)}><option value="en_IN">en_IN</option><option value="en">en</option><option value="hi">hi</option><option value="mr">mr</option></select></div>
               </div>
               <div className="field"><label>Template body</label><textarea rows={3} value={tpl3Body} onChange={e => setTpl3Body(e.target.value)} placeholder={`Dear {{1}}, Your OTP for jewellery delivery is {{2}}. Valid for 10 minutes. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} OTP (4 digits)</div></div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { if (!tpl1Name || !tpl2Name || !tpl3Name) { showMessage('templates', 'All template names required.', false); return }; try { await fetch('/api/settings/templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tpl1Name, tpl2Name, tpl3Name, tpl1Body: tpl1Body || null, tpl2Body: tpl2Body || null, tpl3Body: tpl3Body || null, tpl1Lang: tpl1Lang || 'en', tpl2Lang: tpl2Lang || 'en', tpl3Lang: tpl3Lang || 'en' }) }); showMessage('templates', 'Templates saved to database.', true); } catch { showMessage('templates', 'Failed to save templates.', false); } }}>Save templates</button></div>
               <Msg text={msg['templates']?.text || ''} ok={msg['templates']?.ok || false} />
             </>
           )}
@@ -2181,7 +2180,6 @@ export default function App() {
               <div className="toggle-row"><div><div style={{ fontSize: 13, fontWeight: 600 }}>Send WhatsApp + invoice PDF link on receipt</div><div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>Template: <code>{tpl1Name}</code></div></div><Toggle checked={trRecv} onChange={setTrRecv} /></div>
               <div className="toggle-row"><div><div style={{ fontSize: 13, fontWeight: 600 }}>Send WhatsApp + final invoice link when ready</div><div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>Template: <code>{tpl2Name}</code></div></div><Toggle checked={trReady} onChange={setTrReady} /></div>
               <div className="toggle-row" style={{ border: 'none' }}><div><div style={{ fontSize: 13, fontWeight: 600 }}>Send WhatsApp when issued to karagir</div></div><Toggle checked={trKaragir} onChange={setTrKaragir} /></div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={() => showMessage('triggers', 'Trigger settings saved.', true)}>Save triggers</button></div>
               <Msg text={msg['triggers']?.text || ''} ok={msg['triggers']?.ok || false} />
             </>
           )}
