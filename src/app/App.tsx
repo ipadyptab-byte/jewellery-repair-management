@@ -438,128 +438,33 @@ export default function App() {
     // Check if WhatsApp is configured (has token and template)
     if (rmToken) {
       try {
-        // Use Route Mobile API directly with the OTP approval template (ID: 2739573333095990)
-        // Try multiple payload formats for Route Mobile
-        const mobileNum = mobile.replace(/^\+/, '');
+        // Use server-side proxy to avoid CORS issues
+        console.log('📱 Sending OTP via server proxy...', { mobile, customerName, otp, apiUrl: rmApiUrl });
         
-        // Format 1: Try with template_id (newer API)
-        let payload: any = {
-          phone: mobileNum,
-          template_id: '2739573333095990',
-          language: { code: 'en' },
-          components: [
-            {
-              type: 'body',
-              parameters: [
-                { type: 'text', text: cfgShop || 'Devi Jewellers' },
-                { type: 'text', text: customerName },
-                { type: 'text', text: otp },
-                { type: 'text', text: '10 mins' }
-              ]
-            },
-            {
-              type: 'button',
-              sub_type: 'COPY_CODE',
-              parameters: []
-            }
-          ]
-        };
-        
-        console.log('📱 Sending OTP via Route Mobile...', JSON.stringify(payload, null, 2));
-        
-        let response = await fetch(rmApiUrl || 'https://api.rmlconnect.net/wba/v1/messages', {
+        const response = await fetch('/api/send-whatsapp', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': rmToken
-          },
-          body: JSON.stringify(payload)
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mobile: mobile,
+            customerName: customerName,
+            otp: otp,
+            shopName: cfgShop || 'Devi Jewellers',
+            expiry: '10 mins',
+            token: rmToken,
+            apiUrl: rmApiUrl || 'https://api.rmlconnect.net/wba/v1/messages'
+          })
         });
         
-        let responseText = await response.text();
-        console.log('📱 Route Mobile response (format 1):', response.status, responseText);
+        const result = await response.json();
+        console.log('📱 Server proxy response:', response.status, result);
         
-        // If first format fails, try format 2 (media_template)
-        if (!response.ok) {
-          payload = {
-            phone: mobileNum,
-            media: {
-              type: 'media_template',
-              template_id: '2739573333095990',
-              lang_code: 'en',
-              body: [
-                { text: cfgShop || 'Devi Jewellers' },
-                { text: customerName },
-                { text: otp },
-                { text: '10 mins' }
-              ],
-              button: [{ type: 'COPY_CODE' }]
-            }
-          };
-          
-          console.log('📱 Trying format 2...', JSON.stringify(payload, null, 2));
-          
-          response = await fetch(rmApiUrl || 'https://api.rmlconnect.net/wba/v1/messages', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': rmToken
-            },
-            body: JSON.stringify(payload)
-          });
-          
-          responseText = await response.text();
-          console.log('📱 Route Mobile response (format 2):', response.status, responseText);
-        }
-        
-        // If still fails, try format 3 (simple template)
-        if (!response.ok) {
-          payload = {
-            phone: mobileNum,
-            type: 'template',
-            template: {
-              namespace: '',
-              name: '2739573333095990',
-              language: { policy: 'deterministic', code: 'en' },
-              components: [
-                {
-                  type: 'body',
-                  parameters: [
-                    { type: 'text', text: customerName },
-                    { type: 'text', text: otp }
-                  ]
-                }
-              ]
-            }
-          };
-          
-          console.log('📱 Trying format 3...', JSON.stringify(payload, null, 2));
-          
-          response = await fetch(rmApiUrl || 'https://api.rmlconnect.net/wba/v1/messages', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': rmToken
-            },
-            body: JSON.stringify(payload)
-          });
-          
-          responseText = await response.text();
-          console.log('📱 Route Mobile response (format 3):', response.status, responseText);
-        }
-        
-        if (response.ok) {
+        if (response.ok && result.success) {
           setDeliverOtp(otp);
           setDeliverOtpSent(true);
           showMessage('deliver', 'OTP ' + otp + ' sent to customer via WhatsApp!', true);
         } else {
           // Show actual error
-          let errMsg = 'Unknown error';
-          try {
-            const errJson = JSON.parse(responseText);
-            errMsg = errJson.message || errJson.error?.message || JSON.stringify(errJson);
-          } catch {}
-          showMessage('deliver', 'API Error: ' + errMsg, false);
+          showMessage('deliver', 'API Error: ' + (result.error || result.details || 'Failed to send'), false);
           // Fallback to demo mode
           setDeliverOtp(otp);
           setDeliverOtpSent(true);

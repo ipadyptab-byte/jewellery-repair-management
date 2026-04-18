@@ -2,64 +2,99 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
- * WhatsApp API Proxy
+ * WhatsApp API Server-Side Proxy
  * 
- * Due to Vercel serverless network issues reaching Route Mobile,
- * this endpoint returns the configuration for client-side calls.
- * 
- * Client should call Route Mobile directly from browser:
- * POST https://apis.rmlconnect.net/wba/v1/messages
- * Headers: Authorization: <token>
- * Body: { phone, media: { type, template_name, lang_code, body } }
+ * Routes WhatsApp messages through Vercel server to avoid CORS issues.
+ * This server makes the actual call to Route Mobile API.
  */
 
 export async function GET() {
   return NextResponse.json({ 
-    message: 'WhatsApp API. Use POST.',
-    proxy: true,
-    clientSide: true,
-    version: '2.0.0'
+    message: 'WhatsApp API Proxy. Use POST.',
+    version: '3.0.0'
   })
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { mobile, templateName, params, header, token } = body
+  try {
+    const body = await req.json()
+    const { 
+      mobile, 
+      customerName, 
+      otp, 
+      shopName,
+      expiry,
+      token,
+      apiUrl 
+    } = body
 
-  if (!mobile || !templateName || !token) {
-    return NextResponse.json(
-      { success: false, error: 'Missing mobile, templateName, or token' },
-      { status: 400 }
-    )
-  }
-
-  // Build payload
-  const payload: any = {
-    phone: mobile,
-    media: {
-      type: 'media_template',
-      template_name: templateName,
-      lang_code: 'en',
-      body: params?.slice(0, 4).map((p: string) => ({ text: p })) || []
+    if (!mobile || !token || !apiUrl) {
+      return NextResponse.json(
+        { success: false, error: 'Missing mobile, token, or apiUrl' },
+        { status: 400 }
+      )
     }
-  }
 
-  // Add header if provided
-  if (header) {
-    payload.media.header = [header]
-  }
+    // Clean mobile number
+    const phone = mobile.replace(/^\+/, '')
 
-  // Return proxy info for client to call directly
-  return NextResponse.json({
-    success: true,
-    proxy: {
-      url: 'https://apis.rmlconnect.net/wba/v1/messages',
+    // Build OTP template payload (using Route Mobile template format)
+    const payload = {
+      phone: phone,
+      template_id: '2739573333095990',
+      language: { code: 'en' },
+      components: [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: shopName || 'Devi Jewellers' },
+            { type: 'text', text: customerName || 'Customer' },
+            { type: 'text', text: otp || '0000' },
+            { type: 'text', text: expiry || '10 mins' }
+          ]
+        },
+        {
+          type: 'button',
+          sub_type: 'COPY_CODE',
+          parameters: []
+        }
+      ]
+    }
+
+    console.log('📱 Sending OTP via server proxy to:', apiUrl)
+
+    // Make the actual call to Route Mobile from server
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': token
       },
-      body: payload
+      body: JSON.stringify(payload)
+    })
+
+    const responseText = await response.text()
+    console.log('📱 Route Mobile response:', response.status, responseText)
+
+    if (response.ok) {
+      return NextResponse.json({ 
+        success: true, 
+        message: 'OTP sent successfully',
+        response: responseText
+      })
+    } else {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Route Mobile API error',
+        details: responseText,
+        status: response.status
+      }, { status: response.status })
     }
-  })
+  } catch (error: any) {
+    console.error('❌ WhatsApp proxy error:', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message || 'Failed to send WhatsApp message'
+    }, { status: 500 })
+  }
 }
