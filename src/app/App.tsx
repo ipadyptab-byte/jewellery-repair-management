@@ -423,6 +423,12 @@ export default function App() {
     const mobile = deliverRec?.mobile || deliverRec?.phone_number;
     const customerName = deliverRec?.name || deliverRec?.customer_name || 'Customer';
     
+    // Validate mobile exists
+    if (!mobile) {
+      showMessage('deliver', 'Customer mobile number not found!', false);
+      return;
+    }
+    
     // Check if WhatsApp is configured (has token and template)
     if (rmToken) {
       try {
