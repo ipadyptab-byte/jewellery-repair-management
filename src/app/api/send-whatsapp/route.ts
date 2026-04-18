@@ -54,11 +54,11 @@ export async function POST(req: NextRequest) {
       ]
     }
 
-    // Use the API URL from settings (or default to correct one)
+    // Use the correct API URL - MUST be apis.rmlconnect.net (not api.)
+    // User's settings has wrong URL - we prioritize correct one
     const rmApiUrls = [
-      apiUrl || 'https://apis.rmlconnect.net/wba/v1/messages',
-      'https://apis.rmlconnect.net/wba/v1/messages',
-      'https://api.rmlconnect.net/wba/v1/messages',
+      'https://apis.rmlconnect.net/wba/v1/messages',  // CORRECT - must be "apis" plural
+      'https://api.rmlconnect.net/wba/v1/messages',  // User's URL - might not work
     ];
     
     console.log('📱 Sending OTP via Route Mobile API...');
