@@ -60,53 +60,68 @@ export async function POST(req: NextRequest) {
       { 'Authorization': 'Bearer ' + token },  // Bearer token
     ];
     
-    // Use the correct Route Mobile API URL
-    const rmApiUrl = 'https://apis.rmlconnect.net/wba/v1/messages';
+    // Use the API URL from settings (or default to correct one)
+    // User's settings has: https://api.rmlconnect.net/wba/v1/messages
+    // But correct is: https://apis.rmlconnect.net/wba/v1/messages
+    const rmApiUrls = [
+      apiUrl || 'https://apis.rmlconnect.net/wba/v1/messages',
+      'https://apis.rmlconnect.net/wba/v1/messages',  // Correct URL
+      'https://api.rmlconnect.net/wba/v1/messages',   // User's URL
+    ];
     
     console.log('📱 Sending OTP via Route Mobile API...');
-    console.log('📱 URL:', rmApiUrl);
+    console.log('📱 Using API URLs:', rmApiUrls);
+    console.log('📱 Token (first 30 chars):', token?.substring(0, 30));
     console.log('📱 Payload:', JSON.stringify(payload, null, 2));
     
     let lastError = '';
     
-    for (const headers of authOptions) {
-      console.log('📱 Trying with headers:', { ...headers, 'Authorization': headers['Authorization']?.substring(0, 20) + '...' });
-      
-      try {
-        const response = await fetch(rmApiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...headers
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const responseText = await response.text();
-        console.log('📱 Route Mobile response:', response.status, responseText);
-
-        // Check for success
-        if (response.ok || response.status === 202) {
-          let json;
-          try { json = JSON.parse(responseText); } catch {}
-          return NextResponse.json({ 
-            success: true, 
-            message: json?.message || 'OTP sent successfully!',
-            request_id: json?.request_id,
-            response: responseText
-          });
-        }
+    for (const rmApiUrl of rmApiUrls) {
+      for (const headers of authOptions) {
+        console.log('📱 Trying:', rmApiUrl, 'with', headers['Authorization']?.substring(0, 20) + '...');
         
-        lastError = responseText;
-      } catch (error: any) {
-        console.error('❌ Error:', error.message);
-        lastError = error.message;
+        try {
+          const response = await fetch(rmApiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...headers
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const responseText = await response.text();
+          console.log('📱 Response:', response.status, responseText);
+
+          // Check for success
+          if (response.ok || response.status === 202) {
+            let json;
+            try { json = JSON.parse(responseText); } catch {}
+            return NextResponse.json({ 
+              success: true, 
+              message: json?.message || 'OTP sent successfully!',
+              request_id: json?.request_id,
+              response: responseText
+            });
+          }
+          
+          // If "Invalid token", try next URL
+          if (responseText.includes('Invalid token')) {
+            lastError = responseText;
+            continue;
+          }
+          
+          lastError = responseText;
+        } catch (error: any) {
+          console.error('❌ Error:', error.message);
+          lastError = error.message;
+        }
       }
     }
     
     return NextResponse.json({ 
       success: false, 
-      error: 'Route Mobile API error',
+      error: 'Route Mobile API error - Invalid token',
       details: lastError,
       status: 400
     }, { status: 400 });
