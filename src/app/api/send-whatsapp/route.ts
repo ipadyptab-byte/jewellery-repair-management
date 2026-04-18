@@ -87,13 +87,22 @@ export async function POST(req: NextRequest) {
       ]
     };
 
-    // Use the correct API URL - try multiple possible endpoints
-    const rmApiUrls = [
+    // Use the API URL from settings (user-provided) OR fallback to known working URLs
+    // Priority: user settings → correct apis URL → fallbacks
+    let apiUrlsToTry: string[] = [];
+    if (apiUrl && apiUrl.includes('rmlconnect')) {
+      apiUrlsToTry = [apiUrl]; // Use user's URL first
+    }
+    apiUrlsToTry = [
+      ...apiUrlsToTry,
       'https://apis.rmlconnect.net/wba/v1/messages',
       'https://api.rmlconnect.net/wba/v1/messages',
       'https://waba.rapigoconnect.com/v1/messages',
       'https://api.rapigoconnect.com/v1/messages',
     ];
+    
+    // Remove duplicates
+    const rmApiUrls = [...new Set(apiUrlsToTry)];
     
     console.log('📱 Sending OTP via Route Mobile API...');
     console.log('📱 Using API URLs:', rmApiUrls);
