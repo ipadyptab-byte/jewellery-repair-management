@@ -4,11 +4,11 @@ import { sql } from '@/lib/db'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { tpl1Name, tpl2Name, tpl1Body, tpl2Body, tpl1Lang, tpl2Lang } = body
+    const { tpl1Name, tpl2Name, tpl3Name, tpl1Body, tpl2Body, tpl3Body, tpl1Lang, tpl2Lang, tpl3Lang } = body
 
     const pool = sql()
     
-    const value = JSON.stringify({ tpl1Name, tpl2Name, tpl1Body, tpl2Body, tpl1Lang, tpl2Lang })
+    const value = JSON.stringify({ tpl1Name, tpl2Name, tpl3Name, tpl1Body, tpl2Body, tpl3Body, tpl1Lang, tpl2Lang, tpl3Lang })
     
     await pool.query(
       `INSERT INTO settings (key, value, updated_at) VALUES ('whatsapp_templates', $1, NOW()) 

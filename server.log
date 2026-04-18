@@ -1,0 +1,34 @@
+nohup: ignoring input
+
+> devi-jewellers-repair@1.0.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+  ▲ Next.js 14.2.3
+  - Local:        http://localhost:3001
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for server...
+ ✓ (pwa) Compiling for client (static)...
+ ○ (pwa) Service worker: /workspace/project/jewellery-repair-management/public/sw.js
+ ○ (pwa)   URL: /sw.js
+ ○ (pwa)   Scope: /
+ ○ (pwa) This app will fallback to these precached routes when fetching from the cache and the network fails:
+ ○ (pwa)   Documents (pages): /
+ ○ (pwa) Building in development mode, caching and precaching are disabled for the most part. This means that offline support is disabled, but you can continue developing other functions in service worker.
+ ✓ Ready in 2.8s
+ ✓ Compiled /api/settings in 251ms (55 modules)
+DATABASE_URL_repair found: true
+Database URL prefix: postgres://postgres.pgzgyhhldi...
+ GET /api/settings/ 200 in 639ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1824ms (471 modules)
+ GET /_next/static/css/app/layout.css?v=1776428197852 404 in 1964ms
+ GET /_next/static/chunks/webpack.js?v=1776428197852 404 in 1967ms
+ GET /_next/static/chunks/main-app.js?v=1776428197852 404 in 1966ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 1954ms
+ GET /_next/static/chunks/app/page.js 404 in 1953ms
+ ✓ Compiled in 99ms (250 modules)
+ GET /_next/static/chunks/app/page.js 404 in 72ms

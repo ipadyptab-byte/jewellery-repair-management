@@ -3,10 +3,14 @@ import { sql } from '@/lib/db';
 
 export async function GET() {
   try {
+    console.log('======= GET /api/settings called =======');
     const pool = sql();
+    console.log('Pool created, querying settings...');
     const result = await pool.query(
       `SELECT key, value FROM settings`
     );
+    console.log('Settings query result rows:', result.rows.length);
+    console.log('Settings rows:', JSON.stringify(result.rows));
 
     // Convert key-value pairs to structured object - use keys from schema
     const settings: any = {

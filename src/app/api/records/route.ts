@@ -3,10 +3,13 @@ import { sql } from '@/lib/db';
 
 export async function GET() {
   try {
+    console.log('======= GET /api/records called =======');
     const pool = sql()
+    console.log('Pool created, querying...');
     const result = await pool.query(
       `SELECT * FROM repair_records ORDER BY created_at DESC`
     );
+    console.log('Query result rows:', result.rows.length);
     return NextResponse.json(result.rows);
   } catch (error) {
     console.error('Error fetching records:', error);
@@ -24,9 +27,9 @@ function addDays(date: string | Date, days: number): string {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('POST /api/records called');
+    console.log('======= POST /api/records called =======');
     const body = await request.json();
-    console.log('Request body:', body);
+    console.log('======= Request body:', JSON.stringify(body), '=======');
     const {
       doc_num,
       customer_name,

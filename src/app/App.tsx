@@ -387,7 +387,9 @@ function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp, shop
 /* ─── Main App ─── */
 export default function App() {
   const [page, setPage] = useState('dashboard')
-  const [records, setRecords] = useState<RepairRecord[]>([])
+  const [records, setRecords] = useState<RepairRecord[]>([
+    { id: 9999, doc_num: 'JR9999', customer_name: 'Test Customer', phone_number: '9876543210', item_type: 'Gold Ring', description: 'Gold Ring repair', estimated_cost: 500, status: 'ready', master_id: null, notes: '', images: [], metal: 'Gold 22K', weight: '5.5', jewellery: 'Gold Ring', salesman: 'Suresh', received_date: new Date().toISOString(), completed_date: new Date().toISOString(), final_amount: 500, name: 'Test Customer', docNum: 'JR9999' }
+  ])
   const [docSeq, setDocSeq] = useState(1000)
   const [msg, setMsg] = useState<Record<string, { text: string; ok: boolean }>>({})
 
@@ -413,11 +415,52 @@ export default function App() {
   // Track
   const [trackQ, setTrackQ] = useState(''); const [trackResults, setTrackResults] = useState<RepairRecord[]>([]); const [showAll, setShowAll] = useState(true)
 
+  // Deliver to Customer
+  const [deliverDoc, setDeliverDoc] = useState(''); const [deliverRec, setDeliverRec] = useState<RepairRecord | null>(null); const [deliverSelected, setDeliverSelected] = useState(false); const [deliverOtp, setDeliverOtp] = useState(''); const [deliverOtpSent, setDeliverOtpSent] = useState(false); const [deliverOtpVerified, setDeliverOtpVerified] = useState(false); const [deliverOtpInput, setDeliverOtpInput] = useState('')
+
+  const deliverSendOtp = async () => {
+    const otp = String(Math.floor(1000 + Math.random() * 9000)); // 4-digit OTP
+    const mobile = deliverRec?.mobile || deliverRec?.phone_number;
+    
+    // Check if WhatsApp is configured (has token and template)
+    if (rmToken && tpl3Name) {
+      try {
+        const response = await fetch('/api/send-whatsapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mobile,
+            templateName: tpl3Name,
+            params: [deliverRec?.name || deliverRec?.customer_name, otp],
+            token: rmToken
+          })
+        });
+        if (response.ok) {
+          setDeliverOtp(otp);
+          setDeliverOtpSent(true);
+          showMessage('deliver', 'OTP ' + otp + ' sent to customer!', true);
+        } else {
+          const err = await response.json();
+          showMessage('deliver', 'Failed to send WhatsApp: ' + (err.error || 'Unknown error'), false);
+        }
+      } catch {
+        setDeliverOtp(otp);
+        setDeliverOtpSent(true);
+        showMessage('deliver', 'OTP: ' + otp + ' (WhatsApp API error - showing for demo)', true);
+      }
+    } else {
+      // WhatsApp not configured - still generate OTP for demo
+      setDeliverOtp(otp);
+      setDeliverOtpSent(true);
+      showMessage('deliver', 'OTP: ' + otp + ' (WhatsApp not configured - showing for demo)', true);
+    }
+  }
+
   // Settings
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
-  const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en')
+  const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl3Name, setTpl3Name] = useState('delivery_otp'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl3Body, setTpl3Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en'); const [tpl3Lang, setTpl3Lang] = useState('en')
   const [connStatus, setConnStatus] = useState<'no' | 'ok' | 'checking'>('no')
   const [settingsTab, setSettingsTab] = useState('creds')
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
@@ -554,38 +597,136 @@ export default function App() {
     return () => window.removeEventListener('message', handleMessage)
   }, [])
   
+  // Fresh fetch from Supabase when navigating to Settings page => ensures instant sync across all devices
+  useEffect(() => {
+    if (page !== 'settings') return;
+    
+    const fetchFreshSettings = async () => {
+      console.log('⚡ Fetching fresh settings from Supabase...');
+      try {
+        // Fetch settings directly from API (Supabase) - no localStorage
+        const settingsRes = await fetch('/api/settings');
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json();
+          console.log('⚡ Settings loaded from DB:', settings);
+          
+          // Update all state from database directly
+          if (settings.businessName) setCfgShop(settings.businessName);
+          if (settings.shopOwner) setCfgOwner(settings.shopOwner);
+          if (settings.shopPhone) setCfgPhone(settings.shopPhone);
+          if (settings.shopGst) setCfgGst(settings.shopGst);
+          if (settings.shopCity) setCfgCity(settings.shopCity);
+          if (settings.shopAddress) setCfgAddr(settings.shopAddress);
+          if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
+          if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
+          
+          // WhatsApp settings from DB
+          if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
+          if (settings.whatsappRmApiUrl) setRmApiUrl(settings.whatsappRmApiUrl);
+          if (settings.whatsappRmUser) setRmUser(settings.whatsappRmUser);
+          if (settings.whatsappRmApiVersion) setRmApiver(settings.whatsappRmApiVersion);
+        }
+        
+        // Also fetch fresh templates
+        const tplRes = await fetch('/api/settings/templates');
+        if (tplRes.ok) {
+          const tpl = await tplRes.json();
+          if (tpl.tpl1Name) setTpl1Name(tpl.tpl1Name);
+          if (tpl.tpl2Name) setTpl2Name(tpl.tpl2Name);
+          if (tpl.tpl3Name) setTpl3Name(tpl.tpl3Name);
+          if (tpl.tpl1Body) setTpl1Body(tpl.tpl1Body);
+          if (tpl.tpl2Body) setTpl2Body(tpl.tpl2Body);
+          if (tpl.tpl3Body) setTpl3Body(tpl.tpl3Body);
+        }
+        
+        // Also fetch fresh masters for dropdowns
+        const mastersRes = await fetch('/api/masters');
+        if (mastersRes.ok) {
+          const masters = await mastersRes.json();
+          setSalesmen(masters.filter((m: any) => m.type === 'salesman'));
+          setJewelleries(masters.filter((m: any) => m.type === 'jewellery'));
+          setMetals(masters.filter((m: any) => m.type === 'metal'));
+          setKaragirs(masters.filter((m: any) => m.type === 'karagir'));
+        }
+        
+        console.log('⚡ All data refreshed from Supabase!');
+      } catch (err) {
+        console.error('Error fetching fresh settings:', err);
+      }
+    };
+    
+    fetchFreshSettings();
+  }, [page]) // Runs whenever page changes to 'settings'
+  
   useEffect(() => {
     const loadData = async () => {
       try {
-        // FIRST: Load from localStorage as initial values (these will always work)
-        const savedRmToken = localStorage.getItem('devi-jewellers-rmToken');
-        if (savedRmToken) setRmToken(savedRmToken);
-        
-        const savedRmApiUrl = localStorage.getItem('devi-jewellers-rmApiUrl');
-        if (savedRmApiUrl) setRmApiUrl(savedRmApiUrl);
-        
-        const savedCfgLinkBase = localStorage.getItem('devi-jewellers-cfgLinkBase');
-        if (savedCfgLinkBase) setCfgLinkBase(savedCfgLinkBase);
-        
-        const savedCfgShop = localStorage.getItem('devi-jewellers-cfgShop');
-        if (savedCfgShop) setCfgShop(savedCfgShop);
-        
-        const savedCfgOwner = localStorage.getItem('devi-jewellers-cfgOwner');
-        if (savedCfgOwner) setCfgOwner(savedCfgOwner);
-        
-        const savedCfgPhone = localStorage.getItem('devi-jewellers-cfgPhone');
-        if (savedCfgPhone) setCfgPhone(savedCfgPhone);
-        
-        const savedCfgGst = localStorage.getItem('devi-jewellers-cfgGst');
-        if (savedCfgGst) setCfgGst(savedCfgGst);
-        
-        const savedCfgCity = localStorage.getItem('devi-jewellers-cfgCity');
-        if (savedCfgCity) setCfgCity(savedCfgCity);
-        
-        const savedCfgAddr = localStorage.getItem('devi-jewellers-cfgAddr');
-        if (savedCfgAddr) setCfgAddr(savedCfgAddr);
+        // FIRST: Load settings from API (Supabase) - no localStorage delay
+        // This ensures settings load instantly on any device
+        const settingsResponse = await fetch('/api/settings');
+        if (settingsResponse.ok) {
+          const settings = await settingsResponse.json();
+          // Load all settings from database immediately
+          if (settings.businessName) setCfgShop(settings.businessName);
+          if (settings.shopOwner) setCfgOwner(settings.shopOwner);
+          if (settings.shopPhone) setCfgPhone(settings.shopPhone);
+          if (settings.shopGst) setCfgGst(settings.shopGst);
+          if (settings.shopCity) setCfgCity(settings.shopCity);
+          if (settings.shopAddress) setCfgAddr(settings.shopAddress);
+          if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
+          if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
+          
+          // WhatsApp settings
+          if (settings.whatsappApiKey) setRmToken(settings.whatsappApiKey);
+          if (settings.whatsappApiUrl) setRmApiUrl(settings.whatsappApiUrl);
+          if (settings.whatsappRmUser) setRmUser(settings.whatsappRmUser);
+          if (settings.whatsappRmPass) setRmPass(settings.whatsappRmPass);
+          if (settings.whatsappRmWaba) setRmWaba(settings.whatsappRmWaba);
+          if (settings.whatsappRmPhoneid) setRmPhoneid(settings.whatsappRmPhoneid);
+          if (settings.whatsappRmWaphone) setRmWaphone(settings.whatsappRmWaphone);
+          if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
+          if (settings.whatsappRmApiUrl) setRmApiUrl(settings.whatsappRmApiUrl);
+          if (settings.whatsappRmApiVersion) setRmApiver(settings.whatsappRmApiVersion);
+          
+          // Also save to localStorage as backup after loading from DB
+          if (settings.businessName) localStorage.setItem('devi-jewellers-cfgShop', settings.businessName);
+          if (settings.shopOwner) localStorage.setItem('devi-jewellers-cfgOwner', settings.shopOwner);
+          if (settings.shopPhone) localStorage.setItem('devi-jewellers-cfgPhone', settings.shopPhone);
+          if (settings.shopGst) localStorage.setItem('devi-jewellers-cfgGst', settings.shopGst);
+          if (settings.shopCity) localStorage.setItem('devi-jewellers-cfgCity', settings.shopCity);
+          if (settings.shopAddress) localStorage.setItem('devi-jewellers-cfgAddr', settings.shopAddress);
+          if (settings.invoiceLinkBase) localStorage.setItem('devi-jewellers-cfgLinkBase', settings.invoiceLinkBase);
+        }
 
-        // SECOND: Try to load records from API
+        // Load WhatsApp template settings from API (Supabase)
+        try {
+          const tplResponse = await fetch('/api/settings/templates');
+          if (tplResponse.ok) {
+            const tplSettings = await tplResponse.json();
+            if (tplSettings.tpl1Name) {
+              setTpl1Name(tplSettings.tpl1Name);
+              localStorage.setItem('devi-jewellers-tpl1Name', tplSettings.tpl1Name);
+            }
+            if (tplSettings.tpl2Name) {
+              setTpl2Name(tplSettings.tpl2Name);
+              localStorage.setItem('devi-jewellers-tpl2Name', tplSettings.tpl2Name);
+            }
+            if (tplSettings.tpl3Name) {
+              setTpl3Name(tplSettings.tpl3Name);
+              localStorage.setItem('devi-jewellers-tpl3Name', tplSettings.tpl3Name);
+            }
+            if (tplSettings.tpl1Body) setTpl1Body(tplSettings.tpl1Body);
+            if (tplSettings.tpl2Body) setTpl2Body(tplSettings.tpl2Body);
+            if (tplSettings.tpl3Body) setTpl3Body(tplSettings.tpl3Body);
+            if (tplSettings.tpl1Lang) setTpl1Lang(tplSettings.tpl1Lang);
+            if (tplSettings.tpl2Lang) setTpl2Lang(tplSettings.tpl2Lang);
+            if (tplSettings.tpl3Lang) setTpl3Lang(tplSettings.tpl3Lang);
+          }
+        } catch (e) {
+          console.error('Error loading template settings:', e);
+        }
+
+        // SECOND: Load records from API (Supabase)
         const recordsResponse = await fetch('/api/records');
         if (recordsResponse.ok) {
           const dbRecords = await recordsResponse.json();
@@ -602,7 +743,7 @@ export default function App() {
           }
         }
 
-        // Load masters from API
+        // Load masters from API (Supabase)
         const mastersResponse = await fetch('/api/masters');
         if (mastersResponse.ok) {
           const dbMasters = await mastersResponse.json();
@@ -614,47 +755,6 @@ export default function App() {
           setJewelleries(jewelleries);
           setMetals(metals);
           setKaragirs(karagirs);
-        }
-
-        // Load settings from API (only to override if DB has data)
-        const settingsResponse = await fetch('/api/settings');
-        if (settingsResponse.ok) {
-          const settings = await settingsResponse.json();
-          // Only override if API returned non-empty values
-          if (settings.businessName) setCfgShop(settings.businessName);
-          if (settings.shopOwner) setCfgOwner(settings.shopOwner);
-          if (settings.shopPhone) setCfgPhone(settings.shopPhone);
-          if (settings.shopGst) setCfgGst(settings.shopGst);
-          if (settings.shopCity) setCfgCity(settings.shopCity);
-          if (settings.shopAddress) setCfgAddr(settings.shopAddress);
-          if (settings.whatsappApiKey) setRmToken(settings.whatsappApiKey);
-          if (settings.whatsappApiUrl) setRmApiUrl(settings.whatsappApiUrl);
-          if (settings.whatsappRmUser) setRmUser(settings.whatsappRmUser);
-          if (settings.whatsappRmPass) setRmPass(settings.whatsappRmPass);
-          if (settings.whatsappRmWaba) setRmWaba(settings.whatsappRmWaba);
-          if (settings.whatsappRmPhoneid) setRmPhoneid(settings.whatsappRmPhoneid);
-          if (settings.whatsappRmWaphone) setRmWaphone(settings.whatsappRmWaphone);
-          if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
-          if (settings.whatsappRmApiUrl) setRmApiUrl(settings.whatsappRmApiUrl);
-          if (settings.whatsappRmApiVersion) setRmApiver(settings.whatsappRmApiVersion);
-          if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
-          if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
-        }
-
-        // Load WhatsApp template settings from API
-        try {
-          const tplResponse = await fetch('/api/settings/templates');
-          if (tplResponse.ok) {
-            const tplSettings = await tplResponse.json();
-            if (tplSettings.tpl1Name) setTpl1Name(tplSettings.tpl1Name);
-            if (tplSettings.tpl2Name) setTpl2Name(tplSettings.tpl2Name);
-            if (tplSettings.tpl1Body) setTpl1Body(tplSettings.tpl1Body);
-            if (tplSettings.tpl2Body) setTpl2Body(tplSettings.tpl2Body);
-            if (tplSettings.tpl1Lang) setTpl1Lang(tplSettings.tpl1Lang);
-            if (tplSettings.tpl2Lang) setTpl2Lang(tplSettings.tpl2Lang);
-          }
-        } catch (e) {
-          console.error('Error loading template settings:', e);
         }
 
         // Load docSeq from localStorage as fallback
@@ -734,6 +834,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('devi-jewellers-cfgExpiry', cfgExpiry.toString()) }, [cfgExpiry])
   useEffect(() => { localStorage.setItem('devi-jewellers-tpl1Name', tpl1Name) }, [tpl1Name])
   useEffect(() => { localStorage.setItem('devi-jewellers-tpl2Name', tpl2Name) }, [tpl2Name])
+  useEffect(() => { localStorage.setItem('devi-jewellers-tpl3Name', tpl3Name) }, [tpl3Name])
   useEffect(() => { localStorage.setItem('devi-jewellers-trRecv', trRecv.toString()) }, [trRecv])
   useEffect(() => { localStorage.setItem('devi-jewellers-trReady', trReady.toString()) }, [trReady])
   useEffect(() => { localStorage.setItem('devi-jewellers-trKaragir', trKaragir.toString()) }, [trKaragir])
@@ -1167,10 +1268,17 @@ export default function App() {
     )
   }
 
-  const grp: Record<string, RepairRecord[]> = { overdue: [], ready: [], with_karagir: [], received: [] }
-  records.forEach(r => { const es = effStatus(r); if (grp[es]) grp[es].push(r) })
+  /* DEBUG LINE */
+  const grp: any = {}
+  // @ts-ignore
+  grp.overdue = records.filter(r => effStatus(r) === 'overdue')
+  // @ts-ignore
+  grp.ready = records.filter(r => effStatus(r) === 'ready')
+  // @ts-ignore
+  grp.with_karagir = records.filter(r => effStatus(r) === 'with_karagir')
+  // @ts-ignore
+  grp.received = records.filter(r => effStatus(r) === 'received')
 
-  /* ──────── RENDER ──────── */
   return (
     <div className="app">
       {/* HEADER */}
@@ -1266,6 +1374,11 @@ export default function App() {
             <div className="tile-label">Masters</div>
             <div className="tile-desc">Salesman, jewellery, metal, karagir</div>
           </div>
+          <div className="dash-tile" onClick={() => openPage('deliver')}>
+            <div className="tile-icon" style={{ background: '#DCFCE7' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg></div>
+            <div className="tile-label">Deliver to Customer</div>
+            <div className="tile-desc">Deliver jewellery &amp; send OTP on WhatsApp</div>
+          </div>
           <div className="dash-tile tile-wide" onClick={() => openPage('settings')}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, width: '100%', justifyContent: 'center' }}>
               <div className="tile-icon" style={{ background: '#F0FDF4', flexShrink: 0 }}><IcWA size={28} color="#25D366" /></div>
@@ -1275,6 +1388,87 @@ export default function App() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── DELIVER TO CUSTOMER ── */}
+      <div className={`page ${page === 'deliver' ? 'active' : ''}`}>
+        <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
+        <div className="card">
+          <div className="card-title">📦 Deliver to Customer</div>
+          
+          {(!deliverSelected || !deliverDoc) && (
+            <>
+              <div className="field">
+                <label>Select Invoice <span className="req">*</span></label>
+                <select value={deliverDoc || ''} onChange={e => setDeliverDoc(e.target.value)}>
+                  <option value="">Select ready invoice</option>
+                  {records.filter(r => r.status === 'ready').map((r: RepairRecord) => (
+                    <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
+                      {r.docNum || r.doc_num} — {r.name || r.customer_name} ({r.jewellery || r.item_type})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="btn-row">
+                <button className="btn btn-primary" onClick={() => { const rec = records.find(r => (r.docNum || r.doc_num) === deliverDoc); if (rec) { setDeliverRec(rec); setDeliverSelected(true); } else showMessage('deliver', 'Select an invoice first.', false) }}>Load Invoice</button>
+              </div>
+            </>
+          )}
+          
+          {deliverSelected && deliverRec && (
+            <>
+              <div className="details-box">
+                <div className="detail-row"><span className="detail-label">Doc No:</span><span className="detail-value">{deliverRec.docNum || deliverRec.doc_num}</span></div>
+                <div className="detail-row"><span className="detail-label">Customer:</span><span className="detail-value">{deliverRec.name || deliverRec.customer_name}</span></div>
+                <div className="detail-row"><span className="detail-label">Mobile:</span><span className="detail-value">{deliverRec.mobile || deliverRec.phone_number}</span></div>
+                <div className="detail-row"><span className="detail-label">Item:</span><span className="detail-value">{deliverRec.jewellery || deliverRec.item_type}</span></div>
+                <div className="detail-row"><span className="detail-label">Metal:</span><span className="detail-value">{deliverRec.metal}</span></div>
+                <div className="detail-row"><span className="detail-label">Weight:</span><span className="detail-value">{deliverRec.weight} g</span></div>
+                <div className="detail-row"><span className="detail-label">Final Amount:</span><span className="detail-value">&#8377; {deliverRec.finalAmount || deliverRec.final_amount}</span></div>
+                <div className="detail-row"><span className="detail-label">Received:</span><span className="detail-value">{deliverRec.receivedDate ? fmtDate(deliverRec.receivedDate) : '-'}</span></div>
+                <div className="detail-row"><span className="detail-label">Ready:</span><span className="detail-value">{deliverRec.completedDate ? fmtDate(deliverRec.completedDate) : '-'}</span></div>
+              </div>
+              
+              {!deliverOtpSent && (
+                <div className="btn-row">
+                  <button className="btn" onClick={() => { setDeliverDoc(''); setDeliverRec(null); setDeliverSelected(false); setDeliverOtpSent(false); setDeliverOtpVerified(false); setDeliverOtp(''); }}>Change Invoice</button>
+                  <button className="btn btn-wa" onClick={deliverSendOtp}>Send OTP</button>
+                </div>
+              )}
+              
+              {deliverOtpSent && !deliverOtpVerified && (
+                <>
+                  <div className="divider" />
+                  <div className="field">
+                    <label>Enter OTP <span className="req">*</span></label>
+                    <input type="text" value={deliverOtpInput} onChange={e => setDeliverOtpInput(e.target.value)} placeholder="Enter 4-digit OTP" maxLength={4} style={{ letterSpacing: '0.3em', fontSize: '18px' }} />
+                  </div>
+                  <div className="btn-row">
+                    <button className="btn" onClick={() => { setDeliverOtpSent(false); setDeliverOtp(''); setDeliverOtpInput(''); }}>Resend OTP</button>
+                    <button className="btn btn-primary" onClick={() => { if (deliverOtpInput === deliverOtp) { setDeliverOtpVerified(true); showMessage('deliver', 'OTP Verified!', true); } else { showMessage('deliver', 'Invalid OTP', false); } }}>Verify OTP</button>
+                  </div>
+                </>
+              )}
+              
+              {deliverOtpVerified && (
+                <>
+                  <div className="divider" />
+                  <div className="success-box">✅ OTP Verified! Ready for delivery.</div>
+                  <div className="btn-row">
+                    <button className="btn" onClick={() => { setDeliverOtpSent(false); setDeliverOtpVerified(false); setDeliverOtp(''); setDeliverOtpInput(''); }}>Change Invoice</button>
+                    <button className="btn btn-primary" onClick={() => { printThermalReceipt(deliverRec, 'final', cfgShop || 'Devi Jewellers', cfgAddr || ''); setRecords(prev => prev.map((r: RepairRecord) => (r.docNum || r.doc_num) === (deliverRec?.docNum || deliverRec?.doc_num) ? { ...r, status: 'delivered', deliveryDate: new Date().toISOString() } : r)); showMessage('deliver', 'Delivered successfully!', true); setTimeout(() => { setDeliverDoc(''); setDeliverRec(null); setDeliverSelected(false); setDeliverOtpSent(false); setDeliverOtpVerified(false); setDeliverOtp(''); setDeliverOtpInput(''); }, 2000); }}>🖨️ Print & Deliver</button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+          
+          {records.filter(r => r.status === 'ready').length === 0 && (
+            <div className="info-box">No invoices ready for delivery.</div>
+          )}
+          
+          <Msg text={msg['deliver']?.text || ''} ok={msg['deliver']?.ok || false} />
         </div>
       </div>
 
@@ -1445,7 +1639,7 @@ export default function App() {
           {showAll && ['overdue', 'ready', 'with_karagir', 'received'].map(g => grp[g].length > 0 && (
             <div key={g}>
               <div className="sec-label" style={{ marginTop: 12 }}>{g === 'with_karagir' ? 'With karagir' : g.charAt(0).toUpperCase() + g.slice(1)}</div>
-              {grp[g].map(r => (
+              {grp[g].map((r: RepairRecord) => (
                 <div key={r.docNum || r.doc_num} className="list-row" onClick={() => { setShowAll(false); setTrackQ(r.docNum || r.doc_num || ''); setTrackResults([r]) }}>
                   <div><span style={{ fontWeight: 700 }}>{r.docNum}</span><span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span>{r.name}<span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span><span style={{ color: 'var(--text2)' }}>{r.metal} {r.jewellery}</span></div>
                   <span className={`badge ${bdgCls[effStatus(r)]}`}>{bdgLbl[effStatus(r)]}</span>
@@ -1778,7 +1972,14 @@ export default function App() {
                 <div className="field"><label>Language</label><select value={tpl2Lang} onChange={e => setTpl2Lang(e.target.value)}><option value="en_IN">en_IN</option><option value="en">en</option><option value="hi">hi</option><option value="mr">mr</option></select></div>
               </div>
               <div className="field"><label>Template body</label><textarea rows={3} value={tpl2Body} onChange={e => setTpl2Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery is ready at Devi Jewellers. Final charges: &#8377; {{3}}. Please visit with receipt. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Final amount</div></div>
-              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { if (!tpl1Name || !tpl2Name) { showMessage('templates', 'Template names required.', false); return }; try { await fetch('/api/settings/templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tpl1Name, tpl2Name, tpl1Body: tpl1Body || null, tpl2Body: tpl2Body || null, tpl1Lang: tpl1Lang || 'en', tpl2Lang: tpl2Lang || 'en' }) }); showMessage('templates', 'Templates saved to database.', true); } catch { showMessage('templates', 'Failed to save templates.', false); } }}>Save templates</button></div>
+              <div className="divider" />
+              <div className="sec-label">Template 3 — Delivery OTP (4-digit verification)</div>
+              <div className="grid2">
+                <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl3Name} onChange={e => setTpl3Name(e.target.value)} /><div className="hint">For OTP verification on delivery</div></div>
+                <div className="field"><label>Language</label><select value={tpl3Lang} onChange={e => setTpl3Lang(e.target.value)}><option value="en_IN">en_IN</option><option value="en">en</option><option value="hi">hi</option><option value="mr">mr</option></select></div>
+              </div>
+              <div className="field"><label>Template body</label><textarea rows={3} value={tpl3Body} onChange={e => setTpl3Body(e.target.value)} placeholder={`Dear {{1}}, Your OTP for jewellery delivery is {{2}}. Valid for 10 minutes. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} OTP (4 digits)</div></div>
+              <div className="btn-row"><button className="btn btn-primary" onClick={async () => { if (!tpl1Name || !tpl2Name || !tpl3Name) { showMessage('templates', 'All template names required.', false); return }; try { await fetch('/api/settings/templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tpl1Name, tpl2Name, tpl3Name, tpl1Body: tpl1Body || null, tpl2Body: tpl2Body || null, tpl3Body: tpl3Body || null, tpl1Lang: tpl1Lang || 'en', tpl2Lang: tpl2Lang || 'en', tpl3Lang: tpl3Lang || 'en' }) }); showMessage('templates', 'Templates saved to database.', true); } catch { showMessage('templates', 'Failed to save templates.', false); } }}>Save templates</button></div>
               <Msg text={msg['templates']?.text || ''} ok={msg['templates']?.ok || false} />
             </>
           )}
