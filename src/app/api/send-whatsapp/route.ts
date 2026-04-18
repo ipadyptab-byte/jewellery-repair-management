@@ -35,33 +35,36 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Clean mobile number
-    const phone = mobile.replace(/^\+/, '')
+    // Clean mobile number - ensure it has country code
+    let phone = mobile.replace(/^\+/, '');
+    if (!phone.startsWith('91') && phone.length === 10) {
+      phone = '91' + phone; // Add India country code if not present
+    }
 
-    // Build OTP template payload (using Route Mobile template format)
+    // Build OTP template payload with COPY_CODE button for OTP
+    // Using media_template format with template name
     const payload = {
       phone: phone,
-      template_id: '2739573333095990',
-      language: { code: 'en' },
-      components: [
-        {
-          type: 'body',
-          parameters: [
-            { type: 'text', text: shopName || 'Devi Jewellers' },
-            { type: 'text', text: customerName || 'Customer' },
-            { type: 'text', text: otp || '0000' },
-            { type: 'text', text: expiry || '10 mins' }
-          ]
-        },
-        {
-          type: 'button',
-          sub_type: 'COPY_CODE',
-          parameters: []
-        }
-      ]
+      media: {
+        type: 'media_template',
+        template_name: 'delivery_otp', // Your approved template
+        lang_code: 'en',
+        body: [
+          { text: customerName || 'Customer' },
+          { text: otp || '0000' },
+          { text: '10 mins' }
+        ],
+        header: [
+          { text: shopName || 'Devi Jewellers' }
+        ],
+        button: [
+          { type: 'OTP',otp_type:'COPY_CODE',text:'COPY CODE' }
+        ]
+      }
     }
 
     console.log('📱 Sending OTP via server proxy to:', apiUrl)
+    console.log('📱 Payload:', JSON.stringify(payload, null, 2))
 
     // Make the actual call to Route Mobile from server
     const response = await fetch(apiUrl, {
