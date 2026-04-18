@@ -41,9 +41,9 @@ export async function POST(req: NextRequest) {
       phone = '91' + phone; // Add India country code if not present
     }
 
-    // Build OTP template payload - Use correct template name delivery_otp_dj_3
-    // With language as object and footer
-    const payload = {
+    // Build OTP template payload - try multiple formats
+    // Format 1: Simple template with body array
+    const payload1 = {
       phone: phone,
       template_name: 'delivery_otp_dj_3',
       language: { code: 'en' },
@@ -52,79 +52,114 @@ export async function POST(req: NextRequest) {
         customerName || 'Customer',
         otp || '0000'
       ]
-    }
+    };
+    
+    // Format 2: media_template format (as user said works in browser)
+    const payload2 = {
+      phone: phone,
+      media: {
+        type: 'media_template',
+        template_name: 'delivery_otp_dj_3',
+        lang_code: 'en',
+        body: [
+          { text: customerName || 'Customer' },
+          { text: otp || '0000' }
+        ],
+        button: [
+          { type: 'OTP', parameter: otp || '0000' }
+        ]
+      }
+    };
+    
+    // Format 3: With namespace (if required)
+    const payload3 = {
+      phone: phone,
+      template_name: 'delivery_otp_dj_3',
+      language: 'en',
+      components: [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: customerName || 'Customer' },
+            { type: 'text', text: otp || '0000' }
+          ]
+        }
+      ]
+    };
 
-    // Use the correct API URL - MUST be apis.rmlconnect.net (not api.)
-    // User's settings has wrong URL - we prioritize correct one
+    // Use the correct API URL - try multiple possible endpoints
     const rmApiUrls = [
-      'https://apis.rmlconnect.net/wba/v1/messages',  // CORRECT - must be "apis" plural
-      'https://api.rmlconnect.net/wba/v1/messages',  // User's URL - might not work
+      'https://apis.rmlconnect.net/wba/v1/messages',
+      'https://api.rmlconnect.net/wba/v1/messages',
+      'https://waba.rapigoconnect.com/v1/messages',
+      'https://api.rapigoconnect.com/v1/messages',
     ];
     
     console.log('📱 Sending OTP via Route Mobile API...');
     console.log('📱 Using API URLs:', rmApiUrls);
     console.log('📱 Token (first 30 chars):', token?.substring(0, 30));
-    console.log('📱 Payload:', JSON.stringify(payload, null, 2));
+    console.log('📱 Payload formats:', { payload1, payload2, payload3 });
     
     let lastError = '';
     
+    // Try all combinations: URL + Auth + Payload Format
     for (const rmApiUrl of rmApiUrls) {
-      // Try direct token
-      console.log('📱 Trying:', rmApiUrl, 'with Authorization: <token>');
-      try {
-        const response = await fetch(rmApiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token
-          },
-          body: JSON.stringify(payload)
-        });
-        const responseText = await response.text();
-        console.log('📱 Response:', response.status, responseText);
-        if (response.ok || response.status === 202) {
-          return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
-        }
-        lastError = responseText;
-      } catch (e: any) { lastError = e.message; }
-      
-      // Try Bearer token
-      console.log('📱 Trying:', rmApiUrl, 'with Authorization: Bearer <token>');
-      try {
-        const response = await fetch(rmApiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify(payload)
-        });
-        const responseText = await response.text();
-        console.log('📱 Response:', response.status, responseText);
-        if (response.ok || response.status === 202) {
-          return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
-        }
-        lastError = responseText;
-      } catch (e: any) { lastError = e.message; }
-      
-      // Try X-API-Key header
-      console.log('📱 Trying:', rmApiUrl, 'with X-API-Key: <token>');
-      try {
-        const response = await fetch(rmApiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': token
-          },
-          body: JSON.stringify(payload)
-        });
-        const responseText = await response.text();
-        console.log('📱 Response:', response.status, responseText);
-        if (response.ok || response.status === 202) {
-          return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
-        }
-        lastError = responseText;
-      } catch (e: any) { lastError = e.message; }
+      for (const currentPayload of [payload1, payload2, payload3]) {
+        // Try direct token
+        console.log('📱 Trying:', rmApiUrl, 'payload:', JSON.stringify(currentPayload)?.substring(0, 50));
+        try {
+          const response = await fetch(rmApiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token
+            },
+            body: JSON.stringify(currentPayload)
+          });
+          const responseText = await response.text();
+          console.log('📱 Response:', response.status, responseText.substring(0, 200));
+          if (response.ok || response.status === 202) {
+            return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
+          }
+          lastError = responseText;
+        } catch (e: any) { lastError = e.message; }
+        
+        // Try Bearer token
+        try {
+          const response = await fetch(rmApiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(currentPayload)
+          });
+          const responseText = await response.text();
+          console.log('📱 Bearer Response:', response.status, responseText.substring(0, 200));
+          if (response.ok || response.status === 202) {
+            return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
+          }
+          lastError = responseText;
+        } catch (e: any) { lastError = e.message; }
+        
+        // Try X-API-Key header
+        try {
+          const response = await fetch(rmApiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-API-Key': token
+            },
+            body: JSON.stringify(currentPayload)
+          });
+          const responseText = await response.text();
+          console.log('📱 X-API-Key Response:', response.status, responseText.substring(0, 200));
+          if (response.ok || response.status === 202) {
+            return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
+          }
+          lastError = responseText;
+        } catch (e: any) { lastError = e.message; }
+      }
     }
     
     return NextResponse.json({ 
