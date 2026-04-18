@@ -54,13 +54,6 @@ export async function POST(req: NextRequest) {
       ]
     }
 
-    // Try multiple auth formats
-    const authOptions = [
-      { 'Authorization': token },  // Direct token
-      { 'Authorization': 'Bearer ' + token },  // Bearer token
-      { 'X-API-Key': token },  // API Key header
-    ];
-    
     // Use the API URL from settings (or default to correct one)
     const rmApiUrls = [
       apiUrl || 'https://apis.rmlconnect.net/wba/v1/messages',
@@ -76,41 +69,62 @@ export async function POST(req: NextRequest) {
     let lastError = '';
     
     for (const rmApiUrl of rmApiUrls) {
-      for (const headers of authOptions) {
-        const headerKey = Object.keys(headers)[0];
-        console.log('📱 Trying:', rmApiUrl, 'with', headerKey, ':', Object.values(headers)[0]?.substring(0, 20) + '...');
-        
-        try {
-          const response = await fetch(rmApiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...headers
-            },
-            body: JSON.stringify(payload)
-          });
-
-          const responseText = await response.text();
-          console.log('📱 Response:', response.status, responseText);
-
-          // Check for success
-          if (response.ok || response.status === 202) {
-            let json;
-            try { json = JSON.parse(responseText); } catch {}
-            return NextResponse.json({ 
-              success: true, 
-              message: json?.message || 'OTP sent successfully!',
-              request_id: json?.request_id,
-              response: responseText
-            });
-          }
-          
-          lastError = responseText;
-        } catch (error: any) {
-          console.error('❌ Error:', error.message);
-          lastError = error.message;
+      // Try direct token
+      console.log('📱 Trying:', rmApiUrl, 'with Authorization: <token>');
+      try {
+        const response = await fetch(rmApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token
+          },
+          body: JSON.stringify(payload)
+        });
+        const responseText = await response.text();
+        console.log('📱 Response:', response.status, responseText);
+        if (response.ok || response.status === 202) {
+          return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
         }
-      }
+        lastError = responseText;
+      } catch (e: any) { lastError = e.message; }
+      
+      // Try Bearer token
+      console.log('📱 Trying:', rmApiUrl, 'with Authorization: Bearer <token>');
+      try {
+        const response = await fetch(rmApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify(payload)
+        });
+        const responseText = await response.text();
+        console.log('📱 Response:', response.status, responseText);
+        if (response.ok || response.status === 202) {
+          return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
+        }
+        lastError = responseText;
+      } catch (e: any) { lastError = e.message; }
+      
+      // Try X-API-Key header
+      console.log('📱 Trying:', rmApiUrl, 'with X-API-Key: <token>');
+      try {
+        const response = await fetch(rmApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': token
+          },
+          body: JSON.stringify(payload)
+        });
+        const responseText = await response.text();
+        console.log('📱 Response:', response.status, responseText);
+        if (response.ok || response.status === 202) {
+          return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
+        }
+        lastError = responseText;
+      } catch (e: any) { lastError = e.message; }
     }
     
     return NextResponse.json({ 
