@@ -594,7 +594,13 @@ export default function App() {
   // Save all settings (Shop Info + WhatsApp Credentials + Invoice Settings) - single button
   const saveAllSettings = async () => {
     console.log('💾 Starting save all settings...');
-    console.log('📦 Shop:', { businessName: cfgShop, shopOwner: cfgOwner, shopPhone: cfgPhone, shopGst: cfgGst, shopCity: cfgCity, shopAddress: cfgAddr });
+    console.log('📦 Shop fields being sent:');
+    console.log('  - businessName:', cfgShop);
+    console.log('  - shopOwner:', cfgOwner);
+    console.log('  - shopPhone:', cfgPhone);
+    console.log('  - shopGst:', cfgGst);
+    console.log('  - shopCity:', cfgCity);
+    console.log('  - shopAddress:', cfgAddr);
     
     try {
       // Save shop info
@@ -610,7 +616,8 @@ export default function App() {
           shopAddress: cfgAddr
         })
       });
-      console.log('🏪 Shop save response:', shopRes.status, shopRes.ok);
+      const shopJson = await shopRes.json();
+      console.log('🏪 Shop save response:', shopRes.status, shopJson);
       
       // Save WhatsApp + Invoice settings
       const waRes = await fetch('/api/settings', {
@@ -813,10 +820,11 @@ export default function App() {
         console.log('📥 /api/settings response:', settingsRes.status, settingsRes.ok);
         if (settingsRes.ok) {
           const settings = await settingsRes.json();
-          console.log('⚡ Settings loaded from DB:', settings);
+          console.log('⚡ Settings loaded from DB:', JSON.stringify(settings, null, 2));
           
           // Update all state from database directly
-          if (settings.businessName) setCfgShop(settings.businessName);
+          console.log('🔄 Setting state from DB:');
+          if (settings.businessName) { console.log('  - setCfgShop:', settings.businessName); setCfgShop(settings.businessName); }
           if (settings.shopOwner) setCfgOwner(settings.shopOwner);
           if (settings.shopPhone) setCfgPhone(settings.shopPhone);
           if (settings.shopGst) setCfgGst(settings.shopGst);
