@@ -707,6 +707,38 @@ export default function App() {
     }
   }
 
+  // Save templates only (separate button for Message templates tab)
+  const saveTemplatesOnly = async () => {
+    console.log('💾 Saving templates...', { tpl1Name, tpl2Name, tpl3Name, tpl1Body, tpl2Body, tpl3Body });
+    try {
+      const response = await fetch('/api/settings/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tpl1Name, tpl2Name, tpl3Name,
+          tpl1Body: tpl1Body || null,
+          tpl2Body: tpl2Body || null,
+          tpl3Body: tpl3Body || null,
+          tpl1Lang: tpl1Lang || 'en',
+          tpl2Lang: tpl2Lang || 'en',
+          tpl3Lang: tpl3Lang || 'en'
+        })
+      });
+      
+      if (response.ok) {
+        showMessage('templates', '✅ Templates saved to database!', true);
+        console.log('✅ Templates saved successfully');
+      } else {
+        const err = await response.json();
+        showMessage('templates', 'Failed to save: ' + (err.error || 'unknown'), false);
+        console.error('❌ Template save failed:', err);
+      }
+    } catch (err) {
+      console.error('❌ Template save error:', err);
+      showMessage('templates', 'Error: ' + err, false);
+    }
+  }
+
   // Master form fields
   const [msName, setMsName] = useState(''); const [msMob, setMsMob] = useState(''); const [msStatus, setMsStatus] = useState('active')
   const [mjName, setMjName] = useState(''); const [mjCat, setMjCat] = useState('Necklace'); const [mjStatus, setMjStatus] = useState('active')
@@ -2127,6 +2159,9 @@ export default function App() {
                 <div className="field"><label>Language</label><select value={tpl3Lang} onChange={e => setTpl3Lang(e.target.value)}><option value="en_IN">en_IN</option><option value="en">en</option><option value="hi">hi</option><option value="mr">mr</option></select></div>
               </div>
               <div className="field"><label>Template body</label><textarea rows={3} value={tpl3Body} onChange={e => setTpl3Body(e.target.value)} placeholder={`Dear {{1}}, Your OTP for jewellery delivery is {{2}}. Valid for 10 minutes. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} OTP (4 digits)</div></div>
+              <div className="btn-row" style={{ marginTop: 12 }}>
+                <button className="btn btn-primary" onClick={saveTemplatesOnly}>💾 Save Templates</button>
+              </div>
               <Msg text={msg['templates']?.text || ''} ok={msg['templates']?.ok || false} />
             </>
           )}
