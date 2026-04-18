@@ -650,6 +650,11 @@ export default function App() {
       if (shopRes.ok && waRes.ok && tplRes.ok) {
         showMessage('creds', 'All settings saved successfully!', true);
         console.log('✅ All settings saved!');
+        
+        // Force refresh settings after save
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else {
         showMessage('creds', 'Some settings failed to save. Check console.', false);
         console.error('❌ Some saves failed');
