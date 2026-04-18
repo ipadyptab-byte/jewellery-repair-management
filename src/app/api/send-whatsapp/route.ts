@@ -41,25 +41,16 @@ export async function POST(req: NextRequest) {
       phone = '91' + phone; // Add India country code if not present
     }
 
-    // Build OTP template payload - Using delivery_otp_dj_3 template with COPY_CODE button
+    // Build OTP template payload - Simple format without media/template/components
     const payload = {
       phone: phone,
-      media: {
-        type: 'media_template',
-        template_name: 'delivery_otp_dj_3',
-        lang_code: 'en',
-        body: [
-          { text: customerName || 'Customer' },
-          { text: otp || '0000' }
-        ],
-        button: [
-          {
-            type: 'OTP',
-            otp_type: 'COPY_CODE',
-            text: 'COPY CODE'
-          }
-        ]
-      }
+      template_name: 'delivery_otp_dj_3',
+      template_id: '2739573333095990',
+      language: 'en',
+      body: [
+        customerName || 'Customer',
+        otp || '0000'
+      ]
     }
 
     // Use the correct Route Mobile API URL
@@ -70,7 +61,7 @@ export async function POST(req: NextRequest) {
     console.log('📱 Payload:', JSON.stringify(payload, null, 2));
     
     try {
-      // Use same format as browser - works!
+      // Use simple format
       const response = await fetch(rmApiUrl, {
         method: 'POST',
         headers: {
