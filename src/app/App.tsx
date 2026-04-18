@@ -593,14 +593,25 @@ export default function App() {
 
   // Save all settings (Shop Info + WhatsApp Credentials + Invoice Settings) - single button
   const saveAllSettings = async () => {
+    // Show alert with values being sent - so user can see before page potentially redirects
+    const shopData = {
+      businessName: cfgShop,
+      shopOwner: cfgOwner,
+      shopPhone: cfgPhone,
+      shopGst: cfgGst,
+      shopCity: cfgCity,
+      shopAddress: cfgAddr
+    };
+    alert('📦 Shop fields being sent to database:\n' + 
+      'businessName: ' + cfgShop + '\n' +
+      'shopOwner: ' + cfgOwner + '\n' +
+      'shopPhone: ' + cfgPhone + '\n' +
+      'shopGst: ' + cfgGst + '\n' +
+      'shopCity: ' + cfgCity + '\n' +
+      'shopAddress: ' + cfgAddr + '\n\nClick OK to save...');
+    
     console.log('💾 Starting save all settings...');
-    console.log('📦 Shop fields being sent:');
-    console.log('  - businessName:', cfgShop);
-    console.log('  - shopOwner:', cfgOwner);
-    console.log('  - shopPhone:', cfgPhone);
-    console.log('  - shopGst:', cfgGst);
-    console.log('  - shopCity:', cfgCity);
-    console.log('  - shopAddress:', cfgAddr);
+    console.log('📦 Shop fields being sent:', shopData);
     
     try {
       // Save shop info
@@ -655,13 +666,22 @@ export default function App() {
       console.log('📝 Templates save response:', tplRes.status, tplRes.ok);
       
       if (shopRes.ok && waRes.ok && tplRes.ok) {
-        showMessage('creds', 'All settings saved successfully!', true);
+        showMessage('creds', '✅ All settings saved to database!', true);
         console.log('✅ All settings saved!');
         
-        // Force refresh settings after save
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        // Manually trigger settings reload without page redirect
+        fetch('/api/settings').then(res => res.json()).then(settings => {
+          console.log('🔄 Reloaded settings from DB:', settings);
+          if (settings.businessName) setCfgShop(settings.businessName);
+          if (settings.shopOwner) setCfgOwner(settings.shopOwner);
+          if (settings.shopPhone) setCfgPhone(settings.shopPhone);
+          if (settings.shopGst) setCfgGst(settings.shopGst);
+          if (settings.shopCity) setCfgCity(settings.shopCity);
+          if (settings.shopAddress) setCfgAddr(settings.shopAddress);
+          showMessage('creds', '✅ Settings reloaded from database!', true);
+        }).catch(err => {
+          console.error('Failed to reload:', err);
+        });
       } else {
         showMessage('creds', 'Some settings failed to save. Check console.', false);
         console.error('❌ Some saves failed');
