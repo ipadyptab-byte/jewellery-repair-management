@@ -1210,7 +1210,7 @@ export default function App() {
         return;
       }
 
-      // Update the record via API
+      // Update local state
       setRecords(prev => prev.map(r => r.docNum === koDoc ? {
         ...r,
         karagir: koKaragir,
@@ -1219,6 +1219,22 @@ export default function App() {
         master_id: karagirMaster.id,
         notes: koNotes || r.notes || ''
       } : r));
+
+      // Save to database
+      try {
+        const response = await fetch('/api/repairs/' + koDoc, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            karagir: koKaragir,
+            karagir_date: new Date().toISOString(),
+            status: 'with_karagir',
+            master_id: karagirMaster.id,
+            notes: koNotes || ''
+          })
+        });
+        if (!response.ok) console.error('Failed to save karagir to DB');
+      } catch (e) { console.error('Error saving karagir to DB:', e); }
 
       showMessage('ko', koEditing ? `Updated: ${koDoc} → ${koKaragir}` : `Issued to ${koKaragir} for ${koDoc}`, true);
       setKoDoc(''); setKoLoaded(false); setKoKaragir(''); setKoNotes(''); setKoEditing(false);
@@ -1241,13 +1257,29 @@ export default function App() {
         finalAmount: parseFloat(kiAmount),
         completedDate: kiEditing && r.completedDate ? r.completedDate : new Date().toISOString(),
         quality: kiQuality,
-        status: kiEditing && r.status === 'ready' ? 'ready' : 'ready',
+        status: 'ready',
         final_amount: parseFloat(kiAmount),
         completed_date: kiEditing && r.completed_date ? r.completed_date : new Date().toISOString()
       } : r);
 
       setRecords(updated);
       setFinalRec(updated.find(r => r.docNum === kiDoc) || null);
+
+      // Save to database
+      try {
+        const response = await fetch('/api/repairs/' + kiDoc, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            final_amount: parseFloat(kiAmount),
+            completed_date: new Date().toISOString(),
+            quality: kiQuality,
+            status: 'ready'
+          })
+        });
+        if (!response.ok) console.error('Failed to save final amount to DB');
+      } catch (e) { console.error('Error saving final amount to DB:', e); }
+
       showMessage('ki', kiEditing ? `Updated final amount for ${kiDoc}` : `Updated! Final invoice generated for ${kiDoc}`, true);
       setKiDoc(''); setKiLoaded(false); setKiAmount(''); setKiEditing(false);
       if (kiEditing) { if (finalRec) { setPrintRec(null); } setPage('dashboard'); return null; }
@@ -1638,7 +1670,24 @@ export default function App() {
                   <div className="success-box">✅ OTP Verified! Ready for delivery.</div>
                   <div className="btn-row">
                     <button className="btn" onClick={() => { setDeliverOtpSent(false); setDeliverOtpVerified(false); setDeliverOtp(''); setDeliverOtpInput(''); }}>Change Invoice</button>
-                    <button className="btn btn-primary" onClick={() => { printThermalReceipt(deliverRec, 'final', cfgShop || 'Devi Jewellers', cfgAddr || ''); setRecords(prev => prev.map((r: RepairRecord) => (r.docNum || r.doc_num) === (deliverRec?.docNum || deliverRec?.doc_num) ? { ...r, status: 'delivered', deliveryDate: new Date().toISOString() } : r)); showMessage('deliver', 'Delivered successfully!', true); setTimeout(() => { setDeliverDoc(''); setDeliverRec(null); setDeliverSelected(false); setDeliverOtpSent(false); setDeliverOtpVerified(false); setDeliverOtp(''); setDeliverOtpInput(''); }, 2000); }}>🖨️ Print & Deliver</button>
+                    <button className="btn btn-primary" onClick={async () => { 
+                          printThermalReceipt(deliverRec, 'final', cfgShop || 'Devi Jewellers', cfgAddr || '');
+                          // Update local state
+                          const updatedRecords = prev => prev.map((r: RepairRecord) => (r.docNum || r.doc_num) === (deliverRec?.docNum || deliverRec?.doc_num) ? { ...r, status: 'delivered', deliveryDate: new Date().toISOString() } : r);
+                          setRecords(updatedRecords);
+                          // Save to database
+                          try {
+                            const docNum = deliverRec?.docNum || deliverRec?.doc_num;
+                            const response = await fetch('/api/repairs/' + docNum, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ status: 'delivered', delivery_date: new Date().toISOString() })
+                            });
+                            if (!response.ok) console.error('Failed to save delivery status to DB');
+                          } catch (e) { console.error('Error saving delivery:', e); }
+                          showMessage('deliver', 'Delivered successfully!', true); 
+                          setTimeout(() => { setDeliverDoc(''); setDeliverRec(null); setDeliverSelected(false); setDeliverOtpSent(false); setDeliverOtpVerified(false); setDeliverOtp(''); setDeliverOtpInput(''); }, 2000); 
+                        }}>🖨️ Print & Deliver</button>
                   </div>
                 </>
               )}
