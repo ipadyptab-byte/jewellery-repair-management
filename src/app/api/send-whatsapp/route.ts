@@ -41,34 +41,22 @@ export async function POST(req: NextRequest) {
       phone = '91' + phone; // Add India country code if not present
     }
 
-    // Build OTP template payload for Route Mobile with COPY_CODE OTP button
+    // Build OTP template payload for Route Mobile - Using media_template format
     // Template: delivery_otp (ID: 970657965616814)
     const payload = {
       phone: phone,
-      template_id: '970657965616814',
-      language: { code: 'en' },
-      components: [
-        {
-          type: 'body',
-          parameters: []
-        },
-        {
-          type: 'footer',
-          parameters: [
-            { type: 'text', text: '10 mins' }
-          ]
-        },
-        {
-          type: 'button',
-          sub_type: 'otp',
-          parameters: [
-            { type: 'text', text: otp || '0000' }
-          ]
-        }
-      ]
+      media: {
+        type: 'media_template',
+        template_id: '970657965616814',
+        lang_code: 'en',
+        body: [],
+        button: [
+          { type: 'OTP', otp_type: 'COPY_CODE' }
+        ]
+      }
     }
 
-    // Use the correct Route Mobile API URL (apis.rmlconnect.net - plural)
+    // Use the correct Route Mobile API URL
     const rmApiUrl = 'https://apis.rmlconnect.net/wba/v1/messages';
     
     console.log('📱 Sending OTP via Route Mobile API...');
@@ -81,7 +69,7 @@ export async function POST(req: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': token // The API key directly
+          'Authorization': token
         },
         body: JSON.stringify(payload)
       });
@@ -96,10 +84,43 @@ export async function POST(req: NextRequest) {
           response: responseText
         });
       } else {
+        // Try alternative format if first fails
+        console.log('📱 Trying alternative payload format...');
+        
+        const altPayload = {
+          phone: phone,
+          type: 'template',
+          template: {
+            id: '970657965616814',
+            language: 'en'
+          }
+        };
+        
+        const altResponse = await fetch(rmApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token
+          },
+          body: JSON.stringify(altPayload)
+        });
+        
+        const altText = await altResponse.text();
+        console.log('📱 Alt response:', altResponse.status, altText);
+        
+        if (altResponse.ok) {
+          return NextResponse.json({ 
+            success: true, 
+            message: 'OTP sent successfully!',
+            response: altText
+          });
+        }
+        
         return NextResponse.json({ 
           success: false, 
           error: 'Route Mobile API error',
           details: responseText,
+          alt_details: altText,
           status: response.status
         }, { status: response.status });
       }
