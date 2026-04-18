@@ -58,15 +58,14 @@ export async function POST(req: NextRequest) {
     const authOptions = [
       { 'Authorization': token },  // Direct token
       { 'Authorization': 'Bearer ' + token },  // Bearer token
+      { 'X-API-Key': token },  // API Key header
     ];
     
     // Use the API URL from settings (or default to correct one)
-    // User's settings has: https://api.rmlconnect.net/wba/v1/messages
-    // But correct is: https://apis.rmlconnect.net/wba/v1/messages
     const rmApiUrls = [
       apiUrl || 'https://apis.rmlconnect.net/wba/v1/messages',
-      'https://apis.rmlconnect.net/wba/v1/messages',  // Correct URL
-      'https://api.rmlconnect.net/wba/v1/messages',   // User's URL
+      'https://apis.rmlconnect.net/wba/v1/messages',
+      'https://api.rmlconnect.net/wba/v1/messages',
     ];
     
     console.log('📱 Sending OTP via Route Mobile API...');
@@ -78,7 +77,8 @@ export async function POST(req: NextRequest) {
     
     for (const rmApiUrl of rmApiUrls) {
       for (const headers of authOptions) {
-        console.log('📱 Trying:', rmApiUrl, 'with', headers['Authorization']?.substring(0, 20) + '...');
+        const headerKey = Object.keys(headers)[0];
+        console.log('📱 Trying:', rmApiUrl, 'with', headerKey, ':', Object.values(headers)[0]?.substring(0, 20) + '...');
         
         try {
           const response = await fetch(rmApiUrl, {
@@ -103,12 +103,6 @@ export async function POST(req: NextRequest) {
               request_id: json?.request_id,
               response: responseText
             });
-          }
-          
-          // If "Invalid token", try next URL
-          if (responseText.includes('Invalid token')) {
-            lastError = responseText;
-            continue;
           }
           
           lastError = responseText;
