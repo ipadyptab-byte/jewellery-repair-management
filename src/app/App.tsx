@@ -1222,7 +1222,7 @@ export default function App() {
 
       // Save to database
       try {
-        const response = await fetch('/api/repairs/' + koDoc, {
+        const response = await fetch('/api/records/' + koDoc, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1233,7 +1233,7 @@ export default function App() {
             notes: koNotes || ''
           })
         });
-        if (!response.ok) console.error('Failed to save karagir to DB');
+        if (!response.ok) console.error('Failed to save karagir to DB', response.status);
       } catch (e) { console.error('Error saving karagir to DB:', e); }
 
       showMessage('ko', koEditing ? `Updated: ${koDoc} → ${koKaragir}` : `Issued to ${koKaragir} for ${koDoc}`, true);
@@ -1267,7 +1267,7 @@ export default function App() {
 
       // Save to database
       try {
-        const response = await fetch('/api/repairs/' + kiDoc, {
+        const response = await fetch('/api/records/' + kiDoc, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1277,7 +1277,7 @@ export default function App() {
             status: 'ready'
           })
         });
-        if (!response.ok) console.error('Failed to save final amount to DB');
+        if (!response.ok) console.error('Failed to save final amount to DB', response.status);
       } catch (e) { console.error('Error saving final amount to DB:', e); }
 
       showMessage('ki', kiEditing ? `Updated final amount for ${kiDoc}` : `Updated! Final invoice generated for ${kiDoc}`, true);
@@ -1677,12 +1677,12 @@ export default function App() {
                           // Save to database
                           try {
                             const docNum = deliverRec?.docNum || deliverRec?.doc_num;
-                            const response = await fetch('/api/repairs/' + docNum, {
+                            const response = await fetch('/api/records/' + docNum, {
                               method: 'PUT',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ status: 'delivered', delivery_date: new Date().toISOString() })
                             });
-                            if (!response.ok) console.error('Failed to save delivery status to DB');
+                            if (!response.ok) console.error('Failed to save delivery status to DB', response.status);
                           } catch (e) { console.error('Error saving delivery:', e); }
                           showMessage('deliver', 'Delivered successfully!', true); 
                           setTimeout(() => { setDeliverDoc(''); setDeliverRec(null); setDeliverSelected(false); setDeliverOtpSent(false); setDeliverOtpVerified(false); setDeliverOtp(''); setDeliverOtpInput(''); }, 2000); 

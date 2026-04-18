@@ -110,35 +110,87 @@ export async function PUT(request: NextRequest) {
       salesman
     } = body;
 
-    if (!id) {
-      return NextResponse.json({ error: 'Record ID is required' }, { status: 400 });
+    // Allow update by either id or doc_num
+    if (!id && !doc_num) {
+      return NextResponse.json({ error: 'Either id or doc_num is required' }, { status: 400 });
     }
 
-    const pool = sql()
-    const result = await pool.query(
-      `UPDATE repair_records SET
-        doc_num = $1,
-        name = $2,
-        mobile = $3,
-        metal = $4,
-        jewellery = $5,
-        weight = $6,
-        amount = $7,
-        salesman = $8,
-        description = $9,
-        received_date = $10,
-        delivery_date = $11,
-        status = $12,
-        karagir = $13,
-        karagir_date = $14,
-        final_amount = $15,
-        completed_date = $16,
-        quality = $17,
-        updated_at = NOW()
-      WHERE id = $18
-      RETURNING *`,
-      [doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status, karagir, karagir_date, final_amount, completed_date, quality, id]
-    );
+    const pool = sql();
+    let result;
+
+    if (id) {
+      // Update by id
+      result = await pool.query(
+        `UPDATE repair_records SET
+          doc_num = COALESCE($1, doc_num),
+          name = COALESCE($2, name),
+          mobile = COALESCE($3, mobile),
+          metal = COALESCE($4, metal),
+          jewellery = COALESCE($5, jewellery),
+          weight = COALESCE($6, weight),
+          amount = COALESCE($7, amount),
+          salesman = COALESCE($8, salesman),
+          description = COALESCE($9, description),
+          received_date = COALESCE($10, received_date),
+          delivery_date = COALESCE($11, delivery_date),
+          status = COALESCE($12, status),
+          karagir = COALESCE($13, karagir),
+          karagir_date = COALESCE($14, karagir_date),
+          final_amount = COALESCE($15, final_amount),
+          completed_date = COALESCE($16, completed_date),
+          quality = COALESCE($17, quality),
+          updated_at = NOW()
+        WHERE id = $18
+        RETURNING *`,
+        [doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status, karagir, karagir_date, final_amount, completed_date, quality, id]
+      );
+    } else {
+      // Update by doc_num
+      // Build dynamic update based on provided fields
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramIndex = 1;
+
+      const fields = [
+        ['doc_num', doc_num],
+        ['name', customer_name],
+        ['mobile', phone_number],
+        ['metal', metal],
+        ['jewellery', item_type],
+        ['weight', weight],
+        ['amount', estimated_cost],
+        ['salesman', salesman],
+        ['description', description],
+        ['received_date', received_date],
+        ['delivery_date', delivery_date],
+        ['status', status],
+        ['karagir', karagir],
+        ['karagir_date', karagir_date],
+        ['final_amount', final_amount],
+        ['completed_date', completed_date],
+        ['quality', quality]
+      ];
+
+      for (const [field, value] of fields) {
+        if (value !== undefined && value !== null) {
+          updates.push(`${field} = $${paramIndex}`);
+          values.push(value);
+          paramIndex++;
+        }
+      }
+
+      if (updates.length === 0) {
+        return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+      }
+
+      updates.push('updated_at = NOW()');
+      values.push(doc_num);
+
+      const query = `UPDATE repair_records SET ${updates.join(', ')} WHERE doc_num = $${paramIndex} RETURNING *`;
+      console.log('Update query:', query, 'values:', values);
+      
+      result = await pool.query(query, values);
+    }
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Record not found' }, { status: 404 });
