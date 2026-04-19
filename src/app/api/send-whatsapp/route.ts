@@ -52,14 +52,21 @@ export async function POST(req: NextRequest) {
     const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
     
     // Standard template payload - NO button field (causes mismatch)
-    const payload = {
-      phone: phone,
-      media: {
-        type: 'media_template',
-        template_name: 'delivery_otp_dj_3',
-        lang_code: 'en',
-                body: [
-                    {
+    // Fix phone FIRST (very important)
+let phoneClean = mobile.replace(/\D/g, '');
+
+if (!phoneClean.startsWith('91')) {
+  phoneClean = '91' + phoneClean;
+}
+
+const payload = {
+  phone: phoneClean,
+  media: {
+    type: 'media_template',
+    template_name: 'delivery_otp_dj_3',
+    lang_code: 'en',
+    components: [
+      {
         type: 'button',
         sub_type: 'otp',
         index: '0',
