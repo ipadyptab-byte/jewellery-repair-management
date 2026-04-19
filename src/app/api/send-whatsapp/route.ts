@@ -65,7 +65,7 @@ const payload = {
     type: 'media_template',
     template_name: 'delivery_otp_dj_3',
     lang_code: 'en',
-    components: [
+    body: [
       {
         type: 'button',
         sub_type: 'otp',
