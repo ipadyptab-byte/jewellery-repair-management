@@ -67,7 +67,7 @@ const payload = {
         lang_code: 'en',
         body: [
             
-          { text: OTP || '0000' }
+          { Button Type: OTP || '0000' }
           
         ]
       }
