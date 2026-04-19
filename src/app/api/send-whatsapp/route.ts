@@ -44,16 +44,17 @@ export async function POST(req: NextRequest) {
     // Correct API URL - MUST be apis.rmlconnect.net (plural)
     const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
     
-    // Standard template payload - NO button field (causes mismatch)
+    // Correct payload for WhatsApp Authentication Template (OTP with COPY_CODE)
+    // NO body variables - OTP goes ONLY in button parameter
     const payload = {
       phone: phone,
       media: {
         type: 'media_template',
         template_name: 'delivery_otp_dj_3',
         lang_code: 'en',
-        body: [
-          { text: customerName || 'Customer' },
-          { text: otp || '0000' }
+        // NO body array - causes parameter mismatch error
+        button: [
+          { type: 'OTP', parameter: otp || '0000' }
         ]
       }
     };
