@@ -44,16 +44,21 @@ export async function POST(req: NextRequest) {
     // Correct API URL - MUST be apis.rmlconnect.net (plural)
     const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
     
-    // Standard template payload - NO button field (causes mismatch)
+    // Standard template payload - match approved template exactly
     const payload = {
       phone: phone,
       media: {
         type: 'media_template',
         template_name: 'delivery_otp_dj_3',
         lang_code: 'en',
+        header: "Devi Jewellers",
         body: [
           { text: customerName || 'Customer' },
           { text: otp || '0000' }
+        ],
+        footer: 'Code Expiration Time:10mins',
+        button: [
+          { type: 'OTP', sub_type: 'COPY_CODE', parameter: otp || '0000' }
         ]
       }
     };
