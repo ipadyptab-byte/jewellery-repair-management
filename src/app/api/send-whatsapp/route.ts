@@ -67,19 +67,10 @@ const payload = {
     lang_code: 'en',
     body: [
       {
-        type: 'button',
-        sub_type: 'otp',
-        index: '0',
-        parameters: [
-          {
-            type: 'text',
-            text: otp || '0000'
-          }
-        ]
+        { text: otp || '0000' }
+               ]
       }
-    ]
-  }
-};
+    }; 
     
     console.log('📱 Sending OTP via Route Mobile API...');
     console.log('📱 URL:', API_URL);
