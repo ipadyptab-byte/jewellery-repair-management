@@ -446,7 +446,7 @@ export default function App() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             mobile: mobile,
-            customerName: customerName,
+            customerName: 'mangesh', // Static name for OTP
             otp: otp,
             shopName: cfgShop || 'Devi Jewellers',
             expiry: '10 mins',
