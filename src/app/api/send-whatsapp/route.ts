@@ -68,7 +68,7 @@ const payload = {
         body: [
             
           { text: OTP || '0000' }
-          {Code Expiration Time: expiry ||'10mins'}
+          { expiry: Code Expiration Time  ||'10mins'}     
         ]
       }
     };
