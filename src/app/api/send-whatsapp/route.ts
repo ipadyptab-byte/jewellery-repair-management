@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const { 
       mobile, 
       customerName, 
-      otp, 
+      OTP, 
       shopName,
       expiry,
       token,
@@ -66,9 +66,8 @@ const payload = {
         template_name: 'delivery_otp_dj_3',
         lang_code: 'en',
         body: [
-            { OTP Type:COPY_CODE }
-
-          { text: otp || '0000' }
+            
+          { text: OTP || '0000' }
         ]
       }
     };
