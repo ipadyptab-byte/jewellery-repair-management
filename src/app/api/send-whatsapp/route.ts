@@ -12,14 +12,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // ✅ Clean & format phone (MANDATORY)
-    let phone = mobile.replace(/\D/g, '')
-    if (!phone.startsWith('91')) {
-      phone = '91' + phone
-    }
+   let phone = mobile.replace(/\D/g, '')
 
-    // ✅ CORRECT payload for AUTHENTICATION (OTP template)
-    const payload = {
+if (!phone.startsWith('91')) {
+  phone = '91' + phone
+}
+
+const payload = {
   phone: phone,
   media: {
     type: 'media_template',
@@ -27,12 +26,12 @@ export async function POST(req: NextRequest) {
     lang_code: 'en',
     button: [
       {
-        type: 'OTP',
+        type: 'text',   // ✅ FIXED
         parameter: otp || '0000'
       }
     ]
   }
-};
+}
     console.log('📱 FINAL PAYLOAD:', JSON.stringify(payload, null, 2))
 
     const response = await fetch(
