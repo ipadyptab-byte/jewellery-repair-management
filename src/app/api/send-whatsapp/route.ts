@@ -60,8 +60,7 @@ export async function POST(req: NextRequest) {
         lang_code: 'en',
                 body: [
                     { text: OTP || '0000' }
-                  {OTP Type:COPY_CODE}   
-                ]
+               ]
       }
     };
 
