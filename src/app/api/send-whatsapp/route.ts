@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         type: 'media_template',
         template_name: 'delivery_otp_dj_3',
         lang_code: 'en',
-                body: [
+                components: [
                     { text: otp || '0000' }
                ]
       }
