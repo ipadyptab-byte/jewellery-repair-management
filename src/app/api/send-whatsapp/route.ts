@@ -66,9 +66,7 @@ const payload = {
         template_name: 'delivery_otp_dj_3',
         lang_code: 'en',
         body: [
-              { Button Type:OTP }
-
-             { OTP Type:COPY_CODE }
+            { OTP Type:COPY_CODE }
 
           { text: otp || '0000' }
         ]
