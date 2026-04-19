@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
       shopName,
       expiry,
       token,
-      apiUrl 
+      apiUrl,
+      isOtp 
     } = body
 
     if (!mobile || !token || !apiUrl) {
@@ -35,11 +36,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Clean mobile number - ensure it has country code
+    // Clean mobile number
     let phone = mobile.replace(/^\+/, '');
-    if (!phone.startsWith('91') && phone.length === 10) {
-      phone = '91' + phone; // Add India country code if not present
+    
+    // For OTP messages - keep original format (no 91 prefix)
+    // For other messages - add 91 if not present
+    if (!isOtp) {
+      if (!phone.startsWith('91') && phone.length === 10) {
+        phone = '91' + phone;
+      }
     }
+    // For OTP: keep as-is (e.g., 9422039371)
 
     // Correct API URL - MUST be apis.rmlconnect.net (plural)
     const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';

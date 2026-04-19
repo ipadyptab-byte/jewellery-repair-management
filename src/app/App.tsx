@@ -451,7 +451,8 @@ export default function App() {
             shopName: cfgShop || 'Devi Jewellers',
             expiry: '10 mins',
             token: rmToken,
-            apiUrl: rmApiUrl
+            apiUrl: rmApiUrl,
+            isOtp: true
           })
         });
         
