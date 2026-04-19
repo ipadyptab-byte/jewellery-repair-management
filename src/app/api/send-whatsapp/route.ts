@@ -70,7 +70,7 @@ const payload = {
 
              { OTP Type:COPY_CODE }
 
-          { text: COPY CODE || '0000' }
+          { text: otp || '0000' }
         ]
       }
     };
