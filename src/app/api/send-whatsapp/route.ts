@@ -25,10 +25,12 @@ export async function POST(req: NextRequest) {
     type: 'media_template',
     template_name: 'delivery_otp_dj_3',
     lang_code: 'en',
-    button: {
-      type: 'OTP',
-      parameter: otp || '0000'
-    }
+    button: [
+      {
+        type: 'OTP',
+        parameter: otp || '0000'
+      }
+    ]
   }
 };
     console.log('📱 FINAL PAYLOAD:', JSON.stringify(payload, null, 2))
