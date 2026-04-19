@@ -41,11 +41,10 @@ export async function POST(req: NextRequest) {
       phone = '91' + phone; // Add India country code if not present
     }
 
-    // Use the correct API URL - MUST be apis.rmlconnect.net (plural)
+    // Correct API URL - MUST be apis.rmlconnect.net (plural)
     const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
     
-    // Build OTP template payload
-    // Format: media_template (as user confirmed works in browser)
+    // Standard template payload - NO button field (causes mismatch)
     const payload = {
       phone: phone,
       media: {
@@ -55,20 +54,35 @@ export async function POST(req: NextRequest) {
         body: [
           { text: customerName || 'Customer' },
           { text: otp || '0000' }
-        ],
-        button: [
-          { type: 'OTP', parameter: otp || '0000' }
         ]
       }
     };
     
     console.log('📱 Sending OTP via Route Mobile API...');
     console.log('📱 URL:', API_URL);
-    console.log('📱 TOKEN TYPE:', token?.substring(0, 30));
-    console.log('📱 HEADER USED: Authorization: Bearer <token>');
+    console.log('📱 TOKEN (first 30):', token?.substring(0, 30));
     console.log('📱 Payload:', JSON.stringify(payload));
 
-    // Try with Bearer token (JWT)
+    // Try WITHOUT Bearer first (most likely correct for JWT)
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token  // Not "Bearer " - JWT goes directly
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const responseText = await response.text();
+      console.log('📱 Response (no Bearer):', response.status, responseText?.substring(0, 200));
+
+      if (response.ok || response.status === 202) {
+        return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
+      }
+    } catch (e: any) { console.log('📱 Error (no Bearer):', e.message); }
+    
+    // Try WITH Bearer prefix (alternative for some APIs)
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -80,32 +94,18 @@ export async function POST(req: NextRequest) {
       });
 
       const responseText = await response.text();
-      console.log('📱 Response:', response.status, responseText);
+      console.log('📱 Response (Bearer):', response.status, responseText?.substring(0, 200));
 
       if (response.ok || response.status === 202) {
-        let json;
-        try { json = JSON.parse(responseText); } catch {}
-        return NextResponse.json({ 
-          success: true, 
-          message: json?.message || 'OTP sent successfully!',
-          response: responseText
-        });
+        return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
       }
-      
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Route Mobile API error',
-        details: responseText,
-        status: response.status
-      }, { status: response.status });
-    } catch (error: any) {
-      console.error('❌ Error:', error.message);
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Failed to send OTP',
-        details: error.message
-      }, { status: 500 });
-    }
+    } catch (e: any) { console.log('📱 Error (Bearer):', e.message); }
+    
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Route Mobile API error - Invalid token or template mismatch',
+      status: 400
+    }, { status: 400 });
   } catch (error: any) {
     console.error('❌ WhatsApp proxy error:', error)
     return NextResponse.json({ 
