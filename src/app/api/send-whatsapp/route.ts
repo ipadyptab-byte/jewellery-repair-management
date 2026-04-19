@@ -36,30 +36,38 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Clean mobile number
+    // Clean mobile number - remove any leading +
     let phone = mobile.replace(/^\+/, '');
     
-    // For OTP messages - keep original format (no 91 prefix)
-    // For other messages - add 91 if not present
+    // For non-OTP messages, add 91 if not present
     if (!isOtp) {
       if (!phone.startsWith('91') && phone.length === 10) {
         phone = '91' + phone;
       }
     }
-    // For OTP: keep as-is (e.g., 9422039371)
 
     // Correct API URL - MUST be apis.rmlconnect.net (plural)
     const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
     
-    // Standard template payload - NO button field (causes mismatch)
+    // Correct payload for WhatsApp Authentication Template using components
     const payload = {
-      phone: phone,
+      phone: '91' + phone,  // ALWAYS add 91
       media: {
         type: 'media_template',
         template_name: 'delivery_otp_dj_3',
         lang_code: 'en',
-        body: [
-                    { text: otp || '0000' }
+        components: [
+          {
+            type: 'button',
+            sub_type: 'otp',
+            index: '0',
+            parameters: [
+              {
+                type: 'text',
+                text: otp || '0000'
+              }
+            ]
+          }
         ]
       }
     };
