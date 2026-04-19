@@ -59,11 +59,20 @@ export async function POST(req: NextRequest) {
         template_name: 'delivery_otp_dj_3',
         lang_code: 'en',
                 body: [
-                    { text: otp || '0000' }
-               ]
+                    {
+        type: 'button',
+        sub_type: 'otp',
+        index: '0',
+        parameters: [
+          {
+            type: 'text',
+            text: otp || '0000'
+          }
+        ]
       }
-    };
-
+    ]
+  }
+};
     
     console.log('📱 Sending OTP via Route Mobile API...');
     console.log('📱 URL:', API_URL);
