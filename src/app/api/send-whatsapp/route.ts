@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         template_name: 'delivery_otp_dj_3',
         lang_code: 'en',
                 body: [
-                    { text: OTP || '0000' }
+                    { text: otp || '0000' }
                ]
       }
     };
