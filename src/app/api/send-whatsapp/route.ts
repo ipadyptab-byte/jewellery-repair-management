@@ -66,8 +66,7 @@ const payload = {
         template_name: 'delivery_otp_dj_3',
         lang_code: 'en',
         body: [
-          { text: customerName || 'Customer' },
-          { text: otp || '0000' }
+                   { text: otp || '0000' }
         ]
       }
     };
