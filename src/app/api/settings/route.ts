@@ -140,34 +140,55 @@ export async function POST(request: NextRequest) {
       whatsappRmWaphone,
       whatsappRmToken,
       whatsappRmApiUrl,
-      whatsappRmApiVersion
+      whatsappRmApiVersion,
+      // Templates
+      tpl1Name, tpl2Name, tpl3Name,
+      tpl1Body, tpl2Body, tpl3Body,
+      tpl1Lang, tpl2Lang, tpl3Lang,
+      // Doc sequence
+      docSeq
     } = body;
 
     const pool = sql();
 
-    // Map to keys from schema.sql
-    const settingsMap: Record<string, string> = {
-      'shop_name': businessName || 'Devi Jewellers',
-      'shop_owner': shopOwner || '',
-      'shop_phone': shopPhone || '',
-      'shop_gst': shopGst || '',
-      'shop_city': shopCity || '',
-      'shop_address': shopAddress || '',
-      'whatsapp_rm_token': whatsappApiKey || whatsappRmToken || '',
-      'whatsapp_rm_api_url': whatsappApiUrl || whatsappRmApiUrl || '',
-      'whatsapp_rm_user': whatsappRmUser || '',
-      'whatsapp_rm_pass': whatsappRmPass || '',
-      'whatsapp_rm_waba': whatsappRmWaba || '',
-      'whatsapp_rm_phoneid': whatsappRmPhoneid || '',
-      'whatsapp_rm_waphone': whatsappRmWaphone || '',
-      'whatsapp_rm_api_version': whatsappRmApiVersion || 'v17.0',
-      'invoice_link_base': invoiceLinkBase || '',
-      'invoice_expiry_days': invoiceExpiry ? String(invoiceExpiry) : '10',
-      'currency': currency || 'INR',
-      'tax_rate': String(taxRate || 0)
-    };
+    // Only save fields that are provided (not undefined)
+    // This prevents overwriting existing values with empty strings
+    const settingsMap: Record<string, string> = {};
+    
+    if (businessName !== undefined) settingsMap['shop_name'] = businessName || '';
+    if (shopOwner !== undefined) settingsMap['shop_owner'] = shopOwner || '';
+    if (shopPhone !== undefined) settingsMap['shop_phone'] = shopPhone || '';
+    if (shopGst !== undefined) settingsMap['shop_gst'] = shopGst || '';
+    if (shopCity !== undefined) settingsMap['shop_city'] = shopCity || '';
+    if (shopAddress !== undefined) settingsMap['shop_address'] = shopAddress || '';
+    if (whatsappApiKey !== undefined) settingsMap['whatsapp_rm_token'] = whatsappApiKey || '';
+    if (whatsappRmToken !== undefined) settingsMap['whatsapp_rm_token'] = whatsappRmToken || '';
+    if (whatsappApiUrl !== undefined) settingsMap['whatsapp_rm_api_url'] = whatsappApiUrl || '';
+    if (whatsappRmApiUrl !== undefined) settingsMap['whatsapp_rm_api_url'] = whatsappRmApiUrl || '';
+    if (whatsappRmUser !== undefined) settingsMap['whatsapp_rm_user'] = whatsappRmUser || '';
+    if (whatsappRmPass !== undefined) settingsMap['whatsapp_rm_pass'] = whatsappRmPass || '';
+    if (whatsappRmWaba !== undefined) settingsMap['whatsapp_rm_waba'] = whatsappRmWaba || '';
+    if (whatsappRmPhoneid !== undefined) settingsMap['whatsapp_rm_phoneid'] = whatsappRmPhoneid || '';
+    if (whatsappRmWaphone !== undefined) settingsMap['whatsapp_rm_waphone'] = whatsappRmWaphone || '';
+    if (whatsappRmApiVersion !== undefined) settingsMap['whatsapp_rm_api_version'] = whatsappRmApiVersion || 'v17.0';
+    if (invoiceLinkBase !== undefined) settingsMap['invoice_link_base'] = invoiceLinkBase || '';
+    if (invoiceExpiry !== undefined) settingsMap['invoice_expiry_days'] = String(invoiceExpiry);
+    if (currency !== undefined) settingsMap['currency'] = currency || 'INR';
+    if (taxRate !== undefined) settingsMap['tax_rate'] = String(taxRate);
+    // Templates
+    if (tpl1Name !== undefined) settingsMap['tpl1_name'] = tpl1Name || '';
+    if (tpl2Name !== undefined) settingsMap['tpl2_name'] = tpl2Name || '';
+    if (tpl3Name !== undefined) settingsMap['tpl3_name'] = tpl3Name || '';
+    if (tpl1Body !== undefined) settingsMap['tpl1_body'] = tpl1Body || '';
+    if (tpl2Body !== undefined) settingsMap['tpl2_body'] = tpl2Body || '';
+    if (tpl3Body !== undefined) settingsMap['tpl3_body'] = tpl3Body || '';
+    if (tpl1Lang !== undefined) settingsMap['tpl1_lang'] = tpl1Lang || 'en';
+    if (tpl2Lang !== undefined) settingsMap['tpl2_lang'] = tpl2Lang || 'en';
+    if (tpl3Lang !== undefined) settingsMap['tpl3_lang'] = tpl3Lang || 'en';
+    // Doc sequence
+    if (docSeq !== undefined) settingsMap['doc_seq'] = String(docSeq);
 
-    // Upsert each setting using keys from schema
+    // Upsert only provided settings
     for (const [key, value] of Object.entries(settingsMap)) {
       await pool.query(
         `INSERT INTO settings (key, value) VALUES ($1, $2)
@@ -176,7 +197,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, message: 'Settings saved' });
+    return NextResponse.json({ success: true, message: 'Settings saved', keys: Object.keys(settingsMap) });
   } catch (error) {
     console.error('Error saving settings:', error);
     return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });

@@ -497,48 +497,22 @@ export default function App() {
 
   // Save all settings (Shop Info + WhatsApp Credentials + Invoice Settings) - single button
   const saveAllSettings = async () => {
-    // Show alert with values being sent - so user can see before page potentially redirects
-    const shopData = {
-      businessName: cfgShop,
-      shopOwner: cfgOwner,
-      shopPhone: cfgPhone,
-      shopGst: cfgGst,
-      shopCity: cfgCity,
-      shopAddress: cfgAddr
-    };
-    alert('📦 Shop fields being sent to database:\n' + 
-      'businessName: ' + cfgShop + '\n' +
-      'shopOwner: ' + cfgOwner + '\n' +
-      'shopPhone: ' + cfgPhone + '\n' +
-      'shopGst: ' + cfgGst + '\n' +
-      'shopCity: ' + cfgCity + '\n' +
-      'shopAddress: ' + cfgAddr + '\n\nClick OK to save...');
-    
-    console.log('💾 Starting save all settings...');
-    console.log('📦 Shop fields being sent:', shopData);
+    console.log('💾 Saving all settings in ONE API call...');
     
     try {
-      // Save shop info
-      const shopRes = await fetch('/api/settings', {
+      // Send ALL settings in ONE API call
+      const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // Shop Info
           businessName: cfgShop,
           shopOwner: cfgOwner,
           shopPhone: cfgPhone,
           shopGst: cfgGst,
           shopCity: cfgCity,
-          shopAddress: cfgAddr
-        })
-      });
-      const shopJson = await shopRes.json();
-      console.log('🏪 Shop save response:', shopRes.status, shopJson);
-      
-      // Save WhatsApp + Invoice settings
-      const waRes = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+          shopAddress: cfgAddr,
+          // WhatsApp + Invoice
           whatsappRmUser: rmUser,
           whatsappRmPass: rmPass,
           whatsappRmWaba: rmWaba,
@@ -548,51 +522,53 @@ export default function App() {
           whatsappRmApiUrl: rmApiUrl,
           whatsappRmApiVersion: rmApiver,
           invoiceLinkBase: cfgLinkBase || 'https://jewellery-repair-management.vercel.app',
-          invoiceExpiry: cfgExpiry
-        })
-      });
-      console.log('📱 WhatsApp save response:', waRes.status, waRes.ok);
-      
-      // Save templates
-      const tplRes = await fetch('/api/settings/templates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+          invoiceExpiry: cfgExpiry,
+          // Templates
           tpl1Name, tpl2Name, tpl3Name,
           tpl1Body: tpl1Body || null,
           tpl2Body: tpl2Body || null,
           tpl3Body: tpl3Body || null,
           tpl1Lang: tpl1Lang || 'en',
           tpl2Lang: tpl2Lang || 'en',
-          tpl3Lang: tpl3Lang || 'en'
+          tpl3Lang: tpl3Lang || 'en',
+          // Doc sequence
+          docSeq: docSeq
         })
       });
-      console.log('📝 Templates save response:', tplRes.status, tplRes.ok);
       
-      if (shopRes.ok && waRes.ok && tplRes.ok) {
+      const result = await res.json();
+      console.log('✅ Settings save response:', res.status, result);
+      
+      if (res.ok) {
         showMessage('creds', '✅ All settings saved to database!', true);
-        console.log('✅ All settings saved!');
         
-        // Manually trigger settings reload without page redirect
-        fetch('/api/settings').then(res => res.json()).then(settings => {
-          console.log('🔄 Reloaded settings from DB:', settings);
+        // Reload settings from DB
+        const settingsRes = await fetch('/api/settings');
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json();
           if (settings.businessName) setCfgShop(settings.businessName);
           if (settings.shopOwner) setCfgOwner(settings.shopOwner);
           if (settings.shopPhone) setCfgPhone(settings.shopPhone);
           if (settings.shopGst) setCfgGst(settings.shopGst);
           if (settings.shopCity) setCfgCity(settings.shopCity);
           if (settings.shopAddress) setCfgAddr(settings.shopAddress);
-          showMessage('creds', '✅ Settings reloaded from database!', true);
-        }).catch(err => {
-          console.error('Failed to reload:', err);
-        });
+          if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
+          if (settings.whatsappRmApiUrl) setRmApiUrl(settings.whatsappRmApiUrl);
+          if (settings.whatsappRmUser) setRmUser(settings.whatsappRmUser);
+          if (settings.whatsappRmWaba) setRmWaba(settings.whatsappRmWaba);
+          if (settings.whatsappRmPhoneid) setRmPhoneid(settings.whatsappRmPhoneid);
+          if (settings.whatsappRmWaphone) setRmWaphone(settings.whatsappRmWaphone);
+          if (settings.whatsappRmApiVersion) setRmApiver(settings.whatsappRmApiVersion);
+          if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
+          if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
+          if (settings.docSeq) setDocSeq(settings.docSeq);
+        }
       } else {
-        showMessage('creds', 'Some settings failed to save. Check console.', false);
-        console.error('❌ Some saves failed');
+        showMessage('creds', 'Failed to save: ' + (result.error || 'Unknown error'), false);
       }
     } catch (err) {
-      console.error('❌ Save error:', err);
-      showMessage('creds', 'Failed to save settings: ' + err, false);
+      console.error('Error saving settings:', err);
+      showMessage('creds', 'Error saving settings', false);
     }
   };
 
