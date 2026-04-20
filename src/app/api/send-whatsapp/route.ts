@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     // For OTP: keep as-is (e.g., 9422039371)
 
     // Correct API URL - MUST be apis.rmlconnect.net (plural)
-    const API_URL = 'https://apis.rmlconnect.net/wba/v1/authentication';
+    const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
     
     // Standard template payload - NO button field (causes mismatch)
     // Fix phone FIRST (very important)
