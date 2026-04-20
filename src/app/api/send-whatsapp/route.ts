@@ -1,76 +1,129 @@
-import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic'
+import { NextRequest, NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic';
+/**
+ * WhatsApp API Server-Side Proxy
+ * 
+ * Routes WhatsApp messages through Vercel server to avoid CORS issues.
+ * This server makes the actual call to Route Mobile API.
+ */
 
 export async function GET() {
   return NextResponse.json({ 
     message: 'WhatsApp API Proxy. Use POST.',
     version: '3.0.0'
-  });
+  })
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { mobile, otp, token } = body;
+    const body = await req.json()
+    const { 
+      mobile, 
+      customerName, 
+      otp, 
+      shopName,
+      expiry,
+      token,
+      apiUrl,
+      isOtp 
+    } = body
 
-    if (!mobile || !token) {
+    if (!mobile || !token || !apiUrl) {
       return NextResponse.json(
-        { success: false, error: 'Missing mobile or token' },
+        { success: false, error: 'Missing mobile, token, or apiUrl' },
         { status: 400 }
-      );
+      )
     }
 
-    // Clean phone: remove non-digits, add 91 for India
-    let phone = mobile.replace(/\D/g, '');
-    if (!phone.startsWith('91')) phone = '91' + phone;
-
-    const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
-
-   const payload = {
-  to: phone, // e.g., "919422039371"
-  type: 'template', // Or 'template', but try 'hsm' as seen in other APIs
-  content: { // Some APIs nest the template under 'content'
-    template: {
-      namespace: 'your_namespace_here', // Check dashboard for this
-      element_name: 'delivery_otp_dj_3',
-      language: { policy: 'deterministic', code: 'en' },
-      localizable_params: [{ default: otp }], // For body placeholder
-      button: { // For the copy code button
-        type: 'COPY_CODE',
-        params: [otp]
+    // Clean mobile number
+    let phone = mobile.replace(/^\+/, '');
+    
+    // For OTP messages - keep original format (no 91 prefix)
+    // For other messages - add 91 if not present
+    if (!isOtp) {
+      if (!phone.startsWith('91') && phone.length === 10) {
+        phone = '91' + phone;
       }
     }
-  }
-};
-    console.log('📱 Sending payload:', JSON.stringify(payload, null, 2));
+    // For OTP: keep as-is (e.g., 9422039371)
 
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token   // ⚠️ No "Bearer " – use token directly as in your working version
-      },
-      body: JSON.stringify(payload)
-    });
+    // Correct API URL - MUST be apis.rmlconnect.net (plural)
+    const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
+    
+    // Standard template payload - NO button field (causes mismatch)
+    // Fix phone FIRST (very important)
+let phoneClean = mobile.replace(/\D/g, '');
 
-    const responseText = await response.text();
-    console.log('📱 Status:', response.status);
-    console.log('📱 Response:', responseText);
+if (!phoneClean.startsWith('91')) {
+  phoneClean = '91' + phoneClean;
+}
 
-    if (response.ok || response.status === 202) {
-      return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
-    } else {
-      return NextResponse.json(
-        { success: false, error: responseText || 'Route Mobile API error' },
-        { status: response.status }
-      );
-    }
+const payload = {
+      phone: phone,
+      media: {
+        type: 'media_template',
+        template_name: 'delivery_otp_dj_3',
+        lang_code: 'en',
+        body: [
+                   { text: otp || '0000' }
+        ]
+      }
+    };
+        
+    console.log('📱 Sending OTP via Route Mobile API...');
+    console.log('📱 URL:', API_URL);
+    console.log('📱 TOKEN (first 30):', token?.substring(0, 30));
+    console.log('📱 Payload:', JSON.stringify(payload));
+
+    // Try WITHOUT Bearer first (most likely correct for JWT)
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token  // Not "Bearer " - JWT goes directly
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const responseText = await response.text();
+      console.log('📱 Response (no Bearer):', response.status, responseText?.substring(0, 200));
+
+      if (response.ok || response.status === 202) {
+        return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
+      }
+    } catch (e: any) { console.log('📱 Error (no Bearer):', e.message); }
+    
+    // Try WITH Bearer prefix (alternative for some APIs)
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const responseText = await response.text();
+      console.log('📱 Response (Bearer):', response.status, responseText?.substring(0, 200));
+
+      if (response.ok || response.status === 202) {
+        return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
+      }
+    } catch (e: any) { console.log('📱 Error (Bearer):', e.message); }
+    
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Route Mobile API error - Invalid token or template mismatch',
+      status: 400
+    }, { status: 400 });
   } catch (error: any) {
-    console.error('❌ Proxy error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Failed to send WhatsApp message' },
-      { status: 500 }
-    );
+    console.error('❌ WhatsApp proxy error:', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message || 'Failed to send WhatsApp message'
+    }, { status: 500 })
   }
 }
