@@ -27,27 +27,22 @@ export async function POST(req: NextRequest) {
 
     const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
 
-    const payload = {
-      to: phone,
-      type: 'template',
-      template: {
-        name: 'delivery_otp_dj_3',
-        language: { code: 'en' },
-        components: [
-          {
-            type: 'body',
-            parameters: [{ type: 'text', text: otp || '0000' }]
-          },
-          {
-            type: 'button',
-            sub_type: 'copy_code',
-            index: 0,
-            parameters: [{ type: 'text', text: otp || '0000' }]
-          }
-        ]
+   const payload = {
+  to: phone, // e.g., "919422039371"
+  type: 'hsm', // Or 'template', but try 'hsm' as seen in other APIs
+  content: { // Some APIs nest the template under 'content'
+    hsm: {
+      namespace: 'your_namespace_here', // Check dashboard for this
+      element_name: 'delivery_otp_dj_3',
+      language: { policy: 'deterministic', code: 'en' },
+      localizable_params: [{ default: otp }], // For body placeholder
+      button: { // For the copy code button
+        type: 'COPY_CODE',
+        params: [otp]
       }
-    };
-
+    }
+  }
+};
     console.log('📱 Sending payload:', JSON.stringify(payload, null, 2));
 
     const response = await fetch(API_URL, {
