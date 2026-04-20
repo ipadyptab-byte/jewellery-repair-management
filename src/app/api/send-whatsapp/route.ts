@@ -1,7 +1,18 @@
+import { NextRequest, NextResponse } from 'next/server';   // <-- add this line
+
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  return NextResponse.json({ 
+    message: 'WhatsApp API Proxy. Use POST.',
+    version: '3.0.0'
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { mobile, otp, token } = body;  // also shopName, expiry if needed
+    const { mobile, otp, token } = body;   // shopName, expiry if needed
 
     if (!mobile || !token) {
       return NextResponse.json(
@@ -10,16 +21,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // --- Clean phone: always add 91 for India ---
-    let phone = mobile.replace(/\D/g, '');          // remove all non-digits
+    // Clean phone: always add 91 for India
+    let phone = mobile.replace(/\D/g, '');
     if (!phone.startsWith('91')) {
       phone = '91' + phone;
     }
-    // final phone example: "919422039371"
 
     const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
 
-    // Payload matching your approved template
     const payload = {
       to: phone,
       type: "template",
@@ -45,24 +54,23 @@ export async function POST(req: NextRequest) {
     console.log('📱 Phone:', phone);
     console.log('📱 Payload:', JSON.stringify(payload, null, 2));
 
-    // Try with Bearer (most common for JWT)
+    // Try with Bearer token
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token   // try with Bearer first
+        'Authorization': 'Bearer ' + token
       },
       body: JSON.stringify(payload)
     });
 
     const responseText = await response.text();
     console.log('📱 Response status:', response.status);
-    console.log('📱 Full response:', responseText);   // log everything, not just 200 chars
+    console.log('📱 Full response:', responseText);
 
     if (response.ok || response.status === 202) {
       return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
     } else {
-      // Return the actual error from Route Mobile
       return NextResponse.json(
         { success: false, error: responseText || 'Route Mobile API error' },
         { status: response.status }
