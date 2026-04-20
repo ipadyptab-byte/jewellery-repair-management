@@ -1,141 +1,78 @@
-export const dynamic = 'force-dynamic'
-import { NextRequest, NextResponse } from 'next/server'
-
-/**
- * WhatsApp API Server-Side Proxy
- * 
- * Routes WhatsApp messages through Vercel server to avoid CORS issues.
- * This server makes the actual call to Route Mobile API.
- */
-
-export async function GET() {
-  return NextResponse.json({ 
-    message: 'WhatsApp API Proxy. Use POST.',
-    version: '3.0.0'
-  })
-}
-
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { 
-      mobile, 
-      customerName, 
-      otp, 
-      shopName,
-      expiry,
-      token,
-      apiUrl,
-      isOtp 
-    } = body
+    const body = await req.json();
+    const { mobile, otp, token } = body;  // also shopName, expiry if needed
 
-    if (!mobile || !token || !apiUrl) {
+    if (!mobile || !token) {
       return NextResponse.json(
-        { success: false, error: 'Missing mobile, token, or apiUrl' },
+        { success: false, error: 'Missing mobile or token' },
         { status: 400 }
-      )
+      );
     }
 
-    // Clean mobile number
-    let phone = mobile.replace(/^\+/, '');
-    
-    // For OTP messages - keep original format (no 91 prefix)
-    // For other messages - add 91 if not present
-    if (!isOtp) {
-      if (!phone.startsWith('91') && phone.length === 10) {
-        phone = '91' + phone;
-      }
+    // --- Clean phone: always add 91 for India ---
+    let phone = mobile.replace(/\D/g, '');          // remove all non-digits
+    if (!phone.startsWith('91')) {
+      phone = '91' + phone;
     }
-    // For OTP: keep as-is (e.g., 9422039371)
+    // final phone example: "919422039371"
 
-    // Correct API URL - MUST be apis.rmlconnect.net (plural)
     const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
-    
-    // Standard template payload - NO button field (causes mismatch)
-    // Fix phone FIRST (very important)
-let phoneClean = mobile.replace(/\D/g, '');
 
-if (!phoneClean.startsWith('91')) {
-  phoneClean = '91' + phoneClean;
-}
-
-const payload = {
-  to: phone,                        // "to" not "phone"
-  type: "template",
-  template: {
-    name: "delivery_otp_dj_3",      // your approved template name
-    language: { code: "en" },
-    components: [
-      {
-        type: "body",
-        parameters: [
-          { type: "text", text: otp || "0000" }   // placeholder in body
+    // Payload matching your approved template
+    const payload = {
+      to: phone,
+      type: "template",
+      template: {
+        name: "delivery_otp_dj_3",
+        language: { code: "en" },
+        components: [
+          {
+            type: "body",
+            parameters: [{ type: "text", text: otp || "0000" }]
+          },
+          {
+            type: "button",
+            sub_type: "copy_code",
+            index: 0,
+            parameters: [{ type: "text", text: otp || "0000" }]
+          }
         ]
+      }
+    };
+
+    console.log('📱 Sending to:', API_URL);
+    console.log('📱 Phone:', phone);
+    console.log('📱 Payload:', JSON.stringify(payload, null, 2));
+
+    // Try with Bearer (most common for JWT)
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token   // try with Bearer first
       },
-      {
-        type: "button",
-        sub_type: "copy_code",                     // for COPY_CODE button
-        index: 0,                                  // button position (first button)
-        parameters: [
-          { type: "text", text: otp || "0000" }    // OTP value to copy
-        ]
-      }
-    ]
-  }
-};        
-    console.log('📱 Sending OTP via Route Mobile API...');
-    console.log('📱 URL:', API_URL);
-    console.log('📱 TOKEN (first 30):', token?.substring(0, 30));
-    console.log('📱 Payload:', JSON.stringify(payload));
+      body: JSON.stringify(payload)
+    });
 
-    // Try WITHOUT Bearer first (most likely correct for JWT)
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token  // Not "Bearer " - JWT goes directly
-        },
-        body: JSON.stringify(payload)
-      });
+    const responseText = await response.text();
+    console.log('📱 Response status:', response.status);
+    console.log('📱 Full response:', responseText);   // log everything, not just 200 chars
 
-      const responseText = await response.text();
-      console.log('📱 Response (no Bearer):', response.status, responseText?.substring(0, 200));
-
-      if (response.ok || response.status === 202) {
-        return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
-      }
-    } catch (e: any) { console.log('📱 Error (no Bearer):', e.message); }
-    
-    // Try WITH Bearer prefix (alternative for some APIs)
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const responseText = await response.text();
-      console.log('📱 Response (Bearer):', response.status, responseText?.substring(0, 200));
-
-      if (response.ok || response.status === 202) {
-        return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
-      }
-    } catch (e: any) { console.log('📱 Error (Bearer):', e.message); }
-    
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Route Mobile API error - Invalid token or template mismatch',
-      status: 400
-    }, { status: 400 });
+    if (response.ok || response.status === 202) {
+      return NextResponse.json({ success: true, message: 'OTP sent!', response: responseText });
+    } else {
+      // Return the actual error from Route Mobile
+      return NextResponse.json(
+        { success: false, error: responseText || 'Route Mobile API error' },
+        { status: response.status }
+      );
+    }
   } catch (error: any) {
-    console.error('❌ WhatsApp proxy error:', error)
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message || 'Failed to send WhatsApp message'
-    }, { status: 500 })
+    console.error('❌ Proxy error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Failed to send WhatsApp message' },
+      { status: 500 }
+    );
   }
 }
