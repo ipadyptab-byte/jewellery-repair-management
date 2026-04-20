@@ -1,3 +1,14 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  return NextResponse.json({ 
+    message: 'WhatsApp API Proxy. Use POST.',
+    version: '3.0.0'
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -10,7 +21,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Clean phone: digits only, add 91 for India
+    // Clean phone: remove non-digits, add 91 for India
     let phone = mobile.replace(/\D/g, '');
     if (!phone.startsWith('91')) phone = '91' + phone;
 
@@ -43,7 +54,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': token   // ⚠️ No "Bearer " – as in your working second version
+        'Authorization': token   // ⚠️ No "Bearer " – use token directly as in your working version
       },
       body: JSON.stringify(payload)
     });
