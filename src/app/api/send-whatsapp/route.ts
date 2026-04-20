@@ -67,7 +67,12 @@ const payload = {
         lang_code: 'en',
         body: [
                    { text: otp || '0000' }
-        ]
+        ],
+        "buttons": [
+      {
+        "type": "OTP",
+        "otp_type": "COPY_CODE",
+        "text": "COPY CODE"   // Must match approved button text exactly
       }
     };
         
