@@ -29,9 +29,9 @@ export async function POST(req: NextRequest) {
 
    const payload = {
   to: phone, // e.g., "919422039371"
-  type: 'hsm', // Or 'template', but try 'hsm' as seen in other APIs
+  type: 'template', // Or 'template', but try 'hsm' as seen in other APIs
   content: { // Some APIs nest the template under 'content'
-    hsm: {
+    template: {
       namespace: 'your_namespace_here', // Check dashboard for this
       element_name: 'delivery_otp_dj_3',
       language: { policy: 'deterministic', code: 'en' },
