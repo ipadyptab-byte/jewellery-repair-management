@@ -60,13 +60,15 @@ if (!phoneClean.startsWith('91')) {
 }
 
 const payload = {
-  "phone": "919422039371",
-  "template_name": "delivery_otp_dj_3",
-  "lang_code": "en",
-  "authentication": {
-    "type": "OTP",
-    "otp": "1112"
-  }
+      phone: phone,
+      media: {
+        type: 'media_template',
+        template_name: 'delivery_otp_dj_3',
+        lang_code: 'en',
+        body: [
+                   { text: otp || '0000' }
+        ]
+      }
     };
         
     console.log('📱 Sending OTP via Route Mobile API...');
