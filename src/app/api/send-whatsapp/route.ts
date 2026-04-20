@@ -60,17 +60,29 @@ if (!phoneClean.startsWith('91')) {
 }
 
 const payload = {
-      phone: phone,
-      media: {
-        type: 'media_template',
-        template_name: 'delivery_otp_dj_3',
-        lang_code: 'en',
-        body: [
-                   { text: otp || '0000' }
+  to: phone, // e.g., "919422039371"
+  type: "template",
+  template: {
+    name: "delivery_otp_dj_3",
+    language: { code: "en" },
+    components: [
+      {
+        type: "body",
+        parameters: [
+          { type: "text", text: otp || "0000" } // This fills the body placeholder
+        ]
+      },
+      {
+        type: "button",
+        sub_type: "copy_code", // Required for Copy Code button
+        index: 0, // Index of the button in your template
+        parameters: [
+          { type: "text", text: otp || "0000" } // This fills the code for the button to copy
         ]
       }
-    };
-        
+    ]
+  }
+};        
     console.log('📱 Sending OTP via Route Mobile API...');
     console.log('📱 URL:', API_URL);
     console.log('📱 TOKEN (first 30):', token?.substring(0, 30));
