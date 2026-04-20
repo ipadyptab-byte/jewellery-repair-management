@@ -62,7 +62,7 @@ if (!phoneClean.startsWith('91')) {
 const payload = {
       phone: phone,
       media: {
-        type: 'template',
+        type: 'media_template',
         template_name: 'delivery_otp_dj_3',
         lang_code: 'en',
         body: [
