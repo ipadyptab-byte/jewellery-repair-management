@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     // For OTP: keep as-is (e.g., 9422039371)
 
     // Correct API URL - MUST be apis.rmlconnect.net (plural)
-    const API_URL = 'https://apis.rmlconnect.net/wba/v1/messages';
+    const API_URL = 'https://apis.rmlconnect.net/wba/v1/authentication';
     
     // Standard template payload - NO button field (causes mismatch)
     // Fix phone FIRST (very important)
@@ -60,15 +60,13 @@ if (!phoneClean.startsWith('91')) {
 }
 
 const payload = {
-      phone: phone,
-      media: {
-        type: 'media_template',
-        template_name: 'delivery_otp_dj_3',
-        lang_code: 'en',
-        body: [
-                   { text: otp || '0000' }
-        ]
-      }
+  "phone": "919422039371",
+  "template_name": "delivery_otp_dj_3",
+  "lang_code": "en",
+  "authentication": {
+    "type": "OTP",
+    "otp": "1112"
+  }
     };
         
     console.log('📱 Sending OTP via Route Mobile API...');
