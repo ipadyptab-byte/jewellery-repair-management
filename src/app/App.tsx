@@ -1669,6 +1669,33 @@ export default function App() {
                   </div>
                 </>
               )}
+              
+              {/* Show deliver button even without OTP verification - makes OTP optional */}
+              {!deliverOtpVerified && deliverSelected && (
+                <>
+                  <div className="divider" />
+                  <div className="btn-row">
+                    <button className="btn" onClick={() => { setDeliverDoc(''); setDeliverRec(null); setDeliverSelected(false); setDeliverOtpSent(false); setDeliverOtpVerified(false); setDeliverOtp(''); setDeliverOtpInput(''); }}>Cancel</button>
+                    <button className="btn btn-primary" onClick={async () => { 
+                          printThermalReceipt(deliverRec, 'final', cfgShop || 'Devi Jewellers', cfgAddr || '');
+                          // Update local state
+                          setRecords((prev: RepairRecord[]) => prev.map((r: RepairRecord) => (r.docNum || r.doc_num) === (deliverRec?.docNum || deliverRec?.doc_num) ? { ...r, status: 'delivered', deliveryDate: new Date().toISOString() } : r));
+                          // Save to database
+                          try {
+                            const docNum = deliverRec?.docNum || deliverRec?.doc_num;
+                            const response = await fetch('/api/records', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ doc_num: docNum, status: 'delivered', delivery_date: new Date().toISOString() })
+                            });
+                            if (!response.ok) console.error('Failed to save delivery status to DB', response.status);
+                          } catch (e) { console.error('Error saving delivery:', e); }
+                          showMessage('deliver', 'Delivered successfully!', true); 
+                          setTimeout(() => { setDeliverDoc(''); setDeliverRec(null); setDeliverSelected(false); setDeliverOtpSent(false); setDeliverOtpVerified(false); setDeliverOtp(''); setDeliverOtpInput(''); }, 2000); 
+                        }}>🖨️ Print & Deliver (Skip OTP)</button>
+                  </div>
+                </>
+              )}
             </>
           )}
           
