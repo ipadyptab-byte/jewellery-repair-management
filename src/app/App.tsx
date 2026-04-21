@@ -1713,8 +1713,11 @@ export default function App() {
         <div className="card">
           <div className="card-title"><img src="/icon.png" alt="" />{isEditing ? 'Edit repair record' : 'Receive from customer'}</div>
           <div className="grid2">
+            <div className="field"><label>Mobile <span className="req">*</span></label><input value={rMobile} onChange={e => { setRMobile(e.target.value); // Auto-fill name if mobile exists in records
+const existing = records.find(r => (r.mobile || r.phone_number) === e.target.value);
+if (existing) { setRName(existing.name || existing.customer_name || ''); showMessage('receive', 'Customer found: ' + (existing.name || existing.customer_name), true); }
+}} placeholder="10-digit" maxLength={10} /></div>
             <div className="field"><label>Customer name <span className="req">*</span></label><input value={rName} onChange={e => setRName(e.target.value)} placeholder="e.g. Ramesh Patil" /></div>
-            <div className="field"><label>Mobile <span className="req">*</span></label><input value={rMobile} onChange={e => setRMobile(e.target.value)} placeholder="10-digit" maxLength={10} /></div>
           </div>
           <div className="grid3">
             <div className="field"><label>Metal <span className="req">*</span></label><select value={rMetal} onChange={e => setRMetal(e.target.value)}><option value="">Select metal</option>{metals.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
