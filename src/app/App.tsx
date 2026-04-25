@@ -527,6 +527,13 @@ export default function App() {
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [logoBase64, setLogoBase64] = useState<string>('')
   const [koregaonSeq, setKoregaonSeq] = useState(0)
+  
+  // Location Master - can be extended with more locations
+  const [locations, setLocations] = useState<{id: string, name: string, seq_key: string, next_seq: number}[]>([
+    { id: 'satara', name: 'Satara (Main - Karagir Center)', seq_key: 'doc_seq', next_seq: 0 },
+    { id: 'koregaon', name: 'Koregaon (Branch)', seq_key: 'koregaon_seq', next_seq: 0 }
+  ])
+  
   const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl3Name, setTpl3Name] = useState('2739573333095990'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl3Body, setTpl3Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en'); const [tpl3Lang, setTpl3Lang] = useState('en')
 
   // Load logo on mount
@@ -1572,7 +1579,9 @@ export default function App() {
 
   /* DEBUG LINE */
   // Filter records by location for Koregaon
-  const filteredRecords = records.filter(r => cfgLocation === 'koregaon' ? (r.location === 'koregaon' || r.current_location === 'koregaon') : true)
+  // Satara shows all (both Satara + Koregaon)
+  // Koregaon shows only own records (where location = 'koregaon')
+  const filteredRecords = records.filter(r => cfgLocation === 'koregaon' ? r.location === 'koregaon' : true)
   const grp: any = {}
   // @ts-ignore
   grp.overdue = filteredRecords.filter(r => effStatus(r) === 'overdue')
