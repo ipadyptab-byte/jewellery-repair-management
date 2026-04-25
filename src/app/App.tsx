@@ -509,7 +509,20 @@ export default function App() {
 
   // Settings
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
-  const [cfgLocation, setCfgLocation] = useState('satara') // satara or koregaon
+  const [cfgLocation, setCfgLocation] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('devi-jewellers-location') || 'satara'
+    }
+    return 'satara'
+  }) // satara or koregaon
+  
+  // Save location to localStorage when changed
+  const handleSetLocation = (loc: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('devi-jewellers-location', loc)
+    }
+    setCfgLocation(loc)
+  }
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [logoBase64, setLogoBase64] = useState<string>('')
@@ -2418,7 +2431,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <div className="sec-label">Location Settings</div>
               <div className="grid2">
                 <div className="field"><label>Current Location</label>
-                  <select value={cfgLocation} onChange={e => setCfgLocation(e.target.value)}>
+                  <select value={cfgLocation} onChange={e => handleSetLocation(e.target.value)}>
                     <option value="satara">Satara (Main - Karagir Center)</option>
                     <option value="koregaon">Koregaon (Branch)</option>
                   </select>
