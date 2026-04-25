@@ -1109,8 +1109,6 @@ export default function App() {
         metal: rMetal,
         weight: rWeight,
         salesman: rSalesman,
-        location: cfgLocation,
-        current_location: cfgLocation,
         transfer_status: null
       };
 
