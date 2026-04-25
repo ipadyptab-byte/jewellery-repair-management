@@ -38,6 +38,7 @@ interface RepairRecord {
   completedDate?: string | null;
   receivedDate?: string;
   deliveryDate?: string;
+  received_invoice_expires_at?: string | null;
 }
 interface Master {
   id: number;
@@ -77,6 +78,7 @@ const convertFromDB = (record: any): RepairRecord => ({
   weight: record.weight,
   salesman: record.salesman,
   quality: record.quality,
+  received_invoice_expires_at: record.received_invoice_expires_at,
   // Keep legacy fields for compatibility
   customer_name: record.name,
   phone_number: record.mobile,
@@ -1259,20 +1261,22 @@ export default function App() {
 
     try {
       const existing = records.find(r => r.docNum === kiDoc)
+      const now = new Date().toISOString()
       const updated = records.map(r => r.docNum === kiDoc ? {
         ...r,
         finalAmount: parseFloat(kiAmount),
-        completedDate: kiEditing && r.completedDate ? r.completedDate : new Date().toISOString(),
+        completedDate: kiEditing && r.completedDate ? r.completedDate : now,
         quality: kiQuality,
         status: 'ready',
         final_amount: parseFloat(kiAmount),
-        completed_date: kiEditing && r.completed_date ? r.completed_date : new Date().toISOString()
+        completed_date: kiEditing && r.completed_date ? r.completed_date : now,
+        received_invoice_expires_at: now // Expire the received invoice link immediately
       } : r);
 
       setRecords(updated);
       setFinalRec(updated.find(r => r.docNum === kiDoc) || null);
 
-      // Save to database
+      // Save to database - also set received_invoice_expires_at to NOW to expire old link
       try {
         const response = await fetch('/api/records', {
           method: 'PUT',
@@ -1280,9 +1284,10 @@ export default function App() {
           body: JSON.stringify({
             doc_num: kiDoc,
             final_amount: parseFloat(kiAmount),
-            completed_date: new Date().toISOString(),
+            completed_date: now,
             quality: kiQuality,
-            status: 'ready'
+            status: 'ready',
+            received_invoice_expires_at: now // Expire the received invoice link immediately
           })
         });
         if (!response.ok) console.error('Failed to save final amount to DB', response.status);

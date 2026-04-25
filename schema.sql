@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS repair_records (
   final_amount DECIMAL(10,2),
   completed_date TIMESTAMP,
   quality VARCHAR(50),
+  received_invoice_expires_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

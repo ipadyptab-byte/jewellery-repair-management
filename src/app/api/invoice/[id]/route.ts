@@ -50,6 +50,16 @@ export async function GET(
     const rec = result.rows[0]
     const isFinal = id.includes('-final')
     
+    // Check if received invoice link should be expired (when final invoice was generated)
+    if (!isFinal && rec.received_invoice_expires_at) {
+      const linkExpiry = new Date(rec.received_invoice_expires_at)
+      const now = new Date()
+      if (now > linkExpiry) {
+        const expiredHtml = `<!DOCTYPE html><html><head><title>Link Expired</title></head><body style="font-family:Arial;padding:40px;text-align:center;"><h2 style="color:#c62828">Link Expired</h2><p>This repair invoice link has expired.</p><p>Your final invoice is now available.</p><p>Please contact the shop.</p></body></html>`
+        return new NextResponse(expiredHtml, { headers: { 'Content-Type': 'text/html' }, status: 410 })
+      }
+    }
+    
     // Get settings
     const settingsResult = await sql().query(`SELECT key, value FROM settings`)
     const settings: any = {}

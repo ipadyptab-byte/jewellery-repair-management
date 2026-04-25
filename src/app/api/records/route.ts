@@ -107,7 +107,8 @@ export async function PUT(request: NextRequest) {
       delivery_date,
       metal,
       weight,
-      salesman
+      salesman,
+      received_invoice_expires_at
     } = body;
 
     // Allow update by either id or doc_num
@@ -168,7 +169,8 @@ export async function PUT(request: NextRequest) {
         ['karagir_date', karagir_date],
         ['final_amount', final_amount],
         ['completed_date', completed_date],
-        ['quality', quality]
+        ['quality', quality],
+        ['received_invoice_expires_at', received_invoice_expires_at]
       ];
 
       for (const [field, value] of fields) {

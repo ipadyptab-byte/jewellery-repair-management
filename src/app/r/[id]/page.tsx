@@ -72,7 +72,32 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
     }
 
     const rec = result.rows[0]
-    const isFinal = rec.status === 'completed' || rec.final_amount
+    const isFinal = id.includes('-final')
+    
+    // Check if received invoice link should be expired (when final invoice was generated)
+    // If record has received_invoice_expires_at and this is not a final link, check if expired
+    if (!isFinal && rec.received_invoice_expires_at) {
+      const linkExpiry = new Date(rec.received_invoice_expires_at)
+      const now = new Date()
+      if (now > linkExpiry) {
+        return (
+          <html>
+            <head>
+              <title>Link Expired</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+            </head>
+            <body style={{ fontFamily: 'Arial', textAlign: 'center', padding: '40px', background: '#f5f5f5' }}>
+              <div style={{ background: '#fff', padding: '30px', borderRadius: '10px', maxWidth: '400px', margin: 'auto' }}>
+                <h2 style={{ color: '#c62828' }}>Link Expired</h2>
+                <p>This repair invoice link has expired.</p>
+                <p>Your final invoice is now available.</p>
+                <p>Please contact the shop.</p>
+              </div>
+            </body>
+          </html>
+        )
+      }
+    }
 
     // 🏪 Fetch shop settings
     const settingsResult = await sql().query(`SELECT key, value FROM settings`)
