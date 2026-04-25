@@ -523,15 +523,51 @@ export default function App() {
     }
     setCfgLocation(loc)
   }
+  
+  // Add new location to master
+  const addLocation = () => {
+    if (!newLocationName || !newLocationId) {
+      showMessage('location', 'Please enter location name and ID', false)
+      return
+    }
+    const id = newLocationId.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const nameSlug = newLocationName.trim()
+    if (locations.find(l => l.id === id)) {
+      showMessage('location', 'Location ID already exists', false)
+      return
+    }
+    setLocations(prev => [...prev, { 
+      id, 
+      name: nameSlug, 
+      prefix: `JR-${id.toUpperCase()}`, 
+      next_seq: 0 
+    }])
+    setNewLocationName('')
+    setNewLocationId('')
+    showMessage('location', `Location "${nameSlug}" added!`, true)
+  }
+  
+  // Remove location (only non-main)
+  const removeLocation = (id: string) => {
+    if (id === 'satara') {
+      showMessage('location', 'Cannot remove main location', false)
+      return
+    }
+    if (confirm(`Remove location "${id}"? This cannot be undone.`)) {
+      setLocations(prev => prev.filter(l => l.id !== id))
+      showMessage('location', `Location "${id}" removed`, true)
+    }
+  }
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [logoBase64, setLogoBase64] = useState<string>('')
   const [koregaonSeq, setKoregaonSeq] = useState(0)
   
   // Location Master - can be extended with more locations
-  const [locations, setLocations] = useState<{id: string, name: string, seq_key: string, next_seq: number}[]>([
-    { id: 'satara', name: 'Satara (Main - Karagir Center)', seq_key: 'doc_seq', next_seq: 0 },
-    { id: 'koregaon', name: 'Koregaon (Branch)', seq_key: 'koregaon_seq', next_seq: 0 }
+  // Each location has its own document series sequence
+  const [locations, setLocations] = useState<{id: string, name: string, prefix: string, next_seq: number}[]>([
+    { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
+    { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
   ])
   
   const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl3Name, setTpl3Name] = useState('2739573333095990'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl3Body, setTpl3Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en'); const [tpl3Lang, setTpl3Lang] = useState('en')
@@ -549,6 +585,8 @@ export default function App() {
   }, [])
   const [connStatus, setConnStatus] = useState<'no' | 'ok' | 'checking'>('no')
   const [settingsTab, setSettingsTab] = useState('creds')
+  const [newLocationName, setNewLocationName] = useState('')
+  const [newLocationId, setNewLocationId] = useState('')
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
   const [printRec, setPrintRec] = useState<{rec: RepairRecord; type: 'received' | 'final'} | null>(null)
@@ -2469,20 +2507,58 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </div>
               <div className="divider" />
               <div className="sec-label">Location Settings</div>
-              <div className="grid2">
-                <div className="field"><label>Current Location</label>
-                  <select value={cfgLocation} onChange={e => handleSetLocation(e.target.value)}>
-                    <option value="satara">Satara (Main - Karagir Center)</option>
-                    <option value="koregaon">Koregaon (Branch)</option>
-                  </select>
-                  <div className="hint">Satara = Main branch with karagir; Koregaon = Branch that sends to Satara</div>
+              
+              {/* Location Master List */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>📍 Location Master</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {locations.map(loc => (
+                    <div key={loc.id} style={{ 
+                      background: loc.id === cfgLocation ? 'var(--brand)' : '#e0e0e0',
+                      color: loc.id === cfgLocation ? 'white' : 'var(--text)',
+                      padding: '8px 12px', borderRadius: 6, fontSize: 13,
+                      display: 'flex', alignItems: 'center', gap: 8
+                    }}>
+                      <span>{loc.name}</span>
+                      {loc.id !== 'satara' && (
+                        <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, fontSize: 16 }}
+                          onClick={() => removeLocation(loc.id)}>×</button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                {cfgLocation === 'koregaon' && (
-                  <div className="field"><label>Koregaon Doc Series</label>
-                    <input type="number" value={koregaonSeq} onChange={e => setKoregaonSeq(parseInt(e.target.value) || 0)} placeholder="e.g. 100" />
-                    <div className="hint">Starting number for JR-KO-XXXX</div>
-                  </div>
-                )}
+              </div>
+              
+              {/* Add New Location */}
+              <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>+ Add New Location</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input 
+                    placeholder="Location name (e.g., Pune Branch)" 
+                    value={newLocationName}
+                    onChange={e => setNewLocationName(e.target.value)}
+                    style={{ flex: 1, minWidth: 150 }}
+                  />
+                  <input 
+                    placeholder="ID (e.g., pune)" 
+                    value={newLocationId}
+                    onChange={e => setNewLocationId(e.target.value)}
+                    style={{ width: 80 }}
+                  />
+                  <button className="btn btn-primary" onClick={addLocation}>Add</button>
+                </div>
+              </div>
+              
+              {/* Current Location Selector */}
+              <div className="grid2">
+                <div className="field"><label>Switch to Location</label>
+                  <select value={cfgLocation} onChange={e => handleSetLocation(e.target.value)}>
+                    {locations.map(loc => (
+                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    ))}
+                  </select>
+                  <div className="hint">Select which location to work as</div>
+                </div>
               </div>
               <div className="divider" />
               <div className="sec-label">Invoice PDF link settings</div>
