@@ -2244,10 +2244,10 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         <div className="card">
           <div className="card-title"><img src="/icon.png" alt="" />All repair records</div>
           {records.length === 0 && <p style={{ color: 'var(--text2)', fontSize: 13 }}>No records yet.</p>}
-          {/* Filter records by location for Koregaon */}
+          {/* Filter records by location for Koregaon - show only Koregaon original records */}
           {[...records].filter(r => {
             if (cfgLocation === 'koregaon') {
-              return r.location === 'koregaon' || r.current_location === 'koregaon'
+              return r.location === 'koregaon'
             }
             return true
           }).reverse().map(r => {
