@@ -180,29 +180,41 @@ function generateInvoiceLink(docNum: string, type: string, baseUrl: string, expD
   return { url, expDate }
 }
 
-function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', baseUrl: string, expDays: number, shopName: string = 'Devi Jewellers', shopAddress: string = '') {
+function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', baseUrl: string, expDays: number, shopName: string = 'Devi Jewellers', shopAddress: string = '', logoData?: string) {
   if (typeof window === 'undefined' || !window.jspdf) return null
   const { jsPDF } = window.jspdf
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = 210, pad = 15
   let y = pad
 
-  // Brand header with gradient effect (multiple rectangles)
-  doc.setFillColor(192, 0, 58); doc.rect(0, 0, W, 35, 'F')
-  doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.setFont('helvetica', 'bold')
-  doc.text(shopName, W / 2, 14, { align: 'center' })
-  doc.setFontSize(9); doc.setFont('helvetica', 'normal')
-  if (shopAddress) {
-    doc.text(shopAddress.substring(0, 60), W / 2, 22, { align: 'center' })
+  // Brand header background
+  doc.setFillColor(192, 0, 58); doc.rect(0, 0, W, 50, 'F')
+  
+  // Add logo if available (40mm wide, positioned at top left)
+  if (logoData) {
+    try {
+      doc.addImage(logoData, 'PNG', 10, 5, 40, 40)
+    } catch (e) {
+      // If logo fails, just show text
+    }
   }
-  doc.setFontSize(8); doc.setTextColor(255, 220, 220)
-  doc.text('Jewellery Repair & Custom Design', W / 2, 30, { align: 'center' })
+  
+  // Brand text positioned to the right of logo
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(26); doc.setFont('helvetica', 'bold')
+  doc.text(shopName, logoData ? 58 : W / 2, logoData ? 20 : 18, { align: logoData ? 'left' : 'center' })
+  doc.setFontSize(11); doc.setFont('helvetica', 'normal')
+  if (shopAddress) {
+    doc.text(shopAddress.substring(0, 60), logoData ? 58 : W / 2, logoData ? 32 : 28, { align: logoData ? 'left' : 'center' })
+  }
+  doc.setFontSize(10); doc.setTextColor(255, 220, 220)
+  doc.text('Jewellery Repair & Custom Design', logoData ? 58 : W / 2, logoData ? 43 : 38, { align: logoData ? 'left' : 'center' })
 
   // Type label below header
-  doc.setFillColor(168, 0, 126); doc.rect(0, 35, W, 8, 'F')
-  doc.setTextColor(255, 255, 255); doc.setFontSize(12); doc.setFont('helvetica', 'bold')
-  doc.text(type === 'final' ? 'FINAL REPAIR INVOICE' : 'REPAIR RECEIPT / ESTIMATE', W / 2, 41, { align: 'center' })
-  y = 52
+  doc.setFillColor(168, 0, 126); doc.rect(0, 50, W, 10, 'F')
+  doc.setTextColor(255, 255, 255); doc.setFontSize(14); doc.setFont('helvetica', 'bold')
+  doc.text(type === 'final' ? 'FINAL REPAIR INVOICE' : 'REPAIR RECEIPT / ESTIMATE', W / 2, 58, { align: 'center' })
+  y = 70
 
   doc.setTextColor(0, 0, 0); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
   doc.text('Document No:', pad, y); doc.setFont('helvetica', 'normal'); doc.text(rec.docNum, pad + 32, y)
@@ -490,7 +502,20 @@ export default function App() {
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
+  const [logoBase64, setLogoBase64] = useState<string>('')
   const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl3Name, setTpl3Name] = useState('2739573333095990'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl3Body, setTpl3Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en'); const [tpl3Lang, setTpl3Lang] = useState('en')
+
+  // Load logo on mount
+  useEffect(() => {
+    fetch('/logo.png')
+      .then(r => r.blob())
+      .then(blob => {
+        const reader = new FileReader()
+        reader.onload = () => setLogoBase64(reader.result as string)
+        reader.readAsDataURL(blob)
+      })
+      .catch(() => {}) // ignore if logo fails
+  }, [])
   const [connStatus, setConnStatus] = useState<'no' | 'ok' | 'checking'>('no')
   const [settingsTab, setSettingsTab] = useState('creds')
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
@@ -1736,7 +1761,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             {isEditing ? (
               <>
                 <button className="btn btn-primary" onClick={updateReceipt}><IcPdf />Update Record</button>
-                <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', cfgLinkBase || 'https://www.devi-jewellers.com', cfgExpiry, cfgShop, cfgAddr)}>Print PDF</button>
+                <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', cfgLinkBase || 'https://jewellery-repair-management.vercel.app', cfgExpiry, cfgShop, cfgAddr, logoBase64)}>Print PDF</button>
                 <button className="btn" onClick={() => savedRec && printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr)}>Thermal Print</button>
                 <button className="btn" onClick={cancelEdit}>Cancel Edit</button>
               </>

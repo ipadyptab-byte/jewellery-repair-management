@@ -122,10 +122,13 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
 
         <body>
           <div className="invoice">
-            <div className="brand-header">
-              <div className="brand-name">{shopName}</div>
-              {shopAddress && <div className="brand-address">{shopAddress}</div>}
-              <div className="brand-tagline">Jewellery Repair & Custom Design</div>
+            <div className="brand-header" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <img src="/logo.png" alt="Logo" style={{ width: '80px', height: 'auto', objectFit: 'contain' }} />
+              <div>
+                <div className="brand-name">{shopName}</div>
+                {shopAddress && <div className="brand-address">{shopAddress}</div>}
+                <div className="brand-tagline">Jewellery Repair & Custom Design</div>
+              </div>
             </div>
             <div className="type-label">{isFinal ? 'FINAL REPAIR INVOICE' : 'REPAIR RECEIPT / ESTIMATE'}</div>
             <div className="content">
