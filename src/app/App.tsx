@@ -169,11 +169,11 @@ declare global { interface Window { jspdf: { jsPDF: any } } }
 
 function generateInvoiceLink(docNum: string, type: string, baseUrl: string, expDays: number) {
   const token = randTok(8)
-  const expDate = fmtDate(addDays(new Date(), expDays).toISOString())
+  // If expDays is 0, use 1 day (24 hours), otherwise use the value
+  const actualExpDays = expDays === 0 ? 1 : expDays
+  const expDate = fmtDate(addDays(new Date(), actualExpDays).toISOString())
   const suffix = type === 'final' ? '-final' : ''
-  // Use /r/ format for custom domain (devi-jewellers.com), /api/invoice/ for Vercel
   const isCustomDomain = baseUrl.includes('devi-jewellers')
-  // docNum already contains "JR" prefix (e.g., "JR1107"), don't add it again
   const url = isCustomDomain
     ? `${baseUrl.replace(/\/$/, '')}/r/INV-${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`
     : `${baseUrl.replace(/\/$/, '')}/api/invoice/INV-${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`
@@ -358,9 +358,10 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp, shopName, shopAddress }: { rec: RepairRecord; type: 'received' | 'final'; baseUrl: string; expDays: number; onMsg: (m: string, ok: boolean) => void; onSendWhatsApp: () => Promise<void>; shopName?: string; shopAddress?: string }) {
   const { url, expDate } = generateInvoiceLink(rec.docNum || rec.doc_num, type, baseUrl, expDays)
+  const displayExpiry = expDays === 0 ? '24 hours' : `${expDays} days`
   const waMsg = type === 'received'
-    ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* &#8377; ${rec.amount || rec.estimated_cost}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
-    : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* &#8377; ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${expDays} days — expires ${expDate})_\n\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
+    ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* &#8377; ${rec.amount || rec.estimated_cost}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${displayExpiry} — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
+    : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* &#8377; ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${displayExpiry} — expires ${expDate})_\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
 
   const copy = () => navigator.clipboard.writeText(url).then(() => onMsg('Link copied!', true)).catch(() => onMsg('Copy failed', false))
   const download = () => buildAndDownloadPDF(rec, type, baseUrl, expDays, shopName || 'Devi Jewellers', shopAddress || '')
@@ -380,7 +381,7 @@ function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp, shop
         <IcPdf /> {type === 'final' ? 'Final Invoice PDF generated' : 'Invoice PDF generated'}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-        <span className="expiry-badge"><IcClock /> Link expires in {expDays} days — {expDate}</span>
+        <span className="expiry-badge"><IcClock /> Link expires in {displayExpiry} — {expDate}</span>
       </div>
       <div className="link-box">{url}</div>
       <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '.04em', margin: '10px 0 6px' }}>WhatsApp message preview</div>
@@ -597,21 +598,24 @@ export default function App() {
     }
   };
 
-  const sendWhatsApp = async (rec: RepairRecord, type: 'received' | 'final') => {
+  const sendWhatsApp = async (rec: RepairRecord, type: 'received' | 'final', customExpiry?: number) => {
     if (!rmToken && (!rmUser || !rmPass)) throw new Error('WhatsApp API key or username/password required.')
     if (!tpl1Name || !tpl2Name) throw new Error('WhatsApp template names are required.')
 
     const templateName = type === 'received' ? tpl1Name : tpl2Name
     const templateLang = type === 'received' ? tpl1Lang : tpl2Lang
     const templateBody = type === 'received' ? tpl1Body : tpl2Body
-    // Default to devi-jewellers.com for /r/, can switch to Vercel for /api/invoice/
+    // Default to Vercel for management URL
     const invoiceLinkBase = cfgLinkBase || 'https://jewellery-repair-management.vercel.app'
-    // Use /api/invoice/ format for Vercel, or /r/ format for custom domain
+    // Use /r/ format for custom domain, /api/invoice/ for Vercel
     const isCustomDomain = invoiceLinkBase.includes('devi-jewellers')
     const token = randTok(8)
-    const expDate = fmtDate(addDays(new Date(), cfgExpiry).toISOString()).replace(/ /g, '')
+    // Use custom expiry if provided, otherwise use settings expiry
+    // If customExpiry is 0, use 1 day (24 hours)
+    const expDays = customExpiry !== undefined ? (customExpiry === 0 ? 1 : customExpiry) : cfgExpiry
+    const expDate = fmtDate(addDays(new Date(), expDays).toISOString()).replace(/ /g, '')
     const suffix = type === 'final' ? '-final' : ''
-    // docNum already contains "JR" prefix, don't add it again
+    // docNum already contains "JR" prefix
     const invoiceLink = isCustomDomain 
       ? `${invoiceLinkBase}/r/INV-${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
       : `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
@@ -1765,7 +1769,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </>
             ) : (
               <>
-                <button className="btn btn-primary" onClick={async () => { const rec = await saveReceipt(); if (rec) { if (trRecv) { sendWhatsApp(rec, 'received').catch(console.error); } setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(rec); setPrintRec(null); } }}><IcPdf />Save &amp; Print Thermal Invoice</button>
+                <button className="btn btn-primary" onClick={async () => { const rec = await saveReceipt(); if (rec) { if (trRecv) { const estDays = parseInt(rDays) || 7; sendWhatsApp(rec, 'received', estDays).catch(console.error); } setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(rec); setPrintRec(null); } }}><IcPdf />Save &amp; Print Thermal Invoice</button>
                 <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
             )}
@@ -1871,7 +1875,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 {kiEditing && records.find(r => r.docNum === kiDoc && r.status === 'ready') && (
                   <button className="btn" style={{ background: '#dc2626' }} onClick={() => { if (confirm('Reset final invoice? Status will change back to "With Karagir".')) { setRecords(prev => prev.map(r => r.docNum === kiDoc ? { ...r, finalAmount: 0, final_amount: 0, completedDate: null, completed_date: null, quality: '', status: 'with_karagir' } : r)); showMessage('ki', `Reset final invoice for ${kiDoc}`, true); setKiDoc(''); setKiLoaded(false); setKiAmount(''); setKiEditing(false) } }}>🗑️ Delete / Reset</button>
                 )}
-                <button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec && !kiEditing) { if (trReady) { sendWhatsApp(rec, 'final').catch(console.error); } setSavedRec(rec); setPrintRec(null); } }}>{kiEditing ? '💾 Update' : <><IcPdf />Confirm & Print Thermal Invoice</>}</button>
+                <button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec && !kiEditing) { if (trReady) { const received = rec.receivedDate || rec.received_date; const delivery = rec.deliveryDate || rec.delivery_date; const expDays = (received && delivery) ? Math.max(1, Math.ceil((new Date(delivery).getTime() - new Date(received).getTime()) / (1000 * 60 * 60 * 24))) : cfgExpiry; sendWhatsApp(rec, 'final', expDays).catch(console.error); } setSavedRec(rec); setPrintRec(null); } }}>{kiEditing ? '💾 Update' : <><IcPdf />Confirm & Print Thermal Invoice</>}</button>
               </div>
             </>
           )}
@@ -1880,7 +1884,25 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         {!kiEditing && finalRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Final Invoice — <span style={{ color: 'var(--brand)' }}>{finalRec.docNum}</span></div>
-            <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase || 'https://www.devi-jewellers.com'} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} shopName={cfgShop} shopAddress={cfgAddr} />
+            <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase || 'https://jewellery-repair-management.vercel.app'} expDays={(() => {
+  const rec = finalRec
+  const received = rec.receivedDate || rec.received_date
+  const delivery = rec.deliveryDate || rec.delivery_date
+  if (received && delivery) {
+    const days = Math.ceil((new Date(delivery).getTime() - new Date(received).getTime()) / (1000 * 60 * 60 * 24))
+    return days > 0 ? days : cfgExpiry
+  }
+  return cfgExpiry
+})()} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final', (() => {
+  const rec = finalRec
+  const received = rec.receivedDate || rec.received_date
+  const delivery = rec.deliveryDate || rec.delivery_date
+  if (received && delivery) {
+    const days = Math.ceil((new Date(delivery).getTime() - new Date(received).getTime()) / (1000 * 60 * 60 * 24))
+    return days > 0 ? days : cfgExpiry
+  }
+  return cfgExpiry
+})())} shopName={cfgShop} shopAddress={cfgAddr} />
             <Msg text={msg['wa-final']?.text || ''} ok={msg['wa-final']?.ok || false} />
           </div>
         )}
