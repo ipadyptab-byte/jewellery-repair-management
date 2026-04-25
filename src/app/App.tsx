@@ -1581,6 +1581,19 @@ export default function App() {
             <div className="shop-sub">Jewellery Repair Management System</div>
             <div className="shop-tag">अनमोल क्षणांचे सोनेरी साक्षीदार</div>
           </div>
+          <div className="location-badge" style={{
+            background: cfgLocation === 'satara' ? '#c0003a' : '#185FA5',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            textAlign: 'center',
+            minWidth: '100px'
+          }}>
+            <div style={{ fontSize: '10px', opacity: 0.8 }}>📍 LOCATION</div>
+            <div>{cfgLocation === 'satara' ? 'SATARA' : 'KOREGAON'}</div>
+          </div>
         </div>
         <div className="header-strip">
           <span>GOLD</span><span className="sep">|</span><span>SILVER</span><span className="sep">|</span><span>DIAMONDS</span><span className="sep">|</span><span>PEARLS</span>
