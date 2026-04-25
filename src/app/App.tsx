@@ -523,7 +523,7 @@ export default function App() {
           whatsappRmToken: rmToken,
           whatsappRmApiUrl: rmApiUrl,
           whatsappRmApiVersion: rmApiver,
-          invoiceLinkBase: cfgLinkBase || 'https://repair.devi-jewellers.com',
+          invoiceLinkBase: cfgLinkBase || 'https://jewellery-repair-management.vercel.app',
           invoiceExpiry: cfgExpiry,
           // Templates
           tpl1Name, tpl2Name, tpl3Name,
@@ -582,7 +582,7 @@ export default function App() {
     const templateLang = type === 'received' ? tpl1Lang : tpl2Lang
     const templateBody = type === 'received' ? tpl1Body : tpl2Body
     // Default to devi-jewellers.com for /r/, can switch to Vercel for /api/invoice/
-    const invoiceLinkBase = cfgLinkBase || 'https://repair.devi-jewellers.com'
+    const invoiceLinkBase = cfgLinkBase || 'https://jewellery-repair-management.vercel.app'
     // Use /api/invoice/ format for Vercel, or /r/ format for custom domain
     const isCustomDomain = invoiceLinkBase.includes('devi-jewellers')
     const token = randTok(8)
@@ -2107,7 +2107,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <div className="divider" />
               <div className="sec-label">Invoice PDF link settings</div>
               <div className="grid2">
-                <div className="field" style={{ flex: 2 }}><label>Invoice link base URL</label><input value={cfgLinkBase} onChange={e => setCfgLinkBase(e.target.value)} placeholder="https://repair.devi-jewellers.com" /><div className="hint">Vercel: /api/invoice/..., Custom domain: /r/ (e.g., https://repair.devi-jewellers.com)</div></div>
+                <div className="field" style={{ flex: 2 }}><label>Invoice link base URL</label><input value={cfgLinkBase} onChange={e => setCfgLinkBase(e.target.value)} placeholder="https://jewellery-repair-management.vercel.app" /><div className="hint">Vercel: /api/invoice/..., Custom domain: /r/ (e.g., https://repair.devi-jewellers.com)</div></div>
                 <div className="field" style={{ width: 100 }}><label>Days</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /></div>
               </div>
               <div className="btn-row">
@@ -2204,7 +2204,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <div className="field"><label>Language</label><select value={tpl1Lang} onChange={e => setTpl1Lang(e.target.value)}><option value="en_IN">en_IN — English (India)</option><option value="en">en</option><option value="hi">hi — Hindi</option><option value="mr">mr — Marathi</option></select></div>
               </div>
               <div className="field"><label>Template body</label><textarea rows={3} value={tpl1Body} onChange={e => setTpl1Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: &#8377; {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated)</div></div>
-              <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: &#8377; <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>https://repair.devi-jewellers.com/r/INV-JR1001-xxx?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
+              <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: &#8377; <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>https://jewellery-repair-management.vercel.app/api/invoice/INV-JR1001-xxx?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
               <div className="divider" />
               <div className="sec-label">Template 2 — Ready for delivery (with final invoice link)</div>
               <div className="grid2">
