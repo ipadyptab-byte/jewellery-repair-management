@@ -2012,7 +2012,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <div style={{ fontSize: 13, color: 'var(--text2)' }}>Status: {transferRec.status} | Current: {transferRec.current_location}</div>
               </div>
             )}
-            {transferRec && transferRec.current_location === 'satara' && transferRec.status === 'with_karagir' && (
+            {transferRec && transferRec.current_location === 'satara' && (transferRec.status === 'with_karagir' || transferRec.status === 'ready') && (
               <div className="btn-row">
                 <button className="btn btn-primary" onClick={async () => {
                   try {
@@ -2021,9 +2021,10 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         doc_num: transferRec.docNum || transferRec.doc_num,
-                        status: 'with_karagir',
                         current_location: 'koregaon',
-                        transfer_status: 'received_from_satara'
+                        transfer_status: 'received_from_satara',
+                        // If item was ready, keep it ready; otherwise keep with_karagir
+                        status: transferRec.status === 'ready' ? 'ready' : 'with_karagir'
                       })
                     })
                     if (response.ok) {
@@ -2031,14 +2032,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                       const recs = await fetch('/api/records')
                       if (recs.ok) setRecords((await recs.json()).map(convertFromDB))
                       showMessage('transfer', 'Item received at Koregaon!', true)
-                      // Send WhatsApp to customer (like receive from karagir)
-                      const updatedRec = records.find(r => (r.docNum || r.doc_num) === (transferRec.docNum || transferRec.doc_num))
-                      if (updatedRec && trReady) {
-                        const received = updatedRec.receivedDate || updatedRec.received_date
-                        const delivery = updatedRec.deliveryDate || updatedRec.delivery_date
-                        const expDays = (received && delivery) ? Math.max(1, Math.ceil((new Date(delivery).getTime() - new Date(received).getTime()) / (1000 * 60 * 60 * 24))) : cfgExpiry
-                        sendWhatsApp(updatedRec, 'received', expDays).catch(console.error)
-                      }
+                      // DON'T send WhatsApp - item is not ready yet, still needs delivery at Koregaon
                       setTransferDoc('')
                       setTransferRec(null)
                     }
