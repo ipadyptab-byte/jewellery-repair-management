@@ -962,7 +962,7 @@ export default function App() {
                 const match = String(r.doc_num || r.docNum || '').match(/^JR(\d+)$/);
                 return match ? parseInt(match[1]) : null;
               })
-              .filter(n => n !== null);
+              .filter((n: number | null) => n !== null);
             const maxSataraSeq = sataraNums.length > 0 ? Math.max(...sataraNums) : 0;
             if (maxSataraSeq > 0) setDocSeq(maxSataraSeq);
             
@@ -972,7 +972,7 @@ export default function App() {
                 const match = String(r.doc_num || r.docNum || '').match(/^JR-KO-(\d+)$/);
                 return match ? parseInt(match[1]) : null;
               })
-              .filter(n => n !== null);
+              .filter((n: number | null) => n !== null);
             const maxKoregaonSeq = koregaonNums.length > 0 ? Math.max(...koregaonNums) : 0;
             if (maxKoregaonSeq > 0) setKoregaonSeq(maxKoregaonSeq);
           }
