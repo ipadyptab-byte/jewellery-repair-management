@@ -45,7 +45,10 @@ export async function POST(request: NextRequest) {
       delivery_date,
       metal,
       weight,
-      salesman
+      salesman,
+      location,
+      current_location,
+      transfer_status
     } = body;
 
     // Map to schema column names with fallbacks
@@ -53,8 +56,8 @@ export async function POST(request: NextRequest) {
     const result = await pool.query(
       `INSERT INTO repair_records (
         doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description,
-        received_date, delivery_date, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        received_date, delivery_date, status, location, current_location, transfer_status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *`,
       [
         doc_num,
@@ -68,7 +71,10 @@ export async function POST(request: NextRequest) {
         description || '',
         received_date || new Date().toISOString(),
         delivery_date || addDays(new Date().toISOString(), 7),
-        status || 'received'
+        status || 'received',
+        location || 'satara',           // location (where received)
+        current_location || 'satara',   // current_location
+        transfer_status || null         // transfer_status
       ]
     );
 
@@ -108,6 +114,9 @@ export async function PUT(request: NextRequest) {
       metal,
       weight,
       salesman,
+      location,
+      current_location,
+      transfer_status,
       received_invoice_expires_at
     } = body;
 
@@ -140,10 +149,13 @@ export async function PUT(request: NextRequest) {
           final_amount = COALESCE($15, final_amount),
           completed_date = COALESCE($16, completed_date),
           quality = COALESCE($17, quality),
+          location = COALESCE($18, location),
+          current_location = COALESCE($19, current_location),
+          transfer_status = COALESCE($20, transfer_status),
           updated_at = NOW()
-        WHERE id = $18
+        WHERE id = $21
         RETURNING *`,
-        [doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status, karagir, karagir_date, final_amount, completed_date, quality, id]
+        [doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status, karagir, karagir_date, final_amount, completed_date, quality, location, current_location, transfer_status, id]
       );
     } else {
       // Update by doc_num
@@ -170,7 +182,10 @@ export async function PUT(request: NextRequest) {
         ['final_amount', final_amount],
         ['completed_date', completed_date],
         ['quality', quality],
-        ['received_invoice_expires_at', received_invoice_expires_at]
+        ['received_invoice_expires_at', received_invoice_expires_at],
+        ['location', location],
+        ['current_location', current_location],
+        ['transfer_status', transfer_status]
       ];
 
       for (const [field, value] of fields) {

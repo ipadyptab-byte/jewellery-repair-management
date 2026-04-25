@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS repair_records (
   completed_date TIMESTAMP,
   quality VARCHAR(50),
   received_invoice_expires_at TIMESTAMP,
+  location VARCHAR(50) DEFAULT 'satara',
+  current_location VARCHAR(50) DEFAULT 'satara',
+  transfer_status VARCHAR(50),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -127,5 +130,6 @@ INSERT INTO settings (key, value) VALUES
 ('template_2_name', 'jewellery_ready_invoice'),
 ('trigger_receive', 'true'),
 ('trigger_ready', 'true'),
-('trigger_karagir', 'false')
+('trigger_karagir', 'false'),
+('location', 'satara')
 ON CONFLICT (key) DO NOTHING;

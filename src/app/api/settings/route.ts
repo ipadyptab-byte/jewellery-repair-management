@@ -89,6 +89,9 @@ export async function GET() {
         case 'invoice_expiry_days':
           settings.invoiceExpiry = parseInt(row.value) || 10;
           break;
+        case 'location':
+          settings.location = row.value || 'satara';
+          break;
         case 'currency':
           settings.currency = row.value || 'INR';
           break;
@@ -132,6 +135,7 @@ export async function POST(request: NextRequest) {
       taxRate,
       invoiceLinkBase,
       invoiceExpiry,
+      location,
       // WhatsApp Route Mobile credentials
       whatsappRmUser,
       whatsappRmPass,
@@ -173,6 +177,7 @@ export async function POST(request: NextRequest) {
     if (whatsappRmApiVersion !== undefined) settingsMap['whatsapp_rm_api_version'] = whatsappRmApiVersion || 'v17.0';
     if (invoiceLinkBase !== undefined) settingsMap['invoice_link_base'] = invoiceLinkBase || '';
     if (invoiceExpiry !== undefined) settingsMap['invoice_expiry_days'] = String(invoiceExpiry);
+    if (location !== undefined) settingsMap['location'] = location || 'satara';
     if (currency !== undefined) settingsMap['currency'] = currency || 'INR';
     if (taxRate !== undefined) settingsMap['tax_rate'] = String(taxRate);
     // Templates

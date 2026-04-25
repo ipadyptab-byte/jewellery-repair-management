@@ -39,6 +39,9 @@ interface RepairRecord {
   receivedDate?: string;
   deliveryDate?: string;
   received_invoice_expires_at?: string | null;
+  location?: string;
+  current_location?: string;
+  transfer_status?: string | null;
 }
 interface Master {
   id: number;
@@ -79,6 +82,9 @@ const convertFromDB = (record: any): RepairRecord => ({
   salesman: record.salesman,
   quality: record.quality,
   received_invoice_expires_at: record.received_invoice_expires_at,
+  location: record.location || 'satara',
+  current_location: record.current_location || 'satara',
+  transfer_status: record.transfer_status,
   // Keep legacy fields for compatibility
   customer_name: record.name,
   phone_number: record.mobile,
@@ -144,14 +150,16 @@ const addDays = (d: string | Date, n: number) => { const r = new Date(d); r.setD
 const randTok = (n: number) => Array.from({ length: n }, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]).join('')
 const effStatus = (r: RepairRecord) => {
   if (r.status === 'ready') return 'ready'
+  // If item is transferred but not with karagir yet, show transfer status
+  if (r.current_location && r.current_location !== r.location) return 'transferred'
   if ((r.status === 'received' || r.status === 'with_karagir') && r.deliveryDate && new Date(r.deliveryDate) < new Date()) return 'overdue'
   return r.status
 }
 
-const bdgCls: Record<string, string> = { received: 'badge-recv', with_karagir: 'badge-karagir', ready: 'badge-ready', overdue: 'badge-overdue' }
-const bdgLbl: Record<string, string> = { received: 'Received', with_karagir: 'With Karagir', ready: 'Ready', overdue: 'Overdue' }
-const sbCls: Record<string, string> = { received: 'sb-recv', with_karagir: 'sb-karagir', ready: 'sb-ready', overdue: 'sb-overdue' }
-const sbLbl: Record<string, string> = { received: 'Received — awaiting karagir', with_karagir: 'With karagir — repair in progress', ready: 'Ready for delivery', overdue: 'Overdue — repair pending' }
+const bdgCls: Record<string, string> = { received: 'badge-recv', with_karagir: 'badge-karagir', ready: 'badge-ready', overdue: 'badge-overdue', transferred: 'badge-karagir' }
+const bdgLbl: Record<string, string> = { received: 'Received', with_karagir: 'With Karagir', ready: 'Ready', overdue: 'Overdue', transferred: 'At Satara' }
+const sbCls: Record<string, string> = { received: 'sb-recv', with_karagir: 'sb-karagir', ready: 'sb-ready', overdue: 'sb-overdue', transferred: 'sb-karagir' }
+const sbLbl: Record<string, string> = { received: 'Received — awaiting karagir', with_karagir: 'With karagir — repair in progress', ready: 'Ready for delivery', overdue: 'Overdue — repair pending', transferred: 'Sent to Satara — awaiting karagir' }
 
 /* ─── SVG Icons ─── */
 const IcBack = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
@@ -501,6 +509,7 @@ export default function App() {
 
   // Settings
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
+  const [cfgLocation, setCfgLocation] = useState('satara') // satara or koregaon
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [logoBase64, setLogoBase64] = useState<string>('')
@@ -522,6 +531,11 @@ export default function App() {
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
   const [printRec, setPrintRec] = useState<{rec: RepairRecord; type: 'received' | 'final'} | null>(null)
+  
+  // Transfer states (only for Koregaon)
+  const [transferPage, setTransferPage] = useState<'incoming' | 'outgoing'>('incoming')
+  const [transferDoc, setTransferDoc] = useState('')
+  const [transferRec, setTransferRec] = useState<RepairRecord | null>(null)
 
   // Save all settings (Shop Info + WhatsApp Credentials + Invoice Settings) - single button
   const saveAllSettings = async () => {
@@ -540,6 +554,8 @@ export default function App() {
           shopGst: cfgGst,
           shopCity: cfgCity,
           shopAddress: cfgAddr,
+          // Location
+          location: cfgLocation,
           // WhatsApp + Invoice
           whatsappRmUser: rmUser,
           whatsappRmPass: rmPass,
@@ -590,6 +606,7 @@ export default function App() {
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
           if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
           if (settings.docSeq) setDocSeq(settings.docSeq);
+          if (settings.location) setCfgLocation(settings.location);
         }
       } else {
         showMessage('creds', 'Failed to save: ' + (result.error || 'Unknown error'), false);
@@ -1062,7 +1079,7 @@ export default function App() {
         description: rDesc || '',
         estimated_cost: parseFloat(rAmount),
         status: 'received',
-        master_id: null, // Will be set when assigned to karagir
+        master_id: null,
         notes: '',
         images: [],
         received_date: receivedDate,
@@ -1070,6 +1087,9 @@ export default function App() {
         metal: rMetal,
         weight: rWeight,
         salesman: rSalesman,
+        location: cfgLocation,
+        current_location: cfgLocation,
+        transfer_status: null
       };
 
       const response = await fetch('/api/records', {
@@ -1600,6 +1620,13 @@ export default function App() {
             <div className="tile-label">Masters</div>
             <div className="tile-desc">Salesman, jewellery, metal, karagir</div>
           </div>
+          {cfgLocation === 'koregaon' && (
+            <div className="dash-tile" onClick={() => openPage('transfer')}>
+              <div className="tile-icon" style={{ background: '#E0E7FF' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4338CA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg></div>
+              <div className="tile-label">Transfer</div>
+              <div className="tile-desc">Send/Receive items from Satara</div>
+            </div>
+          )}
           <div className="dash-tile" onClick={() => openPage('deliver')}>
             <div className="tile-icon" style={{ background: '#DCFCE7' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg></div>
             <div className="tile-label">Deliver to Customer</div>
@@ -1913,6 +1940,135 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         )}
       </div>
 
+      {/* ── TRANSFER (Koregaon only) ── */}
+      {cfgLocation === 'koregaon' && (
+      <div className={`page ${page === 'transfer' ? 'active' : ''}`}>
+        <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
+        
+        {/* Transfer Tabs */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <button className={`btn ${transferPage === 'incoming' ? 'btn-primary' : ''}`} onClick={() => setTransferPage('incoming')}>📥 Receive from Satara</button>
+          <button className={`btn ${transferPage === 'outgoing' ? 'btn-primary' : ''}`} onClick={() => setTransferPage('outgoing')}>📤 Send to Satara</button>
+        </div>
+
+        {/* Incoming: Receive from Satara */}
+        {transferPage === 'incoming' && (
+          <div className="card">
+            <div className="card-title">📥 Receive from Satara</div>
+            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Enter document number to receive repaired items from Satara</p>
+            <div className="field">
+              <label>Document Number</label>
+              <input value={transferDoc} onChange={e => {
+                setTransferDoc(e.target.value.toUpperCase())
+                const rec = records.find(r => (r.docNum || r.doc_num) === e.target.value.toUpperCase())
+                setTransferRec(rec || null)
+              }} placeholder="e.g. JR1107" />
+            </div>
+            {transferRec && (
+              <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                <div style={{ fontWeight: 600 }}>{transferRec.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.metal} {transferRec.jewellery}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>Status: {transferRec.status} | Current: {transferRec.current_location}</div>
+              </div>
+            )}
+            {transferRec && transferRec.current_location === 'satara' && transferRec.status === 'with_karagir' && (
+              <div className="btn-row">
+                <button className="btn btn-primary" onClick={async () => {
+                  try {
+                    const response = await fetch('/api/records', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        doc_num: transferRec.docNum || transferRec.doc_num,
+                        status: 'with_karagir',
+                        current_location: 'koregaon',
+                        transfer_status: 'received_from_satara'
+                      })
+                    })
+                    if (response.ok) {
+                      // Reload records
+                      const recs = await fetch('/api/records')
+                      if (recs.ok) setRecords((await recs.json()).map(convertFromDB))
+                      showMessage('transfer', 'Item received at Koregaon!', true)
+                      // Send WhatsApp to customer (like receive from karagir)
+                      const updatedRec = records.find(r => (r.docNum || r.doc_num) === (transferRec.docNum || transferRec.doc_num))
+                      if (updatedRec && trReady) {
+                        const received = updatedRec.receivedDate || updatedRec.received_date
+                        const delivery = updatedRec.deliveryDate || updatedRec.delivery_date
+                        const expDays = (received && delivery) ? Math.max(1, Math.ceil((new Date(delivery).getTime() - new Date(received).getTime()) / (1000 * 60 * 60 * 24))) : cfgExpiry
+                        sendWhatsApp(updatedRec, 'received', expDays).catch(console.error)
+                      }
+                      setTransferDoc('')
+                      setTransferRec(null)
+                    }
+                  } catch (e) {
+                    showMessage('transfer', 'Failed to receive item', false)
+                  }
+                }}>✅ Confirm Receive</button>
+              </div>
+            )}
+            {transferRec && transferRec.current_location !== 'satara' && (
+              <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item is not at Satara</p>
+            )}
+          </div>
+        )}
+
+        {/* Outgoing: Send to Satara */}
+        {transferPage === 'outgoing' && (
+          <div className="card">
+            <div className="card-title">📤 Send to Satara</div>
+            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Enter document number to send items to Satara for karagir repair</p>
+            <div className="field">
+              <label>Document Number</label>
+              <input value={transferDoc} onChange={e => {
+                setTransferDoc(e.target.value.toUpperCase())
+                const rec = records.find(r => (r.docNum || r.doc_num) === e.target.value.toUpperCase())
+                setTransferRec(rec || null)
+              }} placeholder="e.g. JR1107" />
+            </div>
+            {transferRec && (
+              <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                <div style={{ fontWeight: 600 }}>{transferRec.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.metal} {transferRec.jewellery}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>Status: {transferRec.status} | Current: {transferRec.current_location}</div>
+              </div>
+            )}
+            {transferRec && transferRec.current_location === 'koregaon' && transferRec.status === 'received' && (
+              <div className="btn-row">
+                <button className="btn btn-primary" onClick={async () => {
+                  try {
+                    const response = await fetch('/api/records', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        doc_num: transferRec.docNum || transferRec.doc_num,
+                        current_location: 'satara',
+                        transfer_status: 'sent_to_satara'
+                      })
+                    })
+                    if (response.ok) {
+                      const recs = await fetch('/api/records')
+                      if (recs.ok) setRecords((await recs.json()).map(convertFromDB))
+                      showMessage('transfer', 'Item sent to Satara!', true)
+                      setTransferDoc('')
+                      setTransferRec(null)
+                    }
+                  } catch (e) {
+                    showMessage('transfer', 'Failed to send item', false)
+                  }
+                }}>✅ Send to Satara</button>
+              </div>
+            )}
+            {transferRec && !(transferRec.current_location === 'koregaon' && transferRec.status === 'received') && (
+              <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item cannot be sent to Satara (not at Koregaon or wrong status)</p>
+            )}
+          </div>
+        )}
+        
+        <Msg text={msg['transfer']?.text || ''} ok={msg['transfer']?.ok || false} />
+      </div>
+      )}
+
       {/* ── TRACK ── */}
       <div className={`page ${page === 'track' ? 'active' : ''}`}>
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
@@ -2153,6 +2309,17 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <div className="grid2">
                 <div className="field"><label>API base URL</label><input value={rmApiUrl} onChange={e => setRmApiUrl(e.target.value)} /></div>
                 <div className="field"><label>API version</label><select value={rmApiver} onChange={e => setRmApiver(e.target.value)}><option value="v17.0">v17.0 (recommended)</option><option value="v18.0">v18.0</option><option value="v19.0">v19.0</option><option value="v20.0">v20.0</option></select></div>
+              </div>
+              <div className="divider" />
+              <div className="sec-label">Location Settings</div>
+              <div className="grid2">
+                <div className="field"><label>Current Location</label>
+                  <select value={cfgLocation} onChange={e => setCfgLocation(e.target.value)}>
+                    <option value="satara">Satara (Main - Karagir Center)</option>
+                    <option value="koregaon">Koregaon (Branch)</option>
+                  </select>
+                  <div className="hint">Satara = Main branch with karagir; Koregaon = Branch that sends to Satara</div>
+                </div>
               </div>
               <div className="divider" />
               <div className="sec-label">Invoice PDF link settings</div>
