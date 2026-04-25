@@ -92,6 +92,9 @@ export async function GET() {
         case 'location':
           settings.location = row.value || 'satara';
           break;
+        case 'koregaon_seq':
+          settings.koregaonSeq = parseInt(row.value) || 0;
+          break;
         case 'currency':
           settings.currency = row.value || 'INR';
           break;
@@ -150,7 +153,8 @@ export async function POST(request: NextRequest) {
       tpl1Body, tpl2Body, tpl3Body,
       tpl1Lang, tpl2Lang, tpl3Lang,
       // Doc sequence
-      docSeq
+      docSeq,
+      koregaonSeq
     } = body;
 
     const pool = sql();
@@ -192,6 +196,7 @@ export async function POST(request: NextRequest) {
     if (tpl3Lang !== undefined) settingsMap['tpl3_lang'] = tpl3Lang || 'en';
     // Doc sequence
     if (docSeq !== undefined) settingsMap['doc_seq'] = String(docSeq);
+    if (koregaonSeq !== undefined) settingsMap['koregaon_seq'] = String(koregaonSeq);
 
     // Upsert only provided settings
     for (const [key, value] of Object.entries(settingsMap)) {

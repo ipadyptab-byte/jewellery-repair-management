@@ -513,6 +513,7 @@ export default function App() {
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [logoBase64, setLogoBase64] = useState<string>('')
+  const [koregaonSeq, setKoregaonSeq] = useState(0)
   const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl3Name, setTpl3Name] = useState('2739573333095990'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl3Body, setTpl3Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en'); const [tpl3Lang, setTpl3Lang] = useState('en')
 
   // Load logo on mount
@@ -576,7 +577,8 @@ export default function App() {
           tpl2Lang: tpl2Lang || 'en',
           tpl3Lang: tpl3Lang || 'en',
           // Doc sequence
-          docSeq: docSeq
+          docSeq: docSeq,
+          koregaonSeq: koregaonSeq
         })
       });
       
@@ -606,6 +608,7 @@ export default function App() {
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
           if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
           if (settings.docSeq) setDocSeq(settings.docSeq);
+          if (settings.koregaonSeq !== undefined) setKoregaonSeq(settings.koregaonSeq);
           if (settings.location) setCfgLocation(settings.location);
         }
       } else {
@@ -1079,13 +1082,19 @@ export default function App() {
     if (!/^\d{10}$/.test(rMobile)) { showMessage('receive', 'Enter valid 10-digit mobile.', false); return null }
 
     try {
-      const seq = docSeq + 1;
-      const docNum = 'JR' + String(seq).padStart(4, '0');
-      const receivedDate = new Date().toISOString();
-      const deliveryDate = addDays(receivedDate, parseInt(rDays)).toISOString();
+      // Generate doc number based on location
+      const isKoregaon = cfgLocation === 'koregaon'
+      const seq = isKoregaon ? koregaonSeq + 1 : docSeq + 1
+      const docNum = isKoregaon 
+        ? 'JR-KO-' + String(seq).padStart(4, '0')  // JR-KO-0001
+        : 'JR' + String(seq).padStart(4, '0')      // JR0001
+      const receivedDate = new Date().toISOString()
+      const deliveryDate = addDays(receivedDate, parseInt(rDays)).toISOString()
 
       const recordData = {
         doc_num: docNum,
+        location: cfgLocation,
+        current_location: cfgLocation,
         customer_name: rName,
         phone_number: rMobile,
         item_type: rType,
@@ -1118,7 +1127,12 @@ export default function App() {
 
       const savedRecord = await response.json();
       setRecords(prev => [...prev, convertFromDB(savedRecord)]);
-      setDocSeq(seq);
+      // Update sequence based on location
+      if (isKoregaon) {
+        setKoregaonSeq(seq);
+      } else {
+        setDocSeq(seq);
+      }
       setSavedRec(convertFromDB(savedRecord));
       showMessage('receive', `Saved! Document: ${docNum}`, true);
       return convertFromDB(savedRecord);
@@ -1996,26 +2010,44 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         {transferPage === 'incoming' && (
           <div className="card">
             <div className="card-title">📥 Receive from Satara</div>
-            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Enter document number to receive repaired items from Satara</p>
+            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Select repaired items received from Satara</p>
+            
+            {/* Filter: items at Satara that are ready or with_karagir */}
             <div className="field">
-              <label>Document Number</label>
-              <input value={transferDoc} onChange={e => {
-                setTransferDoc(e.target.value.toUpperCase())
-                const rec = records.find(r => (r.docNum || r.doc_num) === e.target.value.toUpperCase())
+              <label>Select Invoice <span className="req">*</span></label>
+              <select value={transferDoc || ''} onChange={e => {
+                setTransferDoc(e.target.value)
+                const rec = records.find(r => (r.docNum || r.doc_num) === e.target.value)
                 setTransferRec(rec || null)
-              }} placeholder="e.g. JR1107" />
+              }}>
+                <option value="">Select invoice to receive</option>
+                {records.filter(r => 
+                  r.current_location === 'satara' && 
+                  (r.status === 'ready' || r.status === 'with_karagir')
+                ).map(r => (
+                  <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
+                    {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery}) {r.status === 'ready' ? '✓ Ready' : 'In repair'}
+                  </option>
+                ))}
+              </select>
             </div>
+            
             {transferRec && (
               <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
                 <div style={{ fontWeight: 600 }}>{transferRec.name}</div>
                 <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.metal} {transferRec.jewellery}</div>
-                <div style={{ fontSize: 13, color: 'var(--text2)' }}>Status: {transferRec.status} | Current: {transferRec.current_location}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.weight} g | &#8377; {transferRec.finalAmount || transferRec.final_amount || transferRec.amount || transferRec.estimated_cost}</div>
+                <div style={{ fontSize: 13, color: transferRec.status === 'ready' ? 'green' : 'var(--text2)' }}>
+                  Status: {transferRec.status === 'ready' ? '✅ Ready for delivery' : '⏳ With Karagir'}
+                </div>
               </div>
             )}
+            
             {transferRec && transferRec.current_location === 'satara' && (transferRec.status === 'with_karagir' || transferRec.status === 'ready') && (
               <div className="btn-row">
                 <button className="btn btn-primary" onClick={async () => {
                   try {
+                    const isReady = transferRec.status === 'ready'
                     const response = await fetch('/api/records', {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json' },
@@ -2023,8 +2055,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                         doc_num: transferRec.docNum || transferRec.doc_num,
                         current_location: 'koregaon',
                         transfer_status: 'received_from_satara',
-                        // If item was ready, keep it ready; otherwise keep with_karagir
-                        status: transferRec.status === 'ready' ? 'ready' : 'with_karagir'
+                        // Keep the status as is - if ready stays ready
+                        status: isReady ? 'ready' : 'with_karagir'
                       })
                     })
                     if (response.ok) {
@@ -2032,7 +2064,15 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                       const recs = await fetch('/api/records')
                       if (recs.ok) setRecords((await recs.json()).map(convertFromDB))
                       showMessage('transfer', 'Item received at Koregaon!', true)
-                      // DON'T send WhatsApp - item is not ready yet, still needs delivery at Koregaon
+                      
+                      // If item was ready, send "Ready for delivery" WhatsApp to customer
+                      if (isReady && trReady) {
+                        const received = transferRec.receivedDate || transferRec.received_date
+                        const delivery = transferRec.deliveryDate || transferRec.delivery_date
+                        const expDays = (received && delivery) ? Math.max(1, Math.ceil((new Date(delivery).getTime() - new Date(received).getTime()) / (1000 * 60 * 60 * 24))) : cfgExpiry
+                        sendWhatsApp(transferRec, 'final', expDays).catch(console.error)
+                      }
+                      
                       setTransferDoc('')
                       setTransferRec(null)
                     }
@@ -2042,8 +2082,13 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 }}>✅ Confirm Receive</button>
               </div>
             )}
+            
             {transferRec && transferRec.current_location !== 'satara' && (
               <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item is not at Satara</p>
+            )}
+            
+            {records.filter(r => r.current_location === 'satara' && (r.status === 'ready' || r.status === 'with_karagir')).length === 0 && (
+              <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No items to receive from Satara.</p>
             )}
           </div>
         )}
@@ -2052,22 +2097,37 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         {transferPage === 'outgoing' && (
           <div className="card">
             <div className="card-title">📤 Send to Satara</div>
-            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Enter document number to send items to Satara for karagir repair</p>
+            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Select items received at Koregaon to send to Satara for karagir repair</p>
+            
+            {/* Filter records: only those at koregaon with status 'received' */}
             <div className="field">
-              <label>Document Number</label>
-              <input value={transferDoc} onChange={e => {
-                setTransferDoc(e.target.value.toUpperCase())
-                const rec = records.find(r => (r.docNum || r.doc_num) === e.target.value.toUpperCase())
+              <label>Select Invoice <span className="req">*</span></label>
+              <select value={transferDoc || ''} onChange={e => {
+                setTransferDoc(e.target.value)
+                const rec = records.find(r => (r.docNum || r.doc_num) === e.target.value)
                 setTransferRec(rec || null)
-              }} placeholder="e.g. JR1107" />
+              }}>
+                <option value="">Select invoice to send</option>
+                {records.filter(r => 
+                  r.location === 'koregaon' && 
+                  r.current_location === 'koregaon' && 
+                  r.status === 'received'
+                ).map(r => (
+                  <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
+                    {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery})
+                  </option>
+                ))}
+              </select>
             </div>
+            
             {transferRec && (
               <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
                 <div style={{ fontWeight: 600 }}>{transferRec.name}</div>
                 <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.metal} {transferRec.jewellery}</div>
-                <div style={{ fontSize: 13, color: 'var(--text2)' }}>Status: {transferRec.status} | Current: {transferRec.current_location}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.weight} g | &#8377; {transferRec.amount || transferRec.estimated_cost}</div>
               </div>
             )}
+            
             {transferRec && transferRec.current_location === 'koregaon' && transferRec.status === 'received' && (
               <div className="btn-row">
                 <button className="btn btn-primary" onClick={async () => {
@@ -2094,8 +2154,13 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 }}>✅ Send to Satara</button>
               </div>
             )}
+            
             {transferRec && !(transferRec.current_location === 'koregaon' && transferRec.status === 'received') && (
-              <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item cannot be sent to Satara (not at Koregaon or wrong status)</p>
+              <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item cannot be sent to Satara</p>
+            )}
+            
+            {records.filter(r => r.location === 'koregaon' && r.current_location === 'koregaon' && r.status === 'received').length === 0 && (
+              <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No items to send to Satara.</p>
             )}
           </div>
         )}
@@ -2361,6 +2426,12 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                   </select>
                   <div className="hint">Satara = Main branch with karagir; Koregaon = Branch that sends to Satara</div>
                 </div>
+                {cfgLocation === 'koregaon' && (
+                  <div className="field"><label>Koregaon Doc Series</label>
+                    <input type="number" value={koregaonSeq} onChange={e => setKoregaonSeq(parseInt(e.target.value) || 0)} placeholder="e.g. 100" />
+                    <div className="hint">Starting number for JR-KO-XXXX</div>
+                  </div>
+                )}
               </div>
               <div className="divider" />
               <div className="sec-label">Invoice PDF link settings</div>
