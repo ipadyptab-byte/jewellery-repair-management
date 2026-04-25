@@ -173,8 +173,9 @@ function generateInvoiceLink(docNum: string, type: string, baseUrl: string, expD
   const suffix = type === 'final' ? '-final' : ''
   // Use /r/ format for custom domain (devi-jewellers.com), /api/invoice/ for Vercel
   const isCustomDomain = baseUrl.includes('devi-jewellers')
+  // docNum already contains "JR" prefix (e.g., "JR1107"), don't add it again
   const url = isCustomDomain
-    ? `${baseUrl.replace(/\/$/, '')}/r/INV-JR${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`
+    ? `${baseUrl.replace(/\/$/, '')}/r/INV-${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`
     : `${baseUrl.replace(/\/$/, '')}/api/invoice/INV-${docNum}${suffix}-${token}?exp=${expDate.replace(/ /g, '')}`
   return { url, expDate }
 }
@@ -580,15 +581,16 @@ export default function App() {
     const templateName = type === 'received' ? tpl1Name : tpl2Name
     const templateLang = type === 'received' ? tpl1Lang : tpl2Lang
     const templateBody = type === 'received' ? tpl1Body : tpl2Body
-    // Default to Vercel URL for /api/invoice/, can switch to devi-jewellers.com for /r/
+    // Default to devi-jewellers.com for /r/, can switch to Vercel for /api/invoice/
     const invoiceLinkBase = cfgLinkBase || 'https://www.devi-jewellers.com'
     // Use /api/invoice/ format for Vercel, or /r/ format for custom domain
     const isCustomDomain = invoiceLinkBase.includes('devi-jewellers')
     const token = randTok(8)
     const expDate = fmtDate(addDays(new Date(), cfgExpiry).toISOString()).replace(/ /g, '')
     const suffix = type === 'final' ? '-final' : ''
+    // docNum already contains "JR" prefix, don't add it again
     const invoiceLink = isCustomDomain 
-      ? `${invoiceLinkBase}/r/INV-JR${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
+      ? `${invoiceLinkBase}/r/INV-${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
       : `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
     const params = type === 'received'
       ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]

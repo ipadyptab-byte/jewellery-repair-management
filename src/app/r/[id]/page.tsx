@@ -11,15 +11,37 @@ interface PageProps {
 export default async function InvoicePage({ params, searchParams }: PageProps) {
   const { id } = params
 
-  // ✅ Extract only numbers from ID (works for INV-JR1081, JR1081, 1081)
-  const docNum = id.replace(/[^0-9]/g, '')
+  // ✅ Extract doc_num from ID (handles INV-JR1107, INV-JR1107-final-abc, etc.)
+  // Format: INV-{docNum}[-suffix][-token]
+  const idParts = id.split('-')
+  // Remove 'INV' prefix, get first part which should be doc_num (e.g., 'JR1107')
+  const docNum = idParts[0] === 'INV' ? idParts[1] : idParts[0]
 
   // 🔐 Expiry check
   if (searchParams?.exp) {
-    const expiryDate = new Date(searchParams.exp)
+    const expStr = searchParams.exp
+    // Parse formats: "05May2026", "05may2026", "05May2026", "2026-05-05"
+    let expDate: Date
+    const normalizedExp = expStr.toLowerCase()
+    
+    // Try parsing "05may2026" format
+    if (/^\d{2}[a-z]+\d{4}$/.test(normalizedExp)) {
+      const day = normalizedExp.slice(0, 2)
+      const monthStr = normalizedExp.slice(2, 5)
+      const year = normalizedExp.slice(5, 9)
+      const monthMap: Record<string, string> = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' }
+      const month = monthMap[monthStr] || '01'
+      expDate = new Date(`${year}-${month}-${day}`)
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(expStr)) {
+      // ISO format "2026-05-05"
+      expDate = new Date(expStr)
+    } else {
+      // Fallback: try direct parsing
+      expDate = new Date(expStr)
+    }
+    
     const today = new Date()
-
-    if (today > expiryDate) {
+    if (isNaN(expDate.getTime()) || today > expDate) {
       return (
         <html>
           <head>
