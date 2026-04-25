@@ -954,14 +954,27 @@ export default function App() {
           const dbRecords = await recordsResponse.json();
           setRecords(dbRecords.map(convertFromDB));
           
-          // Update docSeq based on existing records (get max doc_num)
+          // Update docSeq/koregaonSeq based on existing records
           if (dbRecords.length > 0) {
-            const docNums = dbRecords.map((r: any) => {
-              const match = String(r.doc_num || r.docNum || '').match(/JR(\d+)/);
-              return match ? parseInt(match[1]) : 0;
-            });
-            const maxSeq = Math.max(...docNums);
-            if (maxSeq > 0) setDocSeq(maxSeq);
+            // Parse Satara sequence (JR0001)
+            const sataraNums = dbRecords
+              .map((r: any) => {
+                const match = String(r.doc_num || r.docNum || '').match(/^JR(\d+)$/);
+                return match ? parseInt(match[1]) : null;
+              })
+              .filter(n => n !== null);
+            const maxSataraSeq = sataraNums.length > 0 ? Math.max(...sataraNums) : 0;
+            if (maxSataraSeq > 0) setDocSeq(maxSataraSeq);
+            
+            // Parse Koregaon sequence (JR-KO-0001)
+            const koregaonNums = dbRecords
+              .map((r: any) => {
+                const match = String(r.doc_num || r.docNum || '').match(/^JR-KO-(\d+)$/);
+                return match ? parseInt(match[1]) : null;
+              })
+              .filter(n => n !== null);
+            const maxKoregaonSeq = koregaonNums.length > 0 ? Math.max(...koregaonNums) : 0;
+            if (maxKoregaonSeq > 0) setKoregaonSeq(maxKoregaonSeq);
           }
         }
 
@@ -982,6 +995,10 @@ export default function App() {
         // Load docSeq from localStorage as fallback
         const savedDocSeq = localStorage.getItem('devi-jewellers-docSeq');
         if (savedDocSeq) setDocSeq(parseInt(savedDocSeq));
+        
+        // Load koregaonSeq from localStorage
+        const savedKoregaonSeq = localStorage.getItem('devi-jewellers-koregaonSeq');
+        if (savedKoregaonSeq) setKoregaonSeq(parseInt(savedKoregaonSeq));
 
       } catch (error) {
         console.error('Error loading data:', error);
@@ -1030,6 +1047,7 @@ export default function App() {
 
   // Save docSeq to localStorage (keeping for now)
   useEffect(() => { localStorage.setItem('devi-jewellers-docSeq', docSeq.toString()) }, [docSeq])
+  useEffect(() => { localStorage.setItem('devi-jewellers-koregaonSeq', koregaonSeq.toString()) }, [koregaonSeq])
   useEffect(() => { localStorage.setItem('devi-jewellers-salesmen', JSON.stringify(salesmen)) }, [salesmen])
   useEffect(() => { localStorage.setItem('devi-jewellers-jewelleries', JSON.stringify(jewelleries)) }, [jewelleries])
   useEffect(() => { localStorage.setItem('devi-jewellers-metals', JSON.stringify(metals)) }, [metals])
