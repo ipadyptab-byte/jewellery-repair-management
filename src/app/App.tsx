@@ -522,7 +522,7 @@ export default function App() {
           whatsappRmToken: rmToken,
           whatsappRmApiUrl: rmApiUrl,
           whatsappRmApiVersion: rmApiver,
-          invoiceLinkBase: cfgLinkBase || 'https://jewellery-repair-management.vercel.app',
+          invoiceLinkBase: cfgLinkBase || 'https://www.devi-jewellers.com',
           invoiceExpiry: cfgExpiry,
           // Templates
           tpl1Name, tpl2Name, tpl3Name,
@@ -581,7 +581,7 @@ export default function App() {
     const templateLang = type === 'received' ? tpl1Lang : tpl2Lang
     const templateBody = type === 'received' ? tpl1Body : tpl2Body
     // Default to Vercel URL for /api/invoice/, can switch to devi-jewellers.com for /r/
-    const invoiceLinkBase = cfgLinkBase || 'https://jewellery-repair-management.vercel.app'
+    const invoiceLinkBase = cfgLinkBase || 'https://www.devi-jewellers.com'
     // Use /api/invoice/ format for Vercel, or /r/ format for custom domain
     const isCustomDomain = invoiceLinkBase.includes('devi-jewellers')
     const token = randTok(8)
@@ -1734,7 +1734,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             {isEditing ? (
               <>
                 <button className="btn btn-primary" onClick={updateReceipt}><IcPdf />Update Record</button>
-                <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', cfgLinkBase || 'https://jewellery-repair-management.vercel.app', cfgExpiry, cfgShop, cfgAddr)}>Print PDF</button>
+                <button className="btn" onClick={() => savedRec && buildAndDownloadPDF(savedRec, 'received', cfgLinkBase || 'https://www.devi-jewellers.com', cfgExpiry, cfgShop, cfgAddr)}>Print PDF</button>
                 <button className="btn" onClick={() => savedRec && printThermalReceipt(savedRec, 'received', cfgShop, cfgAddr)}>Thermal Print</button>
                 <button className="btn" onClick={cancelEdit}>Cancel Edit</button>
               </>
@@ -1750,7 +1750,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         {savedRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Invoice PDF &amp; WhatsApp — <span style={{ color: 'var(--brand)' }}>{savedRec.docNum || savedRec.doc_num}</span></div>
-            <InvoicePanel rec={savedRec} type="received" baseUrl={cfgLinkBase || 'https://jewellery-repair-management.vercel.app'} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} onSendWhatsApp={() => sendWhatsApp(savedRec, 'received')} shopName={cfgShop} shopAddress={cfgAddr} />
+            <InvoicePanel rec={savedRec} type="received" baseUrl={cfgLinkBase || 'https://www.devi-jewellers.com'} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-recv', t, ok)} onSendWhatsApp={() => sendWhatsApp(savedRec, 'received')} shopName={cfgShop} shopAddress={cfgAddr} />
             <Msg text={msg['wa-recv']?.text || ''} ok={msg['wa-recv']?.ok || false} />
           </div>
         )}
@@ -1855,7 +1855,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         {!kiEditing && finalRec && (
           <div className="card">
             <div className="card-title"><IcPdf />Final Invoice — <span style={{ color: 'var(--brand)' }}>{finalRec.docNum}</span></div>
-            <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase || 'https://jewellery-repair-management.vercel.app'} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} shopName={cfgShop} shopAddress={cfgAddr} />
+            <InvoicePanel rec={finalRec} type="final" baseUrl={cfgLinkBase || 'https://www.devi-jewellers.com'} expDays={cfgExpiry} onMsg={(t, ok) => showMessage('wa-final', t, ok)} onSendWhatsApp={() => sendWhatsApp(finalRec, 'final')} shopName={cfgShop} shopAddress={cfgAddr} />
             <Msg text={msg['wa-final']?.text || ''} ok={msg['wa-final']?.ok || false} />
           </div>
         )}
@@ -2105,11 +2105,12 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <div className="divider" />
               <div className="sec-label">Invoice PDF link settings</div>
               <div className="grid2">
-                <div className="field" style={{ flex: 2 }}><label>Invoice link base URL</label><input value={cfgLinkBase} onChange={e => setCfgLinkBase(e.target.value)} placeholder="https://jewellery-repair-management.vercel.app" /><div className="hint">Vercel: /api/invoice/..., Custom domain: /r/ (e.g., https://www.devi-jewellers.com)</div></div>
+                <div className="field" style={{ flex: 2 }}><label>Invoice link base URL</label><input value={cfgLinkBase} onChange={e => setCfgLinkBase(e.target.value)} placeholder="https://www.devi-jewellers.com" /><div className="hint">Vercel: /api/invoice/..., Custom domain: /r/ (e.g., https://www.devi-jewellers.com)</div></div>
                 <div className="field" style={{ width: 100 }}><label>Days</label><input type="number" min="1" max="90" value={cfgExpiry} onChange={e => setCfgExpiry(parseInt(e.target.value) || 10)} /></div>
               </div>
               <div className="btn-row">
                 <button className="btn btn-primary" onClick={saveAllSettings}>💾 Save All Settings</button>
+                <button className="btn" onClick={() => setCfgLinkBase('https://www.devi-jewellers.com')}>Use Devi URL</button>
                 <button className="btn" onClick={() => setCfgLinkBase('https://jewellery-repair-management.vercel.app')}>Use Vercel URL</button>
                 <button className="btn btn-wa" onClick={async () => { 
                   if (!rmToken) { showMessage('creds', 'API key required.', false); return }
@@ -2201,7 +2202,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <div className="field"><label>Language</label><select value={tpl1Lang} onChange={e => setTpl1Lang(e.target.value)}><option value="en_IN">en_IN — English (India)</option><option value="en">en</option><option value="hi">hi — Hindi</option><option value="mr">mr — Marathi</option></select></div>
               </div>
               <div className="field"><label>Template body</label><textarea rows={3} value={tpl1Body} onChange={e => setTpl1Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: &#8377; {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated)</div></div>
-              <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: &#8377; <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>https://jewellery-repair-management.vercel.app/api/invoice/INV-JR1001-xxx?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
+              <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: &#8377; <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>https://www.devi-jewellers.com/r/INV-JR1001-xxx?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
               <div className="divider" />
               <div className="sec-label">Template 2 — Ready for delivery (with final invoice link)</div>
               <div className="grid2">
