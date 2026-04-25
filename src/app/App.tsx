@@ -1054,10 +1054,23 @@ export default function App() {
   const goBack = () => { setPage('dashboard'); window.scrollTo(0, 0) }
 
   const stats = {
-    total: records.length,
-    pending: records.filter(r => r.status === 'received' || r.status === 'with_karagir').length,
-    ready: records.filter(r => r.status === 'ready').length,
-    overdue: records.filter(r => effStatus(r) === 'overdue').length,
+    // Filter by location for Koregaon
+    total: records.filter(r => cfgLocation === 'koregaon' ? (r.location === 'koregaon' || r.current_location === 'koregaon') : true).length,
+    pending: records.filter(r => {
+      if (cfgLocation === 'koregaon' && !(r.location === 'koregaon' || r.current_location === 'koregaon')) return false
+      return r.status === 'received' || r.status === 'with_karagir'
+    }).length,
+    ready: records.filter(r => {
+      if (cfgLocation === 'koregaon') {
+        // For Koregaon: show records at koregaon that are ready to deliver
+        return r.current_location === 'koregaon' && r.status === 'ready'
+      }
+      return r.status === 'ready'
+    }).length,
+    overdue: records.filter(r => {
+      if (cfgLocation === 'koregaon' && !(r.location === 'koregaon' || r.current_location === 'koregaon')) return false
+      return effStatus(r) === 'overdue'
+    }).length,
   }
 
   /* ── Save Receipt ── */
@@ -1515,15 +1528,22 @@ export default function App() {
   }
 
   /* DEBUG LINE */
+  // Filter records by location for Koregaon
+  const filteredRecords = records.filter(r => cfgLocation === 'koregaon' ? (r.location === 'koregaon' || r.current_location === 'koregaon') : true)
   const grp: any = {}
   // @ts-ignore
-  grp.overdue = records.filter(r => effStatus(r) === 'overdue')
+  grp.overdue = filteredRecords.filter(r => effStatus(r) === 'overdue')
   // @ts-ignore
-  grp.ready = records.filter(r => effStatus(r) === 'ready')
+  grp.ready = filteredRecords.filter(r => effStatus(r) === 'ready')
   // @ts-ignore
-  grp.with_karagir = records.filter(r => effStatus(r) === 'with_karagir')
+  grp.with_karagir = filteredRecords.filter(r => effStatus(r) === 'with_karagir')
   // @ts-ignore
-  grp.received = records.filter(r => effStatus(r) === 'received')
+  grp.received = filteredRecords.filter(r => effStatus(r) === 'received')
+  // Add transferred for Koregaon items at Satara
+  if (cfgLocation === 'koregaon') {
+    // @ts-ignore
+    grp.transferred = filteredRecords.filter(r => r.current_location === 'satara' && r.status !== 'ready')
+  }
 
   return (
     <div className="app">
@@ -1590,21 +1610,39 @@ export default function App() {
           <div className="stat-card"><div className="stat-label">Overdue</div><div className="stat-val" style={{ color: '#A32D2D' }}>{stats.overdue}</div><div className="stat-sub">past est. date</div></div>
         </div>
         <div className="dash-grid">
+          {/* Common for all locations */}
           <div className="dash-tile" onClick={() => openPage('receive')}>
             <div className="tile-icon" style={{ background: '#FEE2E2' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c0003a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7-7 7 7" /><rect x="3" y="17" width="18" height="4" rx="1" /></svg></div>
             <div className="tile-label">Receive from Customer</div>
             <div className="tile-desc">Accept jewellery, generate receipt &amp; invoice PDF</div>
           </div>
-          <div className="dash-tile" onClick={() => openPage('karagir-out')}>
-            <div className="tile-icon" style={{ background: '#DBEAFE' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 014-4h4" /><path d="M16 11l2 2 4-4" /></svg></div>
-            <div className="tile-label">Give to Karagir</div>
-            <div className="tile-desc">Issue jewellery for repair</div>
-          </div>
-          <div className="dash-tile" onClick={() => openPage('karagir-in')}>
-            <div className="tile-icon" style={{ background: '#D1FAE5' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7 7 7-7" /><rect x="3" y="3" width="18" height="4" rx="1" /></svg></div>
-            <div className="tile-label">Receive from Karagir</div>
-            <div className="tile-desc">Collect repaired, send final invoice</div>
-          </div>
+          
+          {/* Satara only */}
+          {cfgLocation === 'satara' && (
+            <>
+              <div className="dash-tile" onClick={() => openPage('karagir-out')}>
+                <div className="tile-icon" style={{ background: '#DBEAFE' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 014-4h4" /><path d="M16 11l2 2 4-4" /></svg></div>
+                <div className="tile-label">Give to Karagir</div>
+                <div className="tile-desc">Issue jewellery for repair</div>
+              </div>
+              <div className="dash-tile" onClick={() => openPage('karagir-in')}>
+                <div className="tile-icon" style={{ background: '#D1FAE5' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7 7 7-7" /><rect x="3" y="3" width="18" height="4" rx="1" /></svg></div>
+                <div className="tile-label">Receive from Karagir</div>
+                <div className="tile-desc">Collect repaired, send final invoice</div>
+              </div>
+            </>
+          )}
+          
+          {/* Transfer tile for Koregaon only */}
+          {cfgLocation === 'koregaon' && (
+            <div className="dash-tile" onClick={() => openPage('transfer')}>
+              <div className="tile-icon" style={{ background: '#E0E7FF' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4338CA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg></div>
+              <div className="tile-label">Transfer</div>
+              <div className="tile-desc">Send/Receive items from Satara</div>
+            </div>
+          )}
+          
+          {/* Common */}
           <div className="dash-tile" onClick={() => openPage('track')}>
             <div className="tile-icon" style={{ background: '#EDE9FE' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35M11 8v3l2 2" /></svg></div>
             <div className="tile-label">Track Order</div>
@@ -1615,18 +1653,16 @@ export default function App() {
             <div className="tile-label">All Records</div>
             <div className="tile-desc">View complete repair history</div>
           </div>
-          <div className="dash-tile" onClick={() => openPage('masters')}>
-            <div className="tile-icon" style={{ background: '#FCE7F3' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#993556" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg></div>
-            <div className="tile-label">Masters</div>
-            <div className="tile-desc">Salesman, jewellery, metal, karagir</div>
-          </div>
-          {cfgLocation === 'koregaon' && (
-            <div className="dash-tile" onClick={() => openPage('transfer')}>
-              <div className="tile-icon" style={{ background: '#E0E7FF' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4338CA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg></div>
-              <div className="tile-label">Transfer</div>
-              <div className="tile-desc">Send/Receive items from Satara</div>
+          
+          {/* Satara only */}
+          {cfgLocation === 'satara' && (
+            <div className="dash-tile" onClick={() => openPage('masters')}>
+              <div className="tile-icon" style={{ background: '#FCE7F3' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#993556" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg></div>
+              <div className="tile-label">Masters</div>
+              <div className="tile-desc">Salesman, jewellery, metal, karagir</div>
             </div>
           )}
+          
           <div className="dash-tile" onClick={() => openPage('deliver')}>
             <div className="tile-icon" style={{ background: '#DCFCE7' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg></div>
             <div className="tile-label">Deliver to Customer</div>
@@ -1656,7 +1692,12 @@ export default function App() {
                 <label>Select Invoice <span className="req">*</span></label>
                 <select value={deliverDoc || ''} onChange={e => setDeliverDoc(e.target.value)}>
                   <option value="">Select ready invoice</option>
-                  {records.filter(r => r.status === 'ready').map((r: RepairRecord) => (
+                  {records.filter(r => {
+                    // For Koregaon: show only records that are at koregaon (received from Satara)
+                    if (cfgLocation === 'koregaon') return r.current_location === 'koregaon' && r.status === 'ready'
+                    // For Satara: show all ready records
+                    return r.status === 'ready'
+                  }).map((r: RepairRecord) => (
                     <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
                       {r.docNum || r.doc_num} — {r.name || r.customer_name} ({r.jewellery || r.item_type})
                     </option>
@@ -2082,7 +2123,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
           {!showAll && trackResults.length === 0 && trackQ && <p style={{ color: 'var(--text2)', fontSize: 13, padding: '8px 0' }}>No order found.</p>}
           {!showAll && trackResults.map(r => <TrackerCard key={r.docNum} r={r} />)}
           {showAll && records.length === 0 && <p style={{ color: 'var(--text2)', fontSize: 13, padding: '8px 0' }}>No orders yet.</p>}
-          {showAll && ['overdue', 'ready', 'with_karagir', 'received'].map(g => grp[g].length > 0 && (
+          {showAll && ['overdue', 'ready', 'with_karagir', 'received'/*, 'transferred'*/].map(g => grp[g].length > 0 && (
             <div key={g}>
               <div className="sec-label" style={{ marginTop: 12 }}>{g === 'with_karagir' ? 'With karagir' : g.charAt(0).toUpperCase() + g.slice(1)}</div>
               {grp[g].map((r: RepairRecord) => (
@@ -2102,7 +2143,13 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         <div className="card">
           <div className="card-title"><img src="/icon.png" alt="" />All repair records</div>
           {records.length === 0 && <p style={{ color: 'var(--text2)', fontSize: 13 }}>No records yet.</p>}
-          {[...records].reverse().map(r => {
+          {/* Filter records by location for Koregaon */}
+          {[...records].filter(r => {
+            if (cfgLocation === 'koregaon') {
+              return r.location === 'koregaon' || r.current_location === 'koregaon'
+            }
+            return true
+          }).reverse().map(r => {
             const es = effStatus(r)
             return (
               <div key={r.docNum} className="list-row">
