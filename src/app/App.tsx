@@ -547,16 +547,30 @@ export default function App() {
     showMessage('location', `Location "${nameSlug}" added!`, true)
   }
   
-  // Remove location (only non-main)
+  // Remove location (cannot remove main and cannot remove if records exist for that location)
   const removeLocation = (id: string) => {
     if (id === 'satara') {
       showMessage('location', 'Cannot remove main location', false)
       return
     }
+    // Check if records exist for this location
+    const hasRecords = records.some(r => r.location === id)
+    if (hasRecords) {
+      showMessage('location', 'Cannot remove - records exist for this location', false)
+      return
+    }
     if (confirm(`Remove location "${id}"? This cannot be undone.`)) {
       setLocations(prev => prev.filter(l => l.id !== id))
+      if (cfgLocation === id) handleSetLocation('satara')
       showMessage('location', `Location "${id}" removed`, true)
     }
+  }
+  
+  // Edit location name
+  const updateLocationName = (id: string, newName: string) => {
+    setLocations(prev => prev.map(l => l.id === id ? { ...l, name: newName } : l))
+    setEditLocationId(null)
+    showMessage('location', 'Location name updated', true)
   }
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
@@ -587,6 +601,7 @@ export default function App() {
   const [settingsTab, setSettingsTab] = useState('creds')
   const [newLocationName, setNewLocationName] = useState('')
   const [newLocationId, setNewLocationId] = useState('')
+  const [editLocationId, setEditLocationId] = useState<string | null>(null)
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
   const [printRec, setPrintRec] = useState<{rec: RepairRecord; type: 'received' | 'final'} | null>(null)
@@ -2519,7 +2534,22 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                       padding: '8px 12px', borderRadius: 6, fontSize: 13,
                       display: 'flex', alignItems: 'center', gap: 8
                     }}>
-                      <span>{loc.name}</span>
+                      {editLocationId === loc.id ? (
+                        <input 
+                          value={loc.name} 
+                          onChange={e => updateLocationName(loc.id, e.target.value)}
+                          onBlur={() => setEditLocationId(null)}
+                          onKeyDown={e => e.key === 'Enter' && setEditLocationId(null)}
+                          autoFocus
+                          onClick={e => e.stopPropagation()}
+                          style={{ padding: 4, fontSize: 13 }}
+                        />
+                      ) : (
+                        <span onClick={() => setEditLocationId(loc.id)} title="Click to edit" style={{ cursor: 'pointer' }}>
+                          {loc.name}
+                        </span>
+                      )}
+                      <span style={{ fontSize: 10, opacity: 0.7 }}>({loc.prefix})</span>
                       {loc.id !== 'satara' && (
                         <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, fontSize: 16 }}
                           onClick={() => removeLocation(loc.id)}>×</button>
