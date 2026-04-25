@@ -102,10 +102,8 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
             .invoice { max-width: 800px; margin: 0 auto; background: white; padding: 0; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
-            .brand-header { background: #c0003a; color: white; padding: 30px 40px; text-align: center; }
-            .brand-name { font-size: 32px; font-weight: bold; margin: 0; }
-            .brand-tagline { font-size: 12px; opacity: 0.9; margin-top: 5px; }
-            .brand-address { font-size: 14px; margin-top: 10px; opacity: 0.9; }
+            .brand-header { background: #c0003a; padding: 30px; text-align: center; }
+            .brand-header img { max-width: 250px; height: auto; }
             .type-label { background: #a8007e; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; }
             .content { padding: 30px 40px; }
             .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
@@ -122,13 +120,8 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
 
         <body>
           <div className="invoice">
-            <div className="brand-header" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <img src="/logo.png" alt="Logo" style={{ width: '80px', height: 'auto', objectFit: 'contain' }} />
-              <div>
-                <div className="brand-name">{shopName}</div>
-                {shopAddress && <div className="brand-address">{shopAddress}</div>}
-                <div className="brand-tagline">Jewellery Repair & Custom Design</div>
-              </div>
+            <div className="brand-header" style={{ textAlign: 'center' }}>
+              <img src="/logo.png" alt="Brand Logo" style={{ width: '200px', maxWidth: '80%', height: 'auto' }} />
             </div>
             <div className="type-label">{isFinal ? 'FINAL REPAIR INVOICE' : 'REPAIR RECEIPT / ESTIMATE'}</div>
             <div className="content">

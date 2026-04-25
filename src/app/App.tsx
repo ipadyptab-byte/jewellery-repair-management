@@ -187,34 +187,32 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
   const W = 210, pad = 15
   let y = pad
 
-  // Brand header background
-  doc.setFillColor(192, 0, 58); doc.rect(0, 0, W, 50, 'F')
+  // Brand header with logo only (no English text - logo contains brand name)
+  const headerHeight = logoData ? 60 : 50
+  doc.setFillColor(192, 0, 58); doc.rect(0, 0, W, headerHeight, 'F')
   
-  // Add logo if available (40mm wide, positioned at top left)
+  // Add logo centered (60mm wide for visibility)
   if (logoData) {
     try {
-      doc.addImage(logoData, 'PNG', 10, 5, 40, 40)
+      doc.addImage(logoData, 'PNG', (W - 60) / 2, 5, 60, 50)
     } catch (e) {
-      // If logo fails, just show text
+      // fallback to text if logo fails
+    }
+  } else {
+    // Fallback text only if no logo
+    doc.setTextColor(255, 255, 255); doc.setFontSize(26); doc.setFont('helvetica', 'bold')
+    doc.text(shopName, W / 2, 25, { align: 'center' })
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal')
+    if (shopAddress) {
+      doc.text(shopAddress.substring(0, 60), W / 2, 38, { align: 'center' })
     }
   }
-  
-  // Brand text positioned to the right of logo
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(26); doc.setFont('helvetica', 'bold')
-  doc.text(shopName, logoData ? 58 : W / 2, logoData ? 20 : 18, { align: logoData ? 'left' : 'center' })
-  doc.setFontSize(11); doc.setFont('helvetica', 'normal')
-  if (shopAddress) {
-    doc.text(shopAddress.substring(0, 60), logoData ? 58 : W / 2, logoData ? 32 : 28, { align: logoData ? 'left' : 'center' })
-  }
-  doc.setFontSize(10); doc.setTextColor(255, 220, 220)
-  doc.text('Jewellery Repair & Custom Design', logoData ? 58 : W / 2, logoData ? 43 : 38, { align: logoData ? 'left' : 'center' })
 
   // Type label below header
-  doc.setFillColor(168, 0, 126); doc.rect(0, 50, W, 10, 'F')
+  doc.setFillColor(168, 0, 126); doc.rect(0, headerHeight, W, 10, 'F')
   doc.setTextColor(255, 255, 255); doc.setFontSize(14); doc.setFont('helvetica', 'bold')
-  doc.text(type === 'final' ? 'FINAL REPAIR INVOICE' : 'REPAIR RECEIPT / ESTIMATE', W / 2, 58, { align: 'center' })
-  y = 70
+  doc.text(type === 'final' ? 'FINAL REPAIR INVOICE' : 'REPAIR RECEIPT / ESTIMATE', W / 2, headerHeight + 8, { align: 'center' })
+  y = headerHeight + 18
 
   doc.setTextColor(0, 0, 0); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
   doc.text('Document No:', pad, y); doc.setFont('helvetica', 'normal'); doc.text(rec.docNum, pad + 32, y)
