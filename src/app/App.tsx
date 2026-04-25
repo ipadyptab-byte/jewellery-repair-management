@@ -187,22 +187,22 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
   const W = 210, pad = 15
   let y = pad
 
-  doc.setFillColor(192, 0, 58); doc.rect(0, 0, W, 28, 'F')
-  doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont('helvetica', 'bold')
-  doc.text(shopName, pad, 11)
-  doc.setFontSize(8); doc.setFont('helvetica', 'normal')
+  // Brand header with gradient effect (multiple rectangles)
+  doc.setFillColor(192, 0, 58); doc.rect(0, 0, W, 35, 'F')
+  doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.setFont('helvetica', 'bold')
+  doc.text(shopName, W / 2, 14, { align: 'center' })
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal')
   if (shopAddress) {
-    doc.text(shopAddress.substring(0, 50), pad, 17)
-    doc.setFontSize(7); doc.text('Anmol Kshananache Soneri Sakshidar', pad, 22)
-  } else {
-    doc.text('Gold | Silver | Diamonds | Pearls', pad, 17)
-    doc.setFontSize(7); doc.text('Anmol Kshananache Soneri Sakshidar', pad, 22)
+    doc.text(shopAddress.substring(0, 60), W / 2, 22, { align: 'center' })
   }
+  doc.setFontSize(8); doc.setTextColor(255, 220, 220)
+  doc.text('Jewellery Repair & Custom Design', W / 2, 30, { align: 'center' })
 
-  doc.setFillColor(168, 0, 126); doc.rect(0, 28, W, 7, 'F')
-  doc.setTextColor(255, 255, 255); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
-  doc.text(type === 'final' ? 'FINAL REPAIR INVOICE' : 'REPAIR RECEIPT / ESTIMATE', W / 2, 33, { align: 'center' })
-  y = 44
+  // Type label below header
+  doc.setFillColor(168, 0, 126); doc.rect(0, 35, W, 8, 'F')
+  doc.setTextColor(255, 255, 255); doc.setFontSize(12); doc.setFont('helvetica', 'bold')
+  doc.text(type === 'final' ? 'FINAL REPAIR INVOICE' : 'REPAIR RECEIPT / ESTIMATE', W / 2, 41, { align: 'center' })
+  y = 52
 
   doc.setTextColor(0, 0, 0); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
   doc.text('Document No:', pad, y); doc.setFont('helvetica', 'normal'); doc.text(rec.docNum, pad + 32, y)

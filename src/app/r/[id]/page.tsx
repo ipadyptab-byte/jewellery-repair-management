@@ -101,12 +101,13 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
           <style>{`
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-            .invoice { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-            .shop-name { font-size: 28px; font-weight: bold; }
-            .shop-address { font-size: 14px; color: #666; margin-top: 5px; }
-            .shop-contact { font-size: 12px; color: #666; margin-top: 3px; }
-            .invoice-title { font-size: 24px; font-weight: bold; margin: 20px 0; text-align: center; }
+            .invoice { max-width: 800px; margin: 0 auto; background: white; padding: 0; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+            .brand-header { background: #c0003a; color: white; padding: 30px 40px; text-align: center; }
+            .brand-name { font-size: 32px; font-weight: bold; margin: 0; }
+            .brand-tagline { font-size: 12px; opacity: 0.9; margin-top: 5px; }
+            .brand-address { font-size: 14px; margin-top: 10px; opacity: 0.9; }
+            .type-label { background: #a8007e; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; }
+            .content { padding: 30px 40px; }
             .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
             .info-box { background: #f9f9f9; padding: 15px; border-radius: 5px; }
             .info-label { font-size: 12px; color: #888; }
@@ -115,82 +116,78 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
             .items-table th { background: #333; color: white; padding: 12px; text-align: left; }
             .items-table td { padding: 12px; border-bottom: 1px solid #eee; }
             .total { text-align: right; font-size: 22px; font-weight: bold; margin-top: 20px; padding: 20px; background: #f9f9f9; border-radius: 5px; }
-            .footer { text-align: center; margin-top: 30px; color: #888; font-size: 12px; }
-            .btn { display:inline-block; margin-top:15px; padding:10px 15px; background:#333; color:#fff; text-decoration:none; border-radius:5px; }
+            .footer { text-align: center; margin-top: 30px; color: #888; font-size: 12px; padding-bottom: 30px; }
           `}</style>
         </head>
 
         <body>
           <div className="invoice">
-            <div className="header">
-              <div className="shop-name">{shopName}</div>
-              <div className="shop-address">{shopAddress}</div>
-              {shopPhone && <div className="shop-contact">Phone: {shopPhone}</div>}
-              {shopGst && <div className="shop-contact">GST: {shopGst}</div>}
+            <div className="brand-header">
+              <div className="brand-name">{shopName}</div>
+              {shopAddress && <div className="brand-address">{shopAddress}</div>}
+              <div className="brand-tagline">Jewellery Repair & Custom Design</div>
             </div>
-
-            <div className="invoice-title">
-              {isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}
-            </div>
-
-            <div className="info-grid">
-              <div className="info-box">
-                <div className="info-label">Document Number</div>
-                <div className="info-value">{docNumber}</div>
-              </div>
-              <div className="info-box">
-                <div className="info-label">Date</div>
-                <div className="info-value">
-                  {new Date(rec.created_at).toLocaleDateString('en-IN')}
+            <div className="type-label">{isFinal ? 'FINAL REPAIR INVOICE' : 'REPAIR RECEIPT / ESTIMATE'}</div>
+            <div className="content">
+              <div className="info-grid">
+                <div className="info-box">
+                  <div className="info-label">Document Number</div>
+                  <div className="info-value">{docNumber}</div>
+                </div>
+                <div className="info-box">
+                  <div className="info-label">Date</div>
+                  <div className="info-value">
+                    {new Date(rec.created_at).toLocaleDateString('en-IN')}
+                  </div>
+                </div>
+                <div className="info-box">
+                  <div className="info-label">Customer Name</div>
+                  <div className="info-value">
+                    {rec.customer_name || rec.name || '-'}
+                  </div>
+                </div>
+                <div className="info-box">
+                  <div className="info-label">Mobile Number</div>
+                  <div className="info-value">
+                    {rec.mobile || rec.phone_number || '-'}
+                  </div>
                 </div>
               </div>
-              <div className="info-box">
-                <div className="info-label">Customer Name</div>
-                <div className="info-value">
-                  {rec.customer_name || rec.name || '-'}
-                </div>
-              </div>
-              <div className="info-box">
-                <div className="info-label">Mobile Number</div>
-                <div className="info-value">
-                  {rec.mobile || rec.phone_number || '-'}
-                </div>
-              </div>
-            </div>
 
-            <table className="items-table">
-              <tbody>
-                <tr>
-                  <td>Jewellery Type</td>
-                  <td>{rec.item_type || rec.jewellery || '-'}</td>
-                </tr>
-                <tr>
-                  <td>Metal</td>
-                  <td>{rec.metal || '-'}</td>
-                </tr>
-                <tr>
-                  <td>Description</td>
-                  <td>{rec.description || '-'}</td>
-                </tr>
-                {!isFinal && rec.delivery_date && (
+              <table className="items-table">
+                <tbody>
                   <tr>
-                    <td>Expected Delivery Date</td>
-                    <td>
-                      {new Date(rec.delivery_date).toLocaleDateString('en-IN')}
-                    </td>
+                    <td>Jewellery Type</td>
+                    <td>{rec.item_type || rec.jewellery || '-'}</td>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                  <tr>
+                    <td>Metal</td>
+                    <td>{rec.metal || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td>Description</td>
+                    <td>{rec.description || '-'}</td>
+                  </tr>
+                  {!isFinal && rec.delivery_date && (
+                    <tr>
+                      <td>Expected Delivery Date</td>
+                      <td>
+                        {new Date(rec.delivery_date).toLocaleDateString('en-IN')}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
 
-            <div className="total">
-              {isFinal ? 'Final Amount: ' : 'Estimated Amount: '} ₹
-              {amount.toLocaleString('en-IN')}
-            </div>
+              <div className="total">
+                {isFinal ? 'Final Amount: ' : 'Estimated Amount: '} ₹
+                {amount.toLocaleString('en-IN')}
+              </div>
 
-            <div className="footer">
-              <p>Thank you for trusting {shopName}!</p>
-              <p>This is a computer-generated document.</p>
+              <div className="footer">
+                <p>Thank you for trusting {shopName}!</p>
+                <p>This is a computer-generated document.</p>
+              </div>
             </div>
           </div>
         </body>
