@@ -11,11 +11,31 @@ interface PageProps {
 export default async function InvoicePage({ params, searchParams }: PageProps) {
   const { id } = params
 
-  // ✅ Extract doc_num from ID (handles INV-JR1107, INV-JR1107-final-abc, etc.)
-  // Format: INV-{docNum}[-suffix][-token]
-  const idParts = id.split('-')
-  // Remove 'INV' prefix, get first part which should be doc_num (e.g., 'JR1107')
-  const docNum = idParts[0] === 'INV' ? idParts[1] : idParts[0]
+  // ✅ Extract doc_num from ID
+  // Format: INV-{docNum}[-suffix][-token] or INV-{docNum}[-final][-token]
+  // Handle both JR1001 and JR-KO-0001 formats
+  let docNum: string
+  
+  if (id.startsWith('INV-')) {
+    // Remove 'INV-' prefix, then handle suffixes
+    const rest = id.substring(4)
+    // Split only once at '-final' or other known suffixes
+    if (rest.includes('-final-')) {
+      docNum = rest.split('-final-')[0]
+    } else {
+      // For formats like INV-JR-KO-0001-abc, extract the full doc_num
+      // The doc_num is everything before the last part if it looks like a token
+      const parts = rest.split('-')
+      if (parts.length > 2 && parts[parts.length - 1].length < 10) {
+        // Looks like a token at the end, join all but last
+        docNum = parts.slice(0, -1).join('-')
+      } else {
+        docNum = rest
+      }
+    }
+  } else {
+    docNum = id
+  }
 
   // 🔐 Expiry check
   if (searchParams?.exp) {
@@ -116,7 +136,7 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
       ? (rec.final_amount || 0)
       : (rec.estimated_cost || rec.amount || 0)
 
-    const docNumber = 'JR' + rec.doc_num
+    const docNumber = rec.doc_num // Already includes full doc_num like 'JR1001' or 'JR-KO-0001'
 
     return (
       <html>
