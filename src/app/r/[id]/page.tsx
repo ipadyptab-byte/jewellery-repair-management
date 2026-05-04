@@ -17,17 +17,13 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
   let docNum: string
   
   if (id.startsWith('INV-')) {
-    // Remove 'INV-' prefix, then handle suffixes
     const rest = id.substring(4)
-    // Split only once at '-final' or other known suffixes
     if (rest.includes('-final-')) {
       docNum = rest.split('-final-')[0]
     } else {
-      // For formats like INV-JR-KO-0001-abc, extract the full doc_num
-      // The doc_num is everything before the last part if it looks like a token
+      // Handle tokens at end - join all but last part if token is short
       const parts = rest.split('-')
-      if (parts.length > 2 && parts[parts.length - 1].length < 10) {
-        // Looks like a token at the end, join all but last
+      if (parts.length >= 2 && parts[parts.length - 1].length < 15) {
         docNum = parts.slice(0, -1).join('-')
       } else {
         docNum = rest

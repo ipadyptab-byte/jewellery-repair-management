@@ -10,7 +10,23 @@ export async function GET() {
       `SELECT * FROM repair_records ORDER BY created_at DESC`
     );
     console.log('Query result rows:', result.rows.length);
-    return NextResponse.json(result.rows);
+    
+    // Fetch repair_items for each record
+    const recordsWithItems = await Promise.all(
+      result.rows.map(async (record: any) => {
+        try {
+          const itemsResult = await pool.query(
+            `SELECT * FROM repair_items WHERE record_id = $1`,
+            [record.id]
+          );
+          return { ...record, repair_items: itemsResult.rows || [] };
+        } catch {
+          return { ...record, repair_items: [] };
+        }
+      })
+    );
+    
+    return NextResponse.json(recordsWithItems);
   } catch (error) {
     console.error('Error fetching records:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch records';
@@ -48,11 +64,14 @@ export async function POST(request: NextRequest) {
       salesman,
       location,
       current_location,
-      transfer_status
+      transfer_status,
+      repair_items
     } = body;
 
     // Map to schema column names with fallbacks
     const pool = sql()
+    
+    // Insert main repair record
     const result = await pool.query(
       `INSERT INTO repair_records (
         doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description,
@@ -61,25 +80,39 @@ export async function POST(request: NextRequest) {
       RETURNING *`,
       [
         doc_num,
-        customer_name || '',  // name
-        phone_number || '',   // mobile
+        customer_name || '',
+        phone_number || '',
         metal || '',
-        item_type || '',      // jewellery
+        item_type || '',
         String(weight || ''),
-        estimated_cost || 0,  // amount
+        estimated_cost || 0,
         salesman || '',
         description || '',
         received_date || new Date().toISOString(),
         delivery_date || addDays(new Date().toISOString(), 7),
         status || 'received',
-        location || 'satara',           // location (where received)
-        current_location || 'satara',   // current_location
-        transfer_status || null         // transfer_status
+        location || 'satara',
+        current_location || 'satara',
+        transfer_status || null
       ]
     );
 
     const record = result.rows[0];
     console.log('Record created successfully:', record);
+    
+    // If there are additional repair items, save them
+    if (repair_items && Array.isArray(repair_items) && repair_items.length > 0) {
+      for (const item of repair_items) {
+        if (item.metal && item.jewellery && item.weight) {
+          await pool.query(
+            `INSERT INTO repair_items (record_id, metal, jewellery, weight, description)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [record.id, item.metal, item.jewellery, item.weight, item.description || '']
+          );
+        }
+      }
+    }
+    
     return NextResponse.json(record);
   } catch (error) {
     console.error('Error creating record:', error);
