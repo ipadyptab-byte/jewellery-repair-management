@@ -1,5 +1,18 @@
 -- Database schema for Devi Jewellers Repair Management System
 
+-- Create repair_items table for storing multiple jewellery items per repair record
+CREATE TABLE IF NOT EXISTS repair_items (
+  id SERIAL PRIMARY KEY,
+  record_id INTEGER NOT NULL REFERENCES repair_records(id) ON DELETE CASCADE,
+  metal VARCHAR(100) NOT NULL,
+  jewellery VARCHAR(255) NOT NULL,
+  weight VARCHAR(20) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_repair_items_record_id ON repair_items(record_id);
+
 -- Create repair_records table
 CREATE TABLE IF NOT EXISTS repair_records (
   id SERIAL PRIMARY KEY,
