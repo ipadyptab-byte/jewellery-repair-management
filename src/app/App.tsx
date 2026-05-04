@@ -2179,7 +2179,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <option value="">Select invoice to receive</option>
                 {records.filter(r => 
                   r.current_location === 'satara' && 
-                  (r.status === 'ready' || r.status === 'with_karagir')
+                  r.status === 'with_karagir'
                 ).map(r => (
                   <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
                     {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery}) {r.status === 'ready' ? '✓ Ready' : 'In repair'}
@@ -2294,6 +2294,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                       body: JSON.stringify({
                         doc_num: transferRec.docNum || transferRec.doc_num,
                         current_location: 'satara',
+                        status: 'with_karagir',
                         transfer_status: 'sent_to_satara'
                       })
                     })
