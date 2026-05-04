@@ -2037,8 +2037,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <select value={koDoc} onChange={e => { setKoDoc(e.target.value); setKoLoaded(false) }}>
                 <option value="">-- Select received order --</option>
                 {koEditing 
-                  ? records.filter(r => r.status === 'with_karagir' && (r.current_location === cfgLocation || r.location === cfgLocation)).map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
-                  : records.filter(r => (r.status === 'received' || r.status === 'with_karagir') && (r.current_location === cfgLocation || r.location === cfgLocation)).map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  ? records.filter(r => r.status === 'with_karagir' && r.current_location === cfgLocation).map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery}) {r.location !== cfgLocation ? '(From '+r.location+')' : ''}</option>)
+                  : records.filter(r => (r.status === 'received' || r.status === 'with_karagir') && r.current_location === cfgLocation).map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery}) {r.location !== cfgLocation ? '(From '+r.location+')' : ''}</option>)
                 }
               </select>
             </div>
@@ -2091,8 +2091,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <select value={kiDoc} onChange={e => { setKiDoc(e.target.value); setKiLoaded(false); setFinalRec(null) }}>
                 <option value="">-- Select --</option>
                 {kiEditing 
-                  ? records.filter(r => r.status === 'ready' && (r.current_location === cfgLocation || r.location === cfgLocation)).map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
-                  : records.filter(r => r.status === 'with_karagir' && (r.current_location === cfgLocation || r.location === cfgLocation)).map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  ? records.filter(r => r.status === 'ready' && r.current_location === cfgLocation).map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery}) {r.location !== cfgLocation ? '(From '+r.location+')' : ''}</option>)
+                  : records.filter(r => r.status === 'with_karagir' && r.current_location === cfgLocation).map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery}) {r.location !== cfgLocation ? '(From '+r.location+')' : ''}</option>)
                 }
               </select>
             </div>
