@@ -2179,7 +2179,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <option value="">Select invoice to receive</option>
                 {records.filter(r => 
                   r.current_location === 'satara' && 
-                  (r.status === 'with_karagir' || r.status === 'ready')
+                  (r.status === 'with_karagir' || r.status === 'ready') &&
+                  r.doc_num?.startsWith('JR-KO')
                 ).map(r => (
                   <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
                     {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery}) {r.status === 'ready' ? '✓ Ready' : 'In repair'}
@@ -2267,7 +2268,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 {records.filter(r => 
                   r.location === 'koregaon' && 
                   r.current_location === 'koregaon' && 
-                  r.status === 'received'
+                  r.status === 'received' &&
+                  r.doc_num?.startsWith('JR-KO')
                 ).map(r => (
                   <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
                     {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery})
