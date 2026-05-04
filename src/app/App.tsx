@@ -1965,7 +1965,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             <div className="field"><label>Jewellery type <span className="req">*</span></label><select value={repairItems[0]?.type || ''} onChange={e => setRepairItems(prev => { const u = [...prev]; u[0] = {...u[0], type: e.target.value}; return u; })}><option value="">Select type</option>{jewelleries.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
             <div className="field"><label>Weight (grams) <span className="req">*</span></label><input type="number" step="0.1" value={repairItems[0]?.weight || ''} onChange={e => setRepairItems(prev => { const u = [...prev]; u[0] = {...u[0], weight: e.target.value}; return u; })} placeholder="e.g. 12.5" /></div>
           </div>
-          <button className="btnAddItem" onClick={() => setRepairItems(prev => [...prev, {metal: '', type: '', weight: '', desc: ''}])}>+ Add Another Jewellery</button>
+          <div style={{marginBottom:8,fontSize:12,color:'var(--brand)'}}>Items: {repairItems.length}</div>
+          <button type="button" className="btnAddItem" onClick={() => { console.log('Add item clicked, current:', repairItems.length); setRepairItems(prev => [...prev, {metal: '', type: '', weight: '', desc: ''}]) }}>+ Add Another Jewellery ({repairItems.length} item{repairItems.length !== 1 ? 's' : ''})</button>
           <div className="grid3">
             <div className="field"><label>Est. days <span className="req">*</span></label><input type="number" min="1" value={rDays} onChange={e => setRDays(e.target.value)} placeholder="e.g. 7" /></div>
             <div className="field"><label>Est. amount (&#8377;) <span className="req">*</span></label><input type="number" value={rAmount} onChange={e => setRAmount(e.target.value)} placeholder="e.g. 500" /></div>
