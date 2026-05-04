@@ -1252,9 +1252,11 @@ export default function App() {
     setEditingRecord(record);
     setRName(record.name || record.customer_name || '');
     setRMobile(record.mobile || record.phone_number || '');
-    setRMetal(record.metal || '');
-    setRType(record.jewellery || record.item_type || '');
-    setRWeight(record.weight || '');
+    // Load main item + any additional items from repair_items
+    const mainItems = [{ metal: record.metal || '', type: record.jewellery || record.item_type || '', weight: record.weight || '', desc: record.description || '' }];
+    const extraItems = (record as any).repair_items || [];
+    setRepairItems([...mainItems, ...extraItems]);
+    // Calculate days
     setRDays(record.deliveryDate ? Math.ceil((new Date(record.deliveryDate).getTime() - new Date(record.receivedDate || record.received_date || new Date()).getTime()) / (1000 * 60 * 60 * 24)).toString() : '7');
     setRAmount((record.amount || record.estimated_cost || 0).toString());
     setRSalesman(record.salesman || '');
@@ -1265,23 +1267,24 @@ export default function App() {
   const cancelEdit = () => {
     setIsEditing(false);
     setEditingRecord(null);
-    setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc('');
+    setRName(''); setRMobile(''); setRepairItems([{metal: '', type: '', weight: '', desc: ''}]); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc('');
   }
 
   const updateReceipt = async () => {
     if (!editingRecord) return;
-    if (!rName || !rMobile || !rMetal || !rType || !rWeight || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields.', false); return }
+    if (!rName || !rMobile || !repairItems[0]?.metal || !repairItems[0]?.type || !repairItems[0]?.weight || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields.', false); return }
     if (!/^\d{10}$/.test(rMobile)) { showMessage('receive', 'Enter valid 10-digit mobile.', false); return }
 
     try {
       const deliveryDate = addDays(new Date(editingRecord.receivedDate || editingRecord.received_date || new Date()), parseInt(rDays)).toISOString();
+      const firstItem = repairItems[0];
 
       const updateData = {
         id: editingRecord.id,
         doc_num: editingRecord.docNum || editingRecord.doc_num,
         customer_name: rName,
         phone_number: rMobile,
-        item_type: rType,
+        item_type: firstItem.type,
         description: rDesc || '',
         estimated_cost: parseFloat(rAmount),
         status: editingRecord.status,
@@ -1295,9 +1298,15 @@ export default function App() {
         quality: editingRecord.quality,
         received_date: editingRecord.receivedDate || editingRecord.received_date,
         delivery_date: deliveryDate,
-        metal: rMetal,
-        weight: rWeight,
+        metal: firstItem.metal,
+        weight: firstItem.weight,
         salesman: rSalesman,
+        repair_items: repairItems.slice(1).map(item => ({
+          metal: item.metal,
+          jewellery: item.type,
+          weight: item.weight,
+          description: item.desc
+        }))
       };
 
       const response = await fetch('/api/records', {
