@@ -3,38 +3,23 @@ import { sql } from '@/lib/db';
 
 export async function GET() {
   try {
-    console.log('======= GET /api/records called =======');
     const pool = sql()
-    console.log('Pool created, querying...');
-    const result = await pool.query(
-      `SELECT * FROM repair_records ORDER BY created_at DESC`
-    );
-    console.log('Query result rows:', result.rows.length);
+    const result = await pool.query(`SELECT * FROM repair_records ORDER BY created_at DESC`);
     
-    // Fetch repair_items for each record
     const recordsWithItems = await Promise.all(
       result.rows.map(async (record: any) => {
         try {
-          const itemsResult = await pool.query(
-            `SELECT * FROM repair_items WHERE record_id = $1`,
-            [record.id]
-          );
+          const itemsResult = await pool.query(`SELECT * FROM repair_items WHERE record_id = $1`, [record.id]);
           return { ...record, repair_items: itemsResult.rows || [] };
-        } catch {
-          return { ...record, repair_items: [] };
-        }
+        } catch { return { ...record, repair_items: [] }; }
       })
     );
-    
     return NextResponse.json(recordsWithItems);
   } catch (error) {
-    console.error('Error fetching records:', error);
-    const message = error instanceof Error ? error.message : 'Failed to fetch records';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch records' }, { status: 500 });
   }
 }
 
-// Helper function
 function addDays(date: string | Date, days: number): string {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
@@ -43,296 +28,57 @@ function addDays(date: string | Date, days: number): string {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('======= POST /api/records called =======');
     const body = await request.json();
-    console.log('======= Request body:', JSON.stringify(body), '=======');
-    const {
-      doc_num,
-      customer_name,
-      phone_number,
-      item_type,
-      description,
-      estimated_cost,
-      status,
-      master_id,
-      notes,
-      images,
-      received_date,
-      delivery_date,
-      metal,
-      weight,
-      salesman,
-      location,
-      current_location,
-      transfer_status,
-      repair_items
-    } = body;
-
-    // Map to schema column names with fallbacks
+    const { doc_num, customer_name, phone_number, item_type, description, estimated_cost, status, master_id, notes, images, received_date, delivery_date, metal, weight, salesman, location, current_location, transfer_status, repair_items } = body;
     const pool = sql()
-    
-    // Insert main repair record
     const result = await pool.query(
-      `INSERT INTO repair_records (
-        doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description,
-        received_date, delivery_date, status, location, current_location, transfer_status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-      RETURNING *`,
-      [
-        doc_num,
-        customer_name || '',
-        phone_number || '',
-        metal || '',
-        item_type || '',
-        String(weight || ''),
-        estimated_cost || 0,
-        salesman || '',
-        description || '',
-        received_date || new Date().toISOString(),
-        delivery_date || addDays(new Date().toISOString(), 7),
-        status || 'received',
-        location || 'satara',
-        current_location || 'satara',
-        transfer_status || null
-      ]
+      `INSERT INTO repair_records (doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description, received_date, delivery_date, status, location, current_location, transfer_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
+      [doc_num, customer_name || '', phone_number || '', metal || '', item_type || '', String(weight || ''), estimated_cost || 0, salesman || '', description || '', received_date || new Date().toISOString(), delivery_date || addDays(new Date().toISOString(), 7), status || 'received', location || 'satara', current_location || 'satara', transfer_status || null]
     );
-
     const record = result.rows[0];
-    console.log('Record created successfully:', record);
-    
-    // If there are additional repair items, save them
     if (repair_items && Array.isArray(repair_items) && repair_items.length > 0) {
       for (const item of repair_items) {
         if (item.metal && item.jewellery && item.weight) {
-          await pool.query(
-            `INSERT INTO repair_items (record_id, metal, jewellery, weight, description)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [record.id, item.metal, item.jewellery, item.weight, item.description || '']
-          );
+          await pool.query(`INSERT INTO repair_items (record_id, metal, jewellery, weight, description) VALUES ($1, $2, $3, $4, $5)`, [record.id, item.metal, item.jewellery, item.weight, item.description || '']);
         }
       }
     }
-    
     return NextResponse.json(record);
   } catch (error) {
-    console.error('Error creating record:', error);
-    const message = error instanceof Error ? error.message : 'Failed to create record';
-    // Return actual error for debugging
-    return NextResponse.json({ error: message, details: String(error) }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create record' }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      id,
-      doc_num,
-      customer_name,
-      phone_number,
-      item_type,
-      description,
-      estimated_cost,
-      status,
-      master_id,
-      notes,
-      images,
-      karagir,
-      karagir_date,
-      final_amount,
-      completed_date,
-      quality,
-      received_date,
-      delivery_date,
-      metal,
-      weight,
-      salesman,
-      location,
-      current_location,
-      transfer_status,
-      received_invoice_expires_at,
-      repair_items
-    } = body;
-
-    // Allow update by either id or doc_num
-    if (!id && !doc_num) {
-      return NextResponse.json({ error: 'Either id or doc_num is required' }, { status: 400 });
-    }
-
+    const { id, doc_num, customer_name, phone_number, item_type, description, estimated_cost, status, master_id, notes, images, karagir, karagir_date, final_amount, completed_date, quality, received_date, delivery_date, metal, weight, salesman, location, current_location, transfer_status, received_invoice_expires_at, repair_items } = body;
+    if (!id && !doc_num) return NextResponse.json({ error: 'Either id or doc_num is required' }, { status: 400 });
     const pool = sql();
     let result;
-
     if (id) {
-      // Update by id
       result = await pool.query(
-        `UPDATE repair_records SET
-          doc_num = COALESCE($1, doc_num),
-          name = COALESCE($2, name),
-          mobile = COALESCE($3, mobile),
-          metal = COALESCE($4, metal),
-          jewellery = COALESCE($5, jewellery),
-          weight = COALESCE($6, weight),
-          amount = COALESCE($7, amount),
-          salesman = COALESCE($8, salesman),
-          description = COALESCE($9, description),
-          status = COALESCE($10, status),
-          master_id = COALESCE($11, master_id),
-          notes = COALESCE($12, notes),
-          images = COALESCE($13, images),
-          karagir = COALESCE($14, karagir),
-          karagir_date = COALESCE($15, karagir_date),
-          final_amount = COALESCE($16, final_amount),
-          completed_date = COALESCE($17, completed_date),
-          quality = COALESCE($18, quality),
-          received_date = COALESCE($19, received_date),
-          delivery_date = COALESCE($20, delivery_date),
-          location = COALESCE($21, location),
-          current_location = COALESCE($22, current_location),
-          transfer_status = COALESCE($23, transfer_status),
-          received_invoice_expires_at = COALESCE($24, received_invoice_expires_at)
-        WHERE id = $25
-        RETURNING *`,
-        [
-          doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost,
-          salesman, description, status, master_id, notes, images, karagir, karagir_date,
-          final_amount, completed_date, quality, received_date, delivery_date,
-          location, current_location, transfer_status, received_invoice_expires_at, id
-        ]
+        `UPDATE repair_records SET doc_num = COALESCE($1, doc_num), name = COALESCE($2, name), mobile = COALESCE($3, mobile), metal = COALESCE($4, metal), jewellery = COALESCE($5, jewellery), weight = COALESCE($6, weight), amount = COALESCE($7, amount), salesman = COALESCE($8, salesman), description = COALESCE($9, description), status = COALESCE($10, status), master_id = COALESCE($11, master_id), notes = COALESCE($12, notes), images = COALESCE($13, images), karagir = COALESCE($14, karagir), karagir_date = COALESCE($15, karagir_date), final_amount = COALESCE($16, final_amount), completed_date = COALESCE($17, completed_date), quality = COALESCE($18, quality), received_date = COALESCE($19, received_date), delivery_date = COALESCE($20, delivery_date), location = COALESCE($21, location), current_location = COALESCE($22, current_location), transfer_status = COALESCE($23, transfer_status), received_invoice_expires_at = COALESCE($24, received_invoice_expires_at) WHERE id = $25 RETURNING *`,
+        [doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, status, master_id, notes, images, karagir, karagir_date, final_amount, completed_date, quality, received_date, delivery_date, location, current_location, transfer_status, received_invoice_expires_at, id]
       );
     } else {
-      // Update by doc_num
       result = await pool.query(
-        `UPDATE repair_records SET
-          name = COALESCE($1, name),
-          mobile = COALESCE($2, mobile),
-          metal = COALESCE($3, metal),
-          jewellery = COALESCE($4, jewellery),
-          weight = COALESCE($5, weight),
-          amount = COALESCE($6, amount),
-          salesman = COALESCE($7, salesman),
-          description = COALESCE($8, description),
-          status = COALESCE($9, status),
-          karagir = COALESCE($10, karagir),
-          karagir_date = COALESCE($11, karagir_date),
-          final_amount = COALESCE($12, final_amount),
-          completed_date = COALESCE($13, completed_date),
-          quality = COALESCE($14, quality),
-          delivery_date = COALESCE($15, delivery_date)
-        WHERE doc_num = $16
-        RETURNING *`,
-        [
-          customer_name, phone_number, metal, item_type, weight, estimated_cost,
-          salesman, description, status, karagir, karagir_date,
-          final_amount, completed_date, quality, delivery_date, doc_num
-        ]
+        `UPDATE repair_records SET name = COALESCE($1, name), mobile = COALESCE($2, mobile), metal = COALESCE($3, metal), jewellery = COALESCE($4, jewellery), weight = COALESCE($5, weight), amount = COALESCE($6, amount), salesman = COALESCE($7, salesman), description = COALESCE($8, description), status = COALESCE($9, status), karagir = COALESCE($10, karagir), karagir_date = COALESCE($11, karagir_date), final_amount = COALESCE($12, final_amount), completed_date = COALESCE($13, completed_date), quality = COALESCE($14, quality), delivery_date = COALESCE($15, delivery_date) WHERE doc_num = $16 RETURNING *`,
+        [customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, status, karagir, karagir_date, final_amount, completed_date, quality, delivery_date, doc_num]
       );
     }
-
     const updatedRecord = result.rows[0];
-    
-    // Update repair_items if provided (delete old and insert new)
     if (repair_items && Array.isArray(repair_items) && id) {
-      // Delete existing items
       await pool.query(`DELETE FROM repair_items WHERE record_id = $1`, [id]);
-      // Insert new items
       for (const item of repair_items) {
         if (item.metal && item.jewellery && item.weight) {
-          await pool.query(
-            `INSERT INTO repair_items (record_id, metal, jewellery, weight, description) VALUES ($1, $2, $3, $4, $5)`,
-            [id, item.metal, item.jewellery, item.weight, item.description || '']
-          );
+          await pool.query(`INSERT INTO repair_items (record_id, metal, jewellery, weight, description) VALUES ($1, $2, $3, $4, $5)`, [id, item.metal, item.jewellery, item.weight, item.description || '']);
         }
       }
     }
-    
     return NextResponse.json(updatedRecord);
-        `UPDATE repair_records SET
-          doc_num = COALESCE($1, doc_num),
-          name = COALESCE($2, name),
-          mobile = COALESCE($3, mobile),
-          metal = COALESCE($4, metal),
-          jewellery = COALESCE($5, jewellery),
-          weight = COALESCE($6, weight),
-          amount = COALESCE($7, amount),
-          salesman = COALESCE($8, salesman),
-          description = COALESCE($9, description),
-          received_date = COALESCE($10, received_date),
-          delivery_date = COALESCE($11, delivery_date),
-          status = COALESCE($12, status),
-          karagir = COALESCE($13, karagir),
-          karagir_date = COALESCE($14, karagir_date),
-          final_amount = COALESCE($15, final_amount),
-          completed_date = COALESCE($16, completed_date),
-          quality = COALESCE($17, quality),
-          location = COALESCE($18, location),
-          current_location = COALESCE($19, current_location),
-          transfer_status = COALESCE($20, transfer_status),
-          updated_at = NOW()
-        WHERE id = $21
-        RETURNING *`,
-        [doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status, karagir, karagir_date, final_amount, completed_date, quality, location, current_location, transfer_status, id]
-      );
-    } else {
-      // Update by doc_num
-      // Build dynamic update based on provided fields
-      const updates: string[] = [];
-      const values: any[] = [];
-      let paramIndex = 1;
-
-      const fields = [
-        ['doc_num', doc_num],
-        ['name', customer_name],
-        ['mobile', phone_number],
-        ['metal', metal],
-        ['jewellery', item_type],
-        ['weight', weight],
-        ['amount', estimated_cost],
-        ['salesman', salesman],
-        ['description', description],
-        ['received_date', received_date],
-        ['delivery_date', delivery_date],
-        ['status', status],
-        ['karagir', karagir],
-        ['karagir_date', karagir_date],
-        ['final_amount', final_amount],
-        ['completed_date', completed_date],
-        ['quality', quality],
-        ['received_invoice_expires_at', received_invoice_expires_at],
-        ['location', location],
-        ['current_location', current_location],
-        ['transfer_status', transfer_status]
-      ];
-
-      for (const [field, value] of fields) {
-        if (value !== undefined && value !== null) {
-          updates.push(`${field} = $${paramIndex}`);
-          values.push(value);
-          paramIndex++;
-        }
-      }
-
-      if (updates.length === 0) {
-        return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
-      }
-
-      updates.push('updated_at = NOW()');
-      values.push(doc_num);
-
-      const query = `UPDATE repair_records SET ${updates.join(', ')} WHERE doc_num = $${paramIndex} RETURNING *`;
-      console.log('Update query:', query, 'values:', values);
-      
-      result = await pool.query(query, values);
-    }
-
-    if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Record not found' }, { status: 404 });
-    }
-
-    return NextResponse.json(result.rows[0]);
   } catch (error) {
-    console.error('Error updating record:', error);
-    const message = error instanceof Error ? error.message : 'Failed to update record';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update record' }, { status: 500 });
   }
 }
 
@@ -340,24 +86,12 @@ export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
     const { doc_num } = body;
-
-    if (!doc_num) {
-      return NextResponse.json({ error: 'Document number is required' }, { status: 400 });
-    }
-
+    if (!doc_num) return NextResponse.json({ error: 'Document number is required' }, { status: 400 });
     const pool = sql()
-    const result = await pool.query(
-      `DELETE FROM repair_records WHERE doc_num = $1 RETURNING *`,
-      [doc_num]
-    );
-
-    if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Record not found' }, { status: 404 });
-    }
-
+    const result = await pool.query(`DELETE FROM repair_records WHERE doc_num = $1 RETURNING *`, [doc_num]);
+    if (result.rows.length === 0) return NextResponse.json({ error: 'Record not found' }, { status: 404 });
     return NextResponse.json({ message: 'Record deleted successfully' });
   } catch (error) {
-    console.error('Error deleting record:', error);
     return NextResponse.json({ error: 'Failed to delete record' }, { status: 500 });
   }
 }
