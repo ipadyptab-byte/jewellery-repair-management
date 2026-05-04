@@ -1256,7 +1256,12 @@ export default function App() {
     setRMobile(record.mobile || record.phone_number || '');
     // Load main item + any additional items from repair_items
     const mainItems = [{ metal: record.metal || '', type: record.jewellery || record.item_type || '', weight: record.weight || '', desc: record.description || '' }];
-    const extraItems = (record as any).repair_items || [];
+    const extraItems = ((record as any).repair_items || []).map((item: any) => ({
+      metal: item.metal || '',
+      type: item.jewellery || item.type || '',
+      weight: item.weight || '',
+      desc: item.description || item.desc || ''
+    }));
     setRepairItems([...mainItems, ...extraItems]);
     // Calculate days
     setRDays(record.deliveryDate ? Math.ceil((new Date(record.deliveryDate).getTime() - new Date(record.receivedDate || record.received_date || new Date()).getTime()) / (1000 * 60 * 60 * 24)).toString() : '7');
