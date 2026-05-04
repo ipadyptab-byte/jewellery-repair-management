@@ -207,7 +207,6 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
                     <th>#</th>
                     <th>Jewellery Type</th>
                     <th>Metal</th>
-                    <th>Weight</th>
                     <th>Description</th>
                   </tr>
                 </thead>
@@ -216,7 +215,6 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
                     <td>1</td>
                     <td>{rec.jewellery || rec.item_type || '-'}</td>
                     <td>{rec.metal || '-'}</td>
-                    <td>{rec.weight || '-'}</td>
                     <td>{rec.description || '-'}</td>
                   </tr>
                   {repairItems.map((item: any, idx: number) => (
@@ -224,7 +222,6 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
                       <td>{idx + 2}</td>
                       <td>{item.jewellery || '-'}</td>
                       <td>{item.metal || '-'}</td>
-                      <td>{item.weight || '-'}</td>
                       <td>{item.description || '-'}</td>
                     </tr>
                   ))}
