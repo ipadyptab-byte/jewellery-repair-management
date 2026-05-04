@@ -2038,7 +2038,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <option value="">-- Select received order --</option>
                 {koEditing 
                   ? records.filter(r => r.status === 'with_karagir' && r.current_location === cfgLocation).map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
-                  : records.filter(r => r.status === 'received' && r.current_location === cfgLocation).map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  : records.filter(r => (r.status === 'received' || r.status === 'with_karagir') && r.current_location === cfgLocation).map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
                 }
               </select>
             </div>
