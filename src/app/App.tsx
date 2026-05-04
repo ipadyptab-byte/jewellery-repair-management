@@ -2293,6 +2293,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         doc_num: transferRec.docNum || transferRec.doc_num,
+                        location: 'satara',
                         current_location: 'satara',
                         status: 'with_karagir',
                         transfer_status: 'sent_to_satara'
