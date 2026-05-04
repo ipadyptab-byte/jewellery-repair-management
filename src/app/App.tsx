@@ -423,7 +423,9 @@ export default function App() {
   const [masterTab, setMasterTab] = useState('salesman')
 
   // Receive form
-  const [rName, setRName] = useState(''); const [rMobile, setRMobile] = useState(''); const [rMetal, setRMetal] = useState(''); const [rType, setRType] = useState(''); const [rWeight, setRWeight] = useState(''); const [rDays, setRDays] = useState(''); const [rAmount, setRAmount] = useState(''); const [rSalesman, setRSalesman] = useState(''); const [rDesc, setRDesc] = useState(''); const [savedRec, setSavedRec] = useState<RepairRecord | null>(null)
+  const [rName, setRName] = useState(''); const [rMobile, setRMobile] = useState(''); 
+  const [repairItems, setRepairItems] = useState<{metal: string, type: string, weight: string, desc: string}[]>([{metal: '', type: '', weight: '', desc: ''}]); 
+  const [rDays, setRDays] = useState(''); const [rAmount, setRAmount] = useState(''); const [rSalesman, setRSalesman] = useState(''); const [rDesc, setRDesc] = useState(''); const [savedRec, setSavedRec] = useState<RepairRecord | null>(null)
 
   // Edit mode
   const [isEditing, setIsEditing] = useState(false); const [editingRecord, setEditingRecord] = useState<RepairRecord | null>(null)
@@ -1169,7 +1171,9 @@ export default function App() {
 
   /* ── Save Receipt ── */
   const saveReceipt = async (): Promise<RepairRecord | null> => {
-    if (!rName || !rMobile || !rMetal || !rType || !rWeight || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields.', false); return null }
+    // Validate: at least one jewellery item
+    const validItems = repairItems.filter(i => i.metal && i.type && i.weight);
+    if (!rName || !rMobile || validItems.length === 0 || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields (at least one jewellery item).', false); return null }
     if (!/^\d{10}$/.test(rMobile)) { showMessage('receive', 'Enter valid 10-digit mobile.', false); return null }
 
     try {
@@ -1182,13 +1186,17 @@ export default function App() {
       const receivedDate = new Date().toISOString()
       const deliveryDate = addDays(receivedDate, parseInt(rDays)).toISOString()
 
+      // Use first item for main record (for backward compatibility)
+      const firstItem = validItems[0]
+      const additionalItems = validItems.slice(1)
+
       const recordData = {
         doc_num: docNum,
         location: cfgLocation,
         current_location: cfgLocation,
         customer_name: rName,
         phone_number: rMobile,
-        item_type: rType,
+        item_type: firstItem.type,
         description: rDesc || '',
         estimated_cost: parseFloat(rAmount),
         status: 'received',
@@ -1197,10 +1205,16 @@ export default function App() {
         images: [],
         received_date: receivedDate,
         delivery_date: deliveryDate,
-        metal: rMetal,
-        weight: rWeight,
+        metal: firstItem.metal,
+        weight: firstItem.weight,
         salesman: rSalesman,
-        transfer_status: null
+        transfer_status: null,
+        repair_items: additionalItems.map(item => ({
+          metal: item.metal,
+          jewellery: item.type,
+          weight: item.weight,
+          description: item.desc
+        }))
       };
 
       const response = await fetch('/api/records', {
@@ -1238,9 +1252,25 @@ export default function App() {
     setEditingRecord(record);
     setRName(record.name || record.customer_name || '');
     setRMobile(record.mobile || record.phone_number || '');
-    setRMetal(record.metal || '');
-    setRType(record.jewellery || record.item_type || '');
-    setRWeight(record.weight || '');
+    
+    // Build repair items array from record and additional items
+    const items: {metal: string, type: string, weight: string, desc: string}[] = [];
+    // Add first item from main record
+    if (record.metal && record.jewellery) {
+      items.push({ metal: record.metal, type: record.jewellery || record.item_type || '', weight: record.weight || '', desc: record.description || '' });
+    }
+    // Add additional items if available
+    if ((record as any).repair_items && Array.isArray((record as any).repair_items)) {
+      for (const item of (record as any).repair_items) {
+        items.push({ metal: item.metal, type: item.jewellery, weight: item.weight, desc: item.description || '' });
+      }
+    }
+    // Ensure at least one empty item
+    if (items.length === 0) {
+      items.push({ metal: '', type: '', weight: '', desc: '' });
+    }
+    setRepairItems(items);
+    
     setRDays(record.deliveryDate ? Math.ceil((new Date(record.deliveryDate).getTime() - new Date(record.receivedDate || record.received_date || new Date()).getTime()) / (1000 * 60 * 60 * 24)).toString() : '7');
     setRAmount((record.amount || record.estimated_cost || 0).toString());
     setRSalesman(record.salesman || '');
@@ -1251,23 +1281,25 @@ export default function App() {
   const cancelEdit = () => {
     setIsEditing(false);
     setEditingRecord(null);
-    setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc('');
+    setRName(''); setRMobile(''); setRepairItems([{metal: '', type: '', weight: '', desc: ''}]); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc('');
   }
 
   const updateReceipt = async () => {
     if (!editingRecord) return;
-    if (!rName || !rMobile || !rMetal || !rType || !rWeight || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields.', false); return }
+    const validItems = repairItems.filter(i => i.metal && i.type && i.weight);
+    if (!rName || !rMobile || validItems.length === 0 || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields (at least one jewellery item).', false); return }
     if (!/^\d{10}$/.test(rMobile)) { showMessage('receive', 'Enter valid 10-digit mobile.', false); return }
 
     try {
       const deliveryDate = addDays(new Date(editingRecord.receivedDate || editingRecord.received_date || new Date()), parseInt(rDays)).toISOString();
+      const firstItem = validItems[0];
 
       const updateData = {
         id: editingRecord.id,
         doc_num: editingRecord.docNum || editingRecord.doc_num,
         customer_name: rName,
         phone_number: rMobile,
-        item_type: rType,
+        item_type: firstItem.type,
         description: rDesc || '',
         estimated_cost: parseFloat(rAmount),
         status: editingRecord.status,
@@ -1281,9 +1313,15 @@ export default function App() {
         quality: editingRecord.quality,
         received_date: editingRecord.receivedDate || editingRecord.received_date,
         delivery_date: deliveryDate,
-        metal: rMetal,
-        weight: rWeight,
+        metal: firstItem.metal,
+        weight: firstItem.weight,
         salesman: rSalesman,
+        repair_items: validItems.slice(1).map(item => ({
+          metal: item.metal,
+          jewellery: item.type,
+          weight: item.weight,
+          description: item.desc
+        }))
       };
 
       const response = await fetch('/api/records', {
@@ -1313,9 +1351,25 @@ export default function App() {
     setEditingRecord(r);
     setRName(r.name || r.customer_name || '');
     setRMobile(r.mobile || r.phone_number || '');
-    setRMetal(r.metal || '');
-    setRType(r.jewellery || r.item_type || '');
-    setRWeight(r.weight || '');
+    
+    // Build repair items array from record and additional items
+    const items: {metal: string, type: string, weight: string, desc: string}[] = [];
+    // Add first item from main record
+    if (r.metal && r.jewellery) {
+      items.push({ metal: r.metal, type: r.jewellery || r.item_type || '', weight: r.weight || '', desc: r.description || r.desc || '' });
+    }
+    // Add additional items if available
+    if ((r as any).repair_items && Array.isArray((r as any).repair_items)) {
+      for (const item of (r as any).repair_items) {
+        items.push({ metal: item.metal, type: item.jewellery, weight: item.weight, desc: item.description || '' });
+      }
+    }
+    // Ensure at least one empty item
+    if (items.length === 0) {
+      items.push({ metal: '', type: '', weight: '', desc: '' });
+    }
+    setRepairItems(items);
+    
     const days = r.deliveryDate && r.receivedDate ? Math.ceil((new Date(r.deliveryDate).getTime() - new Date(r.receivedDate).getTime()) / (1000 * 60 * 60 * 24)) : r.delivery_date && r.received_date ? Math.ceil((new Date(r.delivery_date).getTime() - new Date(r.received_date).getTime()) / (1000 * 60 * 60 * 24)) : 7;
     setRDays(String(days));
     setRAmount(String(r.amount || r.estimated_cost || ''));
@@ -1939,10 +1993,41 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
 }} placeholder="10-digit" maxLength={10} /></div>
             <div className="field"><label>Customer name <span className="req">*</span></label><input value={rName} onChange={e => setRName(e.target.value)} placeholder="e.g. Ramesh Patil" /></div>
           </div>
-          <div className="grid3">
-            <div className="field"><label>Metal <span className="req">*</span></label><select value={rMetal} onChange={e => setRMetal(e.target.value)}><option value="">Select metal</option>{metals.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
-            <div className="field"><label>Jewellery type <span className="req">*</span></label><select value={rType} onChange={e => setRType(e.target.value)}><option value="">Select type</option>{jewelleries.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
-            <div className="field"><label>Weight (grams) <span className="req">*</span></label><input type="number" step="0.1" value={rWeight} onChange={e => setRWeight(e.target.value)} placeholder="e.g. 12.5" /></div>
+          {/* Multiple Jewellery Items Section */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div className="sec-label" style={{ marginBottom: 0 }}>Jewellery Items <span className="req">*</span></div>
+              <button className="btn" style={{ fontSize: 11, padding: '4px 8px', background: '#22c55e' }} onClick={() => setRepairItems([...repairItems, {metal: '', type: '', weight: '', desc: ''}])}>+ Add Item</button>
+            </div>
+            {repairItems.map((item, idx) => (
+              <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div className="field" style={{ flex: '1 1 120px', marginBottom: 0 }}>
+                  <label>Metal</label>
+                  <select value={item.metal} onChange={e => { const newItems = [...repairItems]; newItems[idx].metal = e.target.value; setRepairItems(newItems); }}>
+                    <option value="">Select</option>
+                    {metals.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}
+                  </select>
+                </div>
+                <div className="field" style={{ flex: '1 1 150px', marginBottom: 0 }}>
+                  <label>Type</label>
+                  <select value={item.type} onChange={e => { const newItems = [...repairItems]; newItems[idx].type = e.target.value; setRepairItems(newItems); }}>
+                    <option value="">Select</option>
+                    {jewelleries.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}
+                  </select>
+                </div>
+                <div className="field" style={{ flex: '1 1 100px', marginBottom: 0 }}>
+                  <label>Weight (g)</label>
+                  <input type="number" step="0.1" value={item.weight} onChange={e => { const newItems = [...repairItems]; newItems[idx].weight = e.target.value; setRepairItems(newItems); }} placeholder="0.0" />
+                </div>
+                <div className="field" style={{ flex: '2 1 200px', marginBottom: 0 }}>
+                  <label>Description</label>
+                  <input value={item.desc} onChange={e => { const newItems = [...repairItems]; newItems[idx].desc = e.target.value; setRepairItems(newItems); }} placeholder="Repair details" />
+                </div>
+                {repairItems.length > 1 && (
+                  <button className="btn" style={{ fontSize: 11, padding: '4px 8px', background: '#dc2626' }} onClick={() => setRepairItems(repairItems.filter((_, i) => i !== idx))}>✕</button>
+                )}
+              </div>
+            ))}
           </div>
           <div className="grid3">
             <div className="field"><label>Est. days <span className="req">*</span></label><input type="number" min="1" value={rDays} onChange={e => setRDays(e.target.value)} placeholder="e.g. 7" /></div>
@@ -1960,8 +2045,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </>
             ) : (
               <>
-                <button className="btn btn-primary" onClick={async () => { const rec = await saveReceipt(); if (rec) { if (trRecv) { const estDays = parseInt(rDays) || 7; sendWhatsApp(rec, 'received', estDays).catch(console.error); } setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(rec); setPrintRec(null); } }}><IcPdf />Save &amp; Print Thermal Invoice</button>
-                <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
+                <button className="btn btn-primary" onClick={async () => { const rec = await saveReceipt(); if (rec) { if (trRecv) { const estDays = parseInt(rDays) || 7; sendWhatsApp(rec, 'received', estDays).catch(console.error); } setRName(''); setRMobile(''); setRepairItems([{metal: '', type: '', weight: '', desc: ''}]); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(rec); setPrintRec(null); } }}><IcPdf />Save &amp; Print Thermal Invoice</button>
+                <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRepairItems([{metal: '', type: '', weight: '', desc: ''}]); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
             )}
           </div>

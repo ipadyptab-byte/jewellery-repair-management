@@ -10,7 +10,19 @@ export async function GET() {
       `SELECT * FROM repair_records ORDER BY created_at DESC`
     );
     console.log('Query result rows:', result.rows.length);
-    return NextResponse.json(result.rows);
+    
+    // Fetch repair_items for each record
+    const recordsWithItems = await Promise.all(
+      result.rows.map(async (record: any) => {
+        const itemsResult = await pool.query(
+          `SELECT * FROM repair_items WHERE record_id = $1`,
+          [record.id]
+        );
+        return { ...record, repair_items: itemsResult.rows };
+      })
+    );
+    
+    return NextResponse.json(recordsWithItems);
   } catch (error) {
     console.error('Error fetching records:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch records';
@@ -48,11 +60,14 @@ export async function POST(request: NextRequest) {
       salesman,
       location,
       current_location,
-      transfer_status
+      transfer_status,
+      repair_items // Array of jewellery items
     } = body;
 
     // Map to schema column names with fallbacks
     const pool = sql()
+    
+    // Insert main repair record
     const result = await pool.query(
       `INSERT INTO repair_records (
         doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description,
@@ -80,6 +95,20 @@ export async function POST(request: NextRequest) {
 
     const record = result.rows[0];
     console.log('Record created successfully:', record);
+    
+    // If there are additional repair items, save them
+    if (repair_items && Array.isArray(repair_items) && repair_items.length > 0) {
+      for (const item of repair_items) {
+        if (item.metal && item.jewellery && item.weight) {
+          await pool.query(
+            `INSERT INTO repair_items (record_id, metal, jewellery, weight, description)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [record.id, item.metal, item.jewellery, item.weight, item.description || '']
+          );
+        }
+      }
+    }
+    
     return NextResponse.json(record);
   } catch (error) {
     console.error('Error creating record:', error);
@@ -117,7 +146,8 @@ export async function PUT(request: NextRequest) {
       location,
       current_location,
       transfer_status,
-      received_invoice_expires_at
+      received_invoice_expires_at,
+      repair_items // Array of additional jewellery items
     } = body;
 
     // Allow update by either id or doc_num
@@ -157,6 +187,22 @@ export async function PUT(request: NextRequest) {
         RETURNING *`,
         [doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost, salesman, description, received_date, delivery_date, status, karagir, karagir_date, final_amount, completed_date, quality, location, current_location, transfer_status, id]
       );
+      
+      // Update repair_items if provided
+      if (result.rows[0] && repair_items && Array.isArray(repair_items)) {
+        // Delete existing additional items
+        await pool.query(`DELETE FROM repair_items WHERE record_id = $1`, [id]);
+        // Insert new additional items
+        for (const item of repair_items) {
+          if (item.metal && item.jewellery && item.weight) {
+            await pool.query(
+              `INSERT INTO repair_items (record_id, metal, jewellery, weight, description)
+               VALUES ($1, $2, $3, $4, $5)`,
+              [id, item.metal, item.jewellery, item.weight, item.description || '']
+            );
+          }
+        }
+      }
     } else {
       // Update by doc_num
       // Build dynamic update based on provided fields
