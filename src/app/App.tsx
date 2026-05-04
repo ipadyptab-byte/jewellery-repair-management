@@ -423,7 +423,9 @@ export default function App() {
   const [masterTab, setMasterTab] = useState('salesman')
 
   // Receive form
-  const [rName, setRName] = useState(''); const [rMobile, setRMobile] = useState(''); const [rMetal, setRMetal] = useState(''); const [rType, setRType] = useState(''); const [rWeight, setRWeight] = useState(''); const [rDays, setRDays] = useState(''); const [rAmount, setRAmount] = useState(''); const [rSalesman, setRSalesman] = useState(''); const [rDesc, setRDesc] = useState(''); const [savedRec, setSavedRec] = useState<RepairRecord | null>(null)
+  const [rName, setRName] = useState(''); const [rMobile, setRMobile] = useState(''); 
+  const [repairItems, setRepairItems] = useState<{metal: string, type: string, weight: string, desc: string}[]>([{metal: '', type: '', weight: '', desc: ''}]); 
+  const [rDays, setRDays] = useState(''); const [rAmount, setRAmount] = useState(''); const [rSalesman, setRSalesman] = useState(''); const [rDesc, setRDesc] = useState(''); const [savedRec, setSavedRec] = useState<RepairRecord | null>(null)
 
   // Edit mode
   const [isEditing, setIsEditing] = useState(false); const [editingRecord, setEditingRecord] = useState<RepairRecord | null>(null)
@@ -1169,7 +1171,7 @@ export default function App() {
 
   /* ── Save Receipt ── */
   const saveReceipt = async (): Promise<RepairRecord | null> => {
-    if (!rName || !rMobile || !rMetal || !rType || !rWeight || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields.', false); return null }
+    if (!rName || !rMobile || !repairItems[0].metal || !repairItems[0].type || !repairItems[0].weight || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields.', false); return null }
     if (!/^\d{10}$/.test(rMobile)) { showMessage('receive', 'Enter valid 10-digit mobile.', false); return null }
 
     try {
@@ -1182,13 +1184,18 @@ export default function App() {
       const receivedDate = new Date().toISOString()
       const deliveryDate = addDays(receivedDate, parseInt(rDays)).toISOString()
 
+      // Get first item for main record
+      const firstItem = repairItems[0]
+      // Get additional items (excluding first)
+      const additionalItems = repairItems.slice(1).filter(item => item.metal && item.type && item.weight)
+
       const recordData = {
         doc_num: docNum,
         location: cfgLocation,
         current_location: cfgLocation,
         customer_name: rName,
         phone_number: rMobile,
-        item_type: rType,
+        item_type: firstItem.type,
         description: rDesc || '',
         estimated_cost: parseFloat(rAmount),
         status: 'received',
@@ -1197,10 +1204,17 @@ export default function App() {
         images: [],
         received_date: receivedDate,
         delivery_date: deliveryDate,
-        metal: rMetal,
-        weight: rWeight,
+        metal: firstItem.metal,
+        weight: firstItem.weight,
         salesman: rSalesman,
-        transfer_status: null
+        transfer_status: null,
+        // Additional jewellery items
+        repair_items: additionalItems.map(item => ({
+          metal: item.metal,
+          jewellery: item.type,
+          weight: item.weight,
+          description: item.desc
+        }))
       };
 
       const response = await fetch('/api/records', {
@@ -1940,10 +1954,11 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             <div className="field"><label>Customer name <span className="req">*</span></label><input value={rName} onChange={e => setRName(e.target.value)} placeholder="e.g. Ramesh Patil" /></div>
           </div>
           <div className="grid3">
-            <div className="field"><label>Metal <span className="req">*</span></label><select value={rMetal} onChange={e => setRMetal(e.target.value)}><option value="">Select metal</option>{metals.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
-            <div className="field"><label>Jewellery type <span className="req">*</span></label><select value={rType} onChange={e => setRType(e.target.value)}><option value="">Select type</option>{jewelleries.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
-            <div className="field"><label>Weight (grams) <span className="req">*</span></label><input type="number" step="0.1" value={rWeight} onChange={e => setRWeight(e.target.value)} placeholder="e.g. 12.5" /></div>
+            <div className="field"><label>Metal <span className="req">*</span></label><select value={repairItems[0]?.metal || ''} onChange={e => setRepairItems(prev => { const u = [...prev]; u[0] = {...u[0], metal: e.target.value}; return u; })}><option value="">Select metal</option>{metals.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
+            <div className="field"><label>Jewellery type <span className="req">*</span></label><select value={repairItems[0]?.type || ''} onChange={e => setRepairItems(prev => { const u = [...prev]; u[0] = {...u[0], type: e.target.value}; return u; })}><option value="">Select type</option>{jewelleries.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
+            <div className="field"><label>Weight (grams) <span className="req">*</span></label><input type="number" step="0.1" value={repairItems[0]?.weight || ''} onChange={e => setRepairItems(prev => { const u = [...prev]; u[0] = {...u[0], weight: e.target.value}; return u; })} placeholder="e.g. 12.5" /></div>
           </div>
+          <button className="btnAddItem" onClick={() => setRepairItems(prev => [...prev, {metal: '', type: '', weight: '', desc: ''}])}>+ Add Another Jewellery</button>
           <div className="grid3">
             <div className="field"><label>Est. days <span className="req">*</span></label><input type="number" min="1" value={rDays} onChange={e => setRDays(e.target.value)} placeholder="e.g. 7" /></div>
             <div className="field"><label>Est. amount (&#8377;) <span className="req">*</span></label><input type="number" value={rAmount} onChange={e => setRAmount(e.target.value)} placeholder="e.g. 500" /></div>
