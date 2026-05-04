@@ -2043,11 +2043,11 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <div className="meta-item"><div className="meta-label">Customer</div><div className="meta-val">{koRecord.name}</div></div>
                 <div className="meta-item"><div className="meta-label">Items</div>
                   <div className="meta-val" style={{textAlign:'left'}}>
-                    <div>{koRecord.metal} {koRecord.jewellery} ({koRecord.weight}g)</div>
-                    {((koRecord as any).repair_items || []).map((item:any, i:number) => <div key={i}>{item.metal} {item.jewellery} ({item.weight}g)</div>)}
+                    <div>• {koRecord.metal} {koRecord.jewellery}</div>
+                    {((koRecord as any).repair_items || []).length > 0 ? ((koRecord as any).repair_items || []).map((item:any, i:number) => <div key={i}>• {item.metal} {item.jewellery}</div>) : null}
                   </div>
                 </div>
-                <div className="meta-item"><div className="meta-label">Est. delivery</div><div className="meta-val">{fmtDate(koRecord.deliveryDate || addDays(new Date(), 7).toISOString())}</div></div>
+                <div className="meta-item"><div className="meta-label">Karagir</div><div className="meta-val">{koRecord.karagir || '-'}</div></div>
               </div>
               <div className="grid2">
                 <div className="field"><label>Karagir <span className="req">*</span></label><select value={koKaragir} onChange={e => setKoKaragir(e.target.value)}><option value="">Select karagir</option>{karagirs.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
@@ -2097,8 +2097,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <div className="meta-item"><div className="meta-label">Customer</div><div className="meta-val">{kiRecord.name}</div></div>
                 <div className="meta-item"><div className="meta-label">Items</div>
                   <div className="meta-val" style={{textAlign:'left'}}>
-                    <div>{kiRecord.metal} {kiRecord.jewellery} ({kiRecord.weight}g)</div>
-                    {((kiRecord as any).repair_items || []).map((item:any, i:number) => <div key={i}>{item.metal} {item.jewellery} ({item.weight}g)</div>)}
+                    <div>• {kiRecord.metal} {kiRecord.jewellery}</div>
+                    {((kiRecord as any).repair_items || []).length > 0 ? ((kiRecord as any).repair_items || []).map((item:any, i:number) => <div key={i}>• {item.metal} {item.jewellery}</div>) : null}
                   </div>
                 </div>
                 <div className="meta-item"><div className="meta-label">Karagir</div><div className="meta-val">{kiRecord.karagir}</div></div>
