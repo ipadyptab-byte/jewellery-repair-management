@@ -150,7 +150,8 @@ export async function PUT(request: NextRequest) {
       location,
       current_location,
       transfer_status,
-      received_invoice_expires_at
+      received_invoice_expires_at,
+      repair_items
     } = body;
 
     // Allow update by either id or doc_num
@@ -164,6 +165,87 @@ export async function PUT(request: NextRequest) {
     if (id) {
       // Update by id
       result = await pool.query(
+        `UPDATE repair_records SET
+          doc_num = COALESCE($1, doc_num),
+          name = COALESCE($2, name),
+          mobile = COALESCE($3, mobile),
+          metal = COALESCE($4, metal),
+          jewellery = COALESCE($5, jewellery),
+          weight = COALESCE($6, weight),
+          amount = COALESCE($7, amount),
+          salesman = COALESCE($8, salesman),
+          description = COALESCE($9, description),
+          status = COALESCE($10, status),
+          master_id = COALESCE($11, master_id),
+          notes = COALESCE($12, notes),
+          images = COALESCE($13, images),
+          karagir = COALESCE($14, karagir),
+          karagir_date = COALESCE($15, karagir_date),
+          final_amount = COALESCE($16, final_amount),
+          completed_date = COALESCE($17, completed_date),
+          quality = COALESCE($18, quality),
+          received_date = COALESCE($19, received_date),
+          delivery_date = COALESCE($20, delivery_date),
+          location = COALESCE($21, location),
+          current_location = COALESCE($22, current_location),
+          transfer_status = COALESCE($23, transfer_status),
+          received_invoice_expires_at = COALESCE($24, received_invoice_expires_at)
+        WHERE id = $25
+        RETURNING *`,
+        [
+          doc_num, customer_name, phone_number, metal, item_type, weight, estimated_cost,
+          salesman, description, status, master_id, notes, images, karagir, karagir_date,
+          final_amount, completed_date, quality, received_date, delivery_date,
+          location, current_location, transfer_status, received_invoice_expires_at, id
+        ]
+      );
+    } else {
+      // Update by doc_num
+      result = await pool.query(
+        `UPDATE repair_records SET
+          name = COALESCE($1, name),
+          mobile = COALESCE($2, mobile),
+          metal = COALESCE($3, metal),
+          jewellery = COALESCE($4, jewellery),
+          weight = COALESCE($5, weight),
+          amount = COALESCE($6, amount),
+          salesman = COALESCE($7, salesman),
+          description = COALESCE($8, description),
+          status = COALESCE($9, status),
+          karagir = COALESCE($10, karagir),
+          karagir_date = COALESCE($11, karagir_date),
+          final_amount = COALESCE($12, final_amount),
+          completed_date = COALESCE($13, completed_date),
+          quality = COALESCE($14, quality),
+          delivery_date = COALESCE($15, delivery_date)
+        WHERE doc_num = $16
+        RETURNING *`,
+        [
+          customer_name, phone_number, metal, item_type, weight, estimated_cost,
+          salesman, description, status, karagir, karagir_date,
+          final_amount, completed_date, quality, delivery_date, doc_num
+        ]
+      );
+    }
+
+    const updatedRecord = result.rows[0];
+    
+    // Update repair_items if provided (delete old and insert new)
+    if (repair_items && Array.isArray(repair_items) && id) {
+      // Delete existing items
+      await pool.query(`DELETE FROM repair_items WHERE record_id = $1`, [id]);
+      // Insert new items
+      for (const item of repair_items) {
+        if (item.metal && item.jewellery && item.weight) {
+          await pool.query(
+            `INSERT INTO repair_items (record_id, metal, jewellery, weight, description) VALUES ($1, $2, $3, $4, $5)`,
+            [id, item.metal, item.jewellery, item.weight, item.description || '']
+          );
+        }
+      }
+    }
+    
+    return NextResponse.json(updatedRecord);
         `UPDATE repair_records SET
           doc_num = COALESCE($1, doc_num),
           name = COALESCE($2, name),

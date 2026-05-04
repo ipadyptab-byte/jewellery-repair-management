@@ -1965,8 +1965,20 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             <div className="field"><label>Jewellery type <span className="req">*</span></label><select value={repairItems[0]?.type || ''} onChange={e => setRepairItems(prev => { const u = [...prev]; u[0] = {...u[0], type: e.target.value}; return u; })}><option value="">Select type</option>{jewelleries.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
             <div className="field"><label>Weight (grams) <span className="req">*</span></label><input type="number" step="0.1" value={repairItems[0]?.weight || ''} onChange={e => setRepairItems(prev => { const u = [...prev]; u[0] = {...u[0], weight: e.target.value}; return u; })} placeholder="e.g. 12.5" /></div>
           </div>
-          <div style={{marginBottom:8,fontSize:12,color:'var(--brand)'}}>Items: {repairItems.length}</div>
-          <button type="button" className="btnAddItem" onClick={() => { console.log('Add item clicked, current:', repairItems.length); setRepairItems(prev => [...prev, {metal: '', type: '', weight: '', desc: ''}]) }}>+ Add Another Jewellery ({repairItems.length} item{repairItems.length !== 1 ? 's' : ''})</button>
+          
+          {/* Additional Items */}
+          {repairItems.slice(1).map((item, idx) => (
+            <div key={idx + 1} className="items-section">
+              <div className="items-header">Jewellery {idx + 2} <button type="button" className="btnRemove" onClick={() => setRepairItems(prev => prev.filter((_, i) => i !== idx + 1))}>Remove</button></div>
+              <div className="grid3">
+                <div className="field"><label>Metal <span className="req">*</span></label><select value={item.metal} onChange={e => { const u = [...repairItems]; u[idx + 1] = {...u[idx + 1], metal: e.target.value}; setRepairItems(u); }}><option value="">Select metal</option>{metals.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
+                <div className="field"><label>Jewellery type <span className="req">*</span></label><select value={item.type} onChange={e => { const u = [...repairItems]; u[idx + 1] = {...u[idx + 1], type: e.target.value}; setRepairItems(u); }}><option value="">Select type</option>{jewelleries.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
+                <div className="field"><label>Weight (g) <span className="req">*</span></label><input type="number" step="0.1" value={item.weight} onChange={e => { const u = [...repairItems]; u[idx + 1] = {...u[idx + 1], weight: e.target.value}; setRepairItems(u); }} placeholder="e.g. 12.5" /></div>
+              </div>
+            </div>
+          ))}
+          
+          <button type="button" className="btnAddItem" style={{background:'#10b981'}} onClick={() => setRepairItems(prev => [...prev, {metal: '', type: '', weight: '', desc: ''}])}>+ Add Another Jewellery ({repairItems.length} item{repairItems.length !== 1 ? 's' : ''})</button>
           <div className="grid3">
             <div className="field"><label>Est. days <span className="req">*</span></label><input type="number" min="1" value={rDays} onChange={e => setRDays(e.target.value)} placeholder="e.g. 7" /></div>
             <div className="field"><label>Est. amount (&#8377;) <span className="req">*</span></label><input type="number" value={rAmount} onChange={e => setRAmount(e.target.value)} placeholder="e.g. 500" /></div>
@@ -2029,7 +2041,12 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             <>
               <div className="meta-grid">
                 <div className="meta-item"><div className="meta-label">Customer</div><div className="meta-val">{koRecord.name}</div></div>
-                <div className="meta-item"><div className="meta-label">Item</div><div className="meta-val">{koRecord.metal} {koRecord.jewellery}</div></div>
+                <div className="meta-item"><div className="meta-label">Items</div>
+                  <div className="meta-val" style={{textAlign:'left'}}>
+                    <div>{koRecord.metal} {koRecord.jewellery} ({koRecord.weight}g)</div>
+                    {((koRecord as any).repair_items || []).map((item:any, i:number) => <div key={i}>{item.metal} {item.jewellery} ({item.weight}g)</div>)}
+                  </div>
+                </div>
                 <div className="meta-item"><div className="meta-label">Est. delivery</div><div className="meta-val">{fmtDate(koRecord.deliveryDate || addDays(new Date(), 7).toISOString())}</div></div>
               </div>
               <div className="grid2">
@@ -2078,7 +2095,12 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             <>
               <div className="meta-grid">
                 <div className="meta-item"><div className="meta-label">Customer</div><div className="meta-val">{kiRecord.name}</div></div>
-                <div className="meta-item"><div className="meta-label">Item</div><div className="meta-val">{kiRecord.metal} {kiRecord.jewellery}</div></div>
+                <div className="meta-item"><div className="meta-label">Items</div>
+                  <div className="meta-val" style={{textAlign:'left'}}>
+                    <div>{kiRecord.metal} {kiRecord.jewellery} ({kiRecord.weight}g)</div>
+                    {((kiRecord as any).repair_items || []).map((item:any, i:number) => <div key={i}>{item.metal} {item.jewellery} ({item.weight}g)</div>)}
+                  </div>
+                </div>
                 <div className="meta-item"><div className="meta-label">Karagir</div><div className="meta-val">{kiRecord.karagir}</div></div>
               </div>
               <div className="grid2">

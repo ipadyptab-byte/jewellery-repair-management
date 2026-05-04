@@ -90,7 +90,17 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
     const rec = result.rows[0]
     const isFinal = id.includes('-final')
     
-    // Check if received invoice link should be expired (when final invoice was generated)
+    // Fetch all repair items for this record
+    let repairItems: any[] = []
+    try {
+      const itemsResult = await sql().query(
+        `SELECT * FROM repair_items WHERE record_id = $1`,
+        [rec.id]
+      )
+      repairItems = itemsResult.rows || []
+    } catch (e) {
+      // Table might not exist yet, ignore
+    }
     // If record has received_invoice_expires_at and this is not a final link, check if expired
     if (!isFinal && rec.received_invoice_expires_at) {
       const linkExpiry = new Date(rec.received_invoice_expires_at)
@@ -192,29 +202,40 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
               </div>
 
               <table className="items-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Jewellery Type</th>
+                    <th>Metal</th>
+                    <th>Weight</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
                 <tbody>
                   <tr>
-                    <td>Jewellery Type</td>
-                    <td>{rec.item_type || rec.jewellery || '-'}</td>
-                  </tr>
-                  <tr>
-                    <td>Metal</td>
+                    <td>1</td>
+                    <td>{rec.jewellery || rec.item_type || '-'}</td>
                     <td>{rec.metal || '-'}</td>
-                  </tr>
-                  <tr>
-                    <td>Description</td>
+                    <td>{rec.weight || '-'}</td>
                     <td>{rec.description || '-'}</td>
                   </tr>
-                  {!isFinal && rec.delivery_date && (
-                    <tr>
-                      <td>Expected Delivery Date</td>
-                      <td>
-                        {new Date(rec.delivery_date).toLocaleDateString('en-IN')}
-                      </td>
+                  {repairItems.map((item: any, idx: number) => (
+                    <tr key={idx}>
+                      <td>{idx + 2}</td>
+                      <td>{item.jewellery || '-'}</td>
+                      <td>{item.metal || '-'}</td>
+                      <td>{item.weight || '-'}</td>
+                      <td>{item.description || '-'}</td>
                     </tr>
-                  )}
+                  ))}
                 </tbody>
               </table>
+
+              {!isFinal && rec.delivery_date && (
+                <div className="info-box" style={{ marginTop: 15 }}>
+                  <strong>Expected Delivery:</strong> {new Date(rec.delivery_date).toLocaleDateString('en-IN')}
+                </div>
+              )}
 
               <div className="total">
                 {isFinal ? 'Final Amount: ' : 'Estimated Amount: '} ₹
