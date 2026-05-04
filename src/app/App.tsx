@@ -42,6 +42,8 @@ interface RepairRecord {
   location?: string;
   current_location?: string;
   transfer_status?: string | null;
+  // Additional repair items
+  repair_items?: { metal: string; jewellery: string; weight: string; description: string }[];
 }
 interface Master {
   id: number;
