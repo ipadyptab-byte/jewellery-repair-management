@@ -2209,9 +2209,9 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         doc_num: transferRec.docNum || transferRec.doc_num,
+                        location: 'koregaon',
                         current_location: 'koregaon',
                         transfer_status: 'received_from_satara',
-                        // Keep the status as is - if ready stays ready
                         status: isReady ? 'ready' : 'with_karagir'
                       })
                     })
