@@ -1336,9 +1336,7 @@ export default function App() {
     setEditingRecord(r);
     setRName(r.name || r.customer_name || '');
     setRMobile(r.mobile || r.phone_number || '');
-    setRMetal(r.metal || '');
-    setRType(r.jewellery || r.item_type || '');
-    setRWeight(r.weight || '');
+    setRepairItems([{ metal: r.metal || '', type: r.jewellery || r.item_type || '', weight: r.weight || '', desc: '' }]);
     const days = r.deliveryDate && r.receivedDate ? Math.ceil((new Date(r.deliveryDate).getTime() - new Date(r.receivedDate).getTime()) / (1000 * 60 * 60 * 24)) : r.delivery_date && r.received_date ? Math.ceil((new Date(r.delivery_date).getTime() - new Date(r.received_date).getTime()) / (1000 * 60 * 60 * 24)) : 7;
     setRDays(String(days));
     setRAmount(String(r.amount || r.estimated_cost || ''));
@@ -1984,8 +1982,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </>
             ) : (
               <>
-                <button className="btn btn-primary" onClick={async () => { const rec = await saveReceipt(); if (rec) { if (trRecv) { const estDays = parseInt(rDays) || 7; sendWhatsApp(rec, 'received', estDays).catch(console.error); } setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(rec); setPrintRec(null); } }}><IcPdf />Save &amp; Print Thermal Invoice</button>
-                <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRMetal(''); setRType(''); setRWeight(''); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
+                <button className="btn btn-primary" onClick={async () => { const rec = await saveReceipt(); if (rec) { if (trRecv) { const estDays = parseInt(rDays) || 7; sendWhatsApp(rec, 'received', estDays).catch(console.error); } setRName(''); setRMobile(''); setRepairItems([{metal: '', type: '', weight: '', desc: ''}]); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(rec); setPrintRec(null); } }}><IcPdf />Save &amp; Print Thermal Invoice</button>
+                <button className="btn" onClick={() => { setRName(''); setRMobile(''); setRepairItems([{metal: '', type: '', weight: '', desc: ''}]); setRDays(''); setRAmount(''); setRSalesman(''); setRDesc(''); setSavedRec(null) }}>Clear</button>
               </>
             )}
           </div>
