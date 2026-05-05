@@ -1814,15 +1814,6 @@ export default function App() {
             </div>
           )}
           
-          {/* Show JR-KO ready to transfer at Satara - for Satara location only */}
-          {cfgLocation === 'satara' && records.filter(r => (r.current_location === 'satara' || r.location === 'satara') && (r.status === 'ready' || r.status === 'with_karagir') && ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))).length > 0 && (
-            <div className="dash-tile" onClick={() => openPage('transfer')}>
-              <div className="tile-icon" style={{ background: '#E0E7FF' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4338CA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg></div>
-              <div className="tile-label">📤 Ready for Koregaon</div>
-              <div className="tile-desc">{records.filter(r => (r.current_location === 'satara' || r.location === 'satara') && (r.status === 'ready' || r.status === 'with_karagir') && ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))).length} JR-KO items</div>
-            </div>
-          )}
-          
           {/* Common */}
           <div className="dash-tile" onClick={() => openPage('track')}>
             <div className="tile-icon" style={{ background: '#EDE9FE' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35M11 8v3l2 2" /></svg></div>
@@ -2211,11 +2202,11 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
           )}
         </div>
 
-        {/* At Satara: Show JR-KO documents ready to send to Koregaon */}
+        {/* At Satara: Send ready items to Koregaon */}
         {cfgLocation === 'satara' && transferPage !== 'incoming' && (
           <div className="card">
-            <div className="card-title">📤 Send JR-KO to Koregaon</div>
-            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Select ready JR-KO documents to send to Koregaon</p>
+            <div className="card-title">📤 Send to Koregaon</div>
+            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Select ready items to send to Koregaon</p>
             
             <div className="field">
               <label>Select Invoice <span className="req">*</span></label>
@@ -2224,15 +2215,14 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 const rec = records.find(r => (r.docNum || r.doc_num) === e.target.value)
                 setTransferRec(rec || null)
               }}>
-                <option value="">Select JR-KO invoice to send</option>
+                <option value="">Select ready invoice to send</option>
                 {records.filter(r => 
-                  // Find all JR-KO documents at Satara that are ready or with_karagir
-                  (r.current_location === 'satara' || r.location === 'satara') && 
-                  (r.status === 'ready' || r.status === 'with_karagir') &&
-                  ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))
+                  // Find all ready documents at Satara (any prefix)
+                  r.current_location === 'satara' && 
+                  r.status === 'ready'
                 ).map(r => (
                   <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
-                    {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery}) {r.status === 'ready' ? '✓ Ready' : 'In repair'}
+                    {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery})
                   </option>
                 ))}
               </select>
@@ -2246,7 +2236,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </div>
             )}
             
-            {transferRec && (transferRec.current_location === 'satara' || transferRec.location === 'satara') && (transferRec.status === 'ready' || transferRec.status === 'with_karagir') && (
+            {transferRec && transferRec.current_location === 'satara' && transferRec.status === 'ready' && (
               <div className="btn-row">
                 <button className="btn btn-primary" onClick={async () => {
                   try {
@@ -2272,8 +2262,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </div>
             )}
             
-            {records.filter(r => (r.current_location === 'satara' || r.location === 'satara') && (r.status === 'ready' || r.status === 'with_karagir') && ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))).length === 0 && (
-              <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No JR-KO items ready to send to Koregaon.</p>
+            {records.filter(r => r.current_location === 'satara' && r.status === 'ready').length === 0 && (
+              <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No items ready to send to Koregaon.</p>
             )}
           </div>
         )}
@@ -2294,9 +2284,9 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               }}>
                 <option value="">Select invoice to receive</option>
                 {records.filter(r => 
-                  r.current_location === 'satara' && 
-                  (r.status === 'ready' || r.status === 'with_karagir') &&
-                  r.transfer_status === 'sent_to_koregaon'
+                  // Show items sent to Koregaon OR ready at Satara (from Receive from Karagir)
+                  (r.current_location === 'satara' && (r.status === 'ready' || r.status === 'with_karagir') && r.transfer_status === 'sent_to_koregaon') ||
+                  (r.current_location === 'satara' && r.status === 'ready')
                 ).map(r => (
                   <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
                     {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery}) {r.status === 'ready' ? '✓ Ready' : 'In repair'}
@@ -2360,7 +2350,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item is not at Koregaon</p>
             )}
             
-            {records.filter(r => r.current_location === 'satara' && (r.status === 'ready' || r.status === 'with_karagir') && r.transfer_status === 'sent_to_koregaon').length === 0 && (
+            {records.filter(r => (r.current_location === 'satara' && (r.status === 'ready' || r.status === 'with_karagir') && r.transfer_status === 'sent_to_koregaon') || (r.current_location === 'satara' && r.status === 'ready')).length === 0 && (
               <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No items to receive from Satara.</p>
             )}
           </div>
