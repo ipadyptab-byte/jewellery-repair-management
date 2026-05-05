@@ -1841,10 +1841,8 @@ export default function App() {
                   {records.filter(r => {
                     // Only JR-KO series
                     if (!r.doc_num?.startsWith('JR-KO')) return false
-                    // At Satara: only show records from Satara (not transferred from Koregaon)
-                    if (cfgLocation === 'satara') return r.location === 'satara' && r.status === 'ready'
-                    // At Koregaon: show only records at koregaon
-                    return r.current_location === 'koregaon' && r.status === 'ready'
+                    // Show ready records at current location
+                    return r.current_location === cfgLocation && r.status === 'ready'
                   }).map((r: RepairRecord) => (
                     <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
                       {r.docNum || r.doc_num} — {r.name || r.customer_name} ({r.jewellery || r.item_type})
