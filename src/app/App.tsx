@@ -2181,22 +2181,14 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <option value="">Select invoice to receive</option>
                 {records.filter(r => 
                   r.status === 'ready' &&
-                  r.current_location === cfgLocation &&
                   r.location !== cfgLocation &&
+                  r.current_location === cfgLocation &&
                   (r.doc_num?.startsWith('JR-KO') || r.docNum?.startsWith('JR-KO'))
                 ).map(r => (
                   <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
                     {r.docNum || r.doc_num} — {r.name} (₹{r.finalAmount || r.final_amount})
                   </option>
                 ))}
-                {records.filter(r => 
-                  r.status === 'ready' &&
-                  r.current_location === cfgLocation &&
-                  r.location !== cfgLocation &&
-                  (r.doc_num?.startsWith('JR-KO') || r.docNum?.startsWith('JR-KO'))
-                ).length === 0 && (
-                  <p style={{fontSize:12,color:'#666',marginTop:8}}>No records to receive from other location</p>
-                )}
               </select>
             </div>
             
