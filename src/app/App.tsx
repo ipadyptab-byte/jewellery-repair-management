@@ -1814,6 +1814,15 @@ export default function App() {
             </div>
           )}
           
+          {/* Show JR-KO ready to transfer at Satara - for Satara location only */}
+          {cfgLocation === 'satara' && records.filter(r => (r.current_location === 'satara' || r.location === 'satara') && (r.status === 'ready' || r.status === 'with_karagir') && ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))).length > 0 && (
+            <div className="dash-tile" onClick={() => openPage('transfer')}>
+              <div className="tile-icon" style={{ background: '#E0E7FF' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4338CA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg></div>
+              <div className="tile-label">📤 Ready for Koregaon</div>
+              <div className="tile-desc">{records.filter(r => (r.current_location === 'satara' || r.location === 'satara') && (r.status === 'ready' || r.status === 'with_karagir') && ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))).length} JR-KO items</div>
+            </div>
+          )}
+          
           {/* Common */}
           <div className="dash-tile" onClick={() => openPage('track')}>
             <div className="tile-icon" style={{ background: '#EDE9FE' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35M11 8v3l2 2" /></svg></div>
@@ -1837,7 +1846,7 @@ export default function App() {
           
           <div className="dash-tile" onClick={() => openPage('deliver')}>
             <div className="tile-icon" style={{ background: '#DCFCE7' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg></div>
-            <div className="tile-label">Deliver to Customer</div>
+            <div className="tile-label">{cfgLocation === 'koregaon' ? 'Deliver at Satara' : 'Deliver to Customer'}</div>
             <div className="tile-desc">Deliver jewellery &amp; send OTP on WhatsApp</div>
           </div>
           <div className="dash-tile tile-wide" onClick={() => openPage('settings')}>
@@ -1856,7 +1865,7 @@ export default function App() {
       <div className={`page ${page === 'deliver' ? 'active' : ''}`}>
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
         <div className="card">
-          <div className="card-title">📦 Deliver to Customer</div>
+          <div className="card-title">{cfgLocation === 'koregaon' ? '📦 Deliver at Satara' : '📦 Deliver to Customer'}</div>
           
           {(!deliverSelected || !deliverDoc) && (
             <>
@@ -1865,8 +1874,8 @@ export default function App() {
                 <select value={deliverDoc || ''} onChange={e => setDeliverDoc(e.target.value)}>
                   <option value="">Select ready invoice</option>
                   {records.filter(r => {
-                    // For Koregaon: show only records that are at koregaon (received from Satara)
-                    if (cfgLocation === 'koregaon') return r.current_location === 'koregaon' && r.status === 'ready'
+                    // For Koregaon: show only records that are at koregaon and received from Satara (transfer_status)
+                    if (cfgLocation === 'koregaon') return r.current_location === 'koregaon' && r.status === 'ready' && (r.transfer_status === 'received_from_satara' || (r.docNum || r.doc_num || '').startsWith('JR-KO-'))
                     // For Satara: show all ready records
                     return r.status === 'ready'
                   }).map((r: RepairRecord) => (
@@ -2184,24 +2193,99 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         )}
       </div>
 
-      {/* ── TRANSFER (Koregaon only) ── */}
-      {cfgLocation === 'koregaon' && (
+      {/* ── TRANSFER (Satara & Koregaon) ── */}
+      {(cfgLocation === 'koregaon' || cfgLocation === 'satara') && (
       <div className={`page ${page === 'transfer' ? 'active' : ''}`}>
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
         
-        {/* Transfer Tabs */}
+        {/* Transfer tabs - different for each location */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          <button className={`btn ${transferPage === 'incoming' ? 'btn-primary' : ''}`} onClick={() => setTransferPage('incoming')}>📥 Receive from Satara</button>
-          <button className={`btn ${transferPage === 'outgoing' ? 'btn-primary' : ''}`} onClick={() => setTransferPage('outgoing')}>📤 Send to Satara</button>
+          {cfgLocation === 'koregaon' && (
+            <>
+              <button className={`btn ${transferPage === 'incoming' ? 'btn-primary' : ''}`} onClick={() => setTransferPage('incoming')}>📥 Receive from Satara</button>
+              <button className={`btn ${transferPage === 'outgoing' ? 'btn-primary' : ''}`} onClick={() => setTransferPage('outgoing')}>📤 Send to Satara</button>
+            </>
+          )}
+          {cfgLocation === 'satara' && (
+            <button className={`btn ${transferPage === 'outgoing' ? 'btn-primary' : ''}`} onClick={() => setTransferPage('outgoing')}>📤 Send to Koregaon</button>
+          )}
         </div>
 
-        {/* Incoming: Receive from Satara */}
-        {transferPage === 'incoming' && (
+        {/* At Satara: Show JR-KO documents ready to send to Koregaon */}
+        {cfgLocation === 'satara' && transferPage !== 'incoming' && (
+          <div className="card">
+            <div className="card-title">📤 Send JR-KO to Koregaon</div>
+            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Select ready JR-KO documents to send to Koregaon</p>
+            
+            <div className="field">
+              <label>Select Invoice <span className="req">*</span></label>
+              <select value={transferDoc || ''} onChange={e => {
+                setTransferDoc(e.target.value)
+                const rec = records.find(r => (r.docNum || r.doc_num) === e.target.value)
+                setTransferRec(rec || null)
+              }}>
+                <option value="">Select JR-KO invoice to send</option>
+                {records.filter(r => 
+                  // Find all JR-KO documents at Satara that are ready or with_karagir
+                  (r.current_location === 'satara' || r.location === 'satara') && 
+                  (r.status === 'ready' || r.status === 'with_karagir') &&
+                  ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))
+                ).map(r => (
+                  <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
+                    {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery}) {r.status === 'ready' ? '✓ Ready' : 'In repair'}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {transferRec && (
+              <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                <div style={{ fontWeight: 600 }}>{transferRec.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.metal} {transferRec.jewellery}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.weight} g | &#8377; {transferRec.finalAmount || transferRec.final_amount}</div>
+              </div>
+            )}
+            
+            {transferRec && (transferRec.current_location === 'satara' || transferRec.location === 'satara') && (transferRec.status === 'ready' || transferRec.status === 'with_karagir') && (
+              <div className="btn-row">
+                <button className="btn btn-primary" onClick={async () => {
+                  try {
+                    const response = await fetch('/api/records', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        doc_num: transferRec.docNum || transferRec.doc_num,
+                        current_location: 'koregaon',
+                        transfer_status: 'sent_to_koregaon'
+                      })
+                    })
+                    if (response.ok) {
+                      const recs = await fetch('/api/records')
+                      if (recs.ok) setRecords((await recs.json()).map(convertFromDB))
+                      showMessage('transfer', 'Item sent to Koregaon!', true)
+                      setTransferDoc('')
+                      setTransferRec(null)
+                    }
+                  } catch (e) {
+                    showMessage('transfer', 'Failed to send item', false)
+                  }
+                }}>📤 Send to Koregaon</button>
+              </div>
+            )}
+            
+            {records.filter(r => (r.current_location === 'satara' || r.location === 'satara') && (r.status === 'ready' || r.status === 'with_karagir') && ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))).length === 0 && (
+              <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No JR-KO items ready to send to Koregaon.</p>
+            )}
+          </div>
+        )}
+
+        {/* Incoming: Receive from Satara (Koregaon only) */}
+        {cfgLocation === 'koregaon' && transferPage === 'incoming' && (
           <div className="card">
             <div className="card-title">📥 Receive from Satara</div>
             <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Select repaired items received from Satara</p>
             
-            {/* Filter: items at Satara that are ready or with_karagir */}
+            {/* Filter: items at Koregaon that were sent from Satara */}
             <div className="field">
               <label>Select Invoice <span className="req">*</span></label>
               <select value={transferDoc || ''} onChange={e => {
@@ -2211,8 +2295,9 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               }}>
                 <option value="">Select invoice to receive</option>
                 {records.filter(r => 
-                  r.current_location === 'satara' && 
-                  (r.status === 'ready' || r.status === 'with_karagir')
+                  r.current_location === 'koregaon' && 
+                  (r.status === 'ready' || r.status === 'with_karagir') &&
+                  ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))
                 ).map(r => (
                   <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
                     {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery}) {r.status === 'ready' ? '✓ Ready' : 'In repair'}
@@ -2272,12 +2357,12 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </div>
             )}
             
-            {transferRec && transferRec.current_location !== 'satara' && (
-              <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item is not at Satara</p>
+            {transferRec && transferRec.current_location !== 'koregaon' && (
+              <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item is not at Koregaon</p>
             )}
             
-            {records.filter(r => r.current_location === 'satara' && (r.status === 'ready' || r.status === 'with_karagir')).length === 0 && (
-              <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No items to receive from Satara.</p>
+            {records.filter(r => r.current_location === 'koregaon' && (r.status === 'ready' || r.status === 'with_karagir') && ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))).length === 0 && (
+              <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No JR-KO items to receive from Satara.</p>
             )}
           </div>
         )}
