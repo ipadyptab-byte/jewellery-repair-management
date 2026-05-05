@@ -2295,9 +2295,9 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               }}>
                 <option value="">Select invoice to receive</option>
                 {records.filter(r => 
-                  r.current_location === 'koregaon' && 
+                  r.current_location === 'satara' && 
                   (r.status === 'ready' || r.status === 'with_karagir') &&
-                  ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))
+                  r.transfer_status === 'sent_to_koregaon'
                 ).map(r => (
                   <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
                     {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery}) {r.status === 'ready' ? '✓ Ready' : 'In repair'}
@@ -2317,7 +2317,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </div>
             )}
             
-            {transferRec && transferRec.current_location === 'satara' && (transferRec.status === 'with_karagir' || transferRec.status === 'ready') && (
+            {transferRec && (transferRec.current_location === 'satara' || transferRec.current_location === 'koregaon') && (transferRec.status === 'with_karagir' || transferRec.status === 'ready') && (
               <div className="btn-row">
                 <button className="btn btn-primary" onClick={async () => {
                   try {
@@ -2361,8 +2361,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item is not at Koregaon</p>
             )}
             
-            {records.filter(r => r.current_location === 'koregaon' && (r.status === 'ready' || r.status === 'with_karagir') && ((r.docNum || r.doc_num || '').toLowerCase().includes('jr-ko') || (r.doc_num || '').toLowerCase().includes('jr-ko'))).length === 0 && (
-              <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No JR-KO items to receive from Satara.</p>
+            {records.filter(r => r.current_location === 'satara' && (r.status === 'ready' || r.status === 'with_karagir') && r.transfer_status === 'sent_to_koregaon').length === 0 && (
+              <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No items to receive from Satara.</p>
             )}
           </div>
         )}
