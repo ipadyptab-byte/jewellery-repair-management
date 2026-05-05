@@ -1839,9 +1839,11 @@ export default function App() {
                 <select value={deliverDoc || ''} onChange={e => setDeliverDoc(e.target.value)}>
                   <option value="">Select ready invoice</option>
                   {records.filter(r => {
-                    // For Koregaon: show only records that are at koregaon (received from Satara)
+                    // Only JR-KO series
+                    if (!r.doc_num?.startsWith('JR-KO')) return false
+                    // For Koregaon: show only records at koregaon (received from Satara)
                     if (cfgLocation === 'koregaon') return r.current_location === 'koregaon' && r.status === 'ready'
-                    // For Satara: show all ready records
+                    // For Satara: show all ready JR-KO records
                     return r.status === 'ready'
                   }).map((r: RepairRecord) => (
                     <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
