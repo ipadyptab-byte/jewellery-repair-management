@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
+// Debug endpoint to check records
+export async function OPTIONS() {
+  try {
+    const pool = sql()
+    const result = await pool.query(`SELECT doc_num, status, location, current_location FROM repair_records WHERE doc_num LIKE 'JR-KO%' ORDER BY created_at DESC`);
+    return NextResponse.json(result.rows);
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}
+
 export async function GET() {
   try {
     const pool = sql()
