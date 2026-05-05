@@ -1837,7 +1837,7 @@ export default function App() {
           
           <div className="dash-tile" onClick={() => openPage('deliver')}>
             <div className="tile-icon" style={{ background: '#DCFCE7' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg></div>
-            <div className="tile-label">{cfgLocation === 'koregaon' ? 'Deliver at Satara' : 'Deliver to Customer'}</div>
+            <div className="tile-label">Deliver to Customer</div>
             <div className="tile-desc">Deliver jewellery &amp; send OTP on WhatsApp</div>
           </div>
           <div className="dash-tile tile-wide" onClick={() => openPage('settings')}>
@@ -1856,7 +1856,7 @@ export default function App() {
       <div className={`page ${page === 'deliver' ? 'active' : ''}`}>
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
         <div className="card">
-          <div className="card-title">{cfgLocation === 'koregaon' ? '📦 Deliver at Satara' : '📦 Deliver to Customer'}</div>
+          <div className="card-title">📦 Deliver to Customer</div>
           
           {(!deliverSelected || !deliverDoc) && (
             <>
