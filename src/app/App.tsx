@@ -2180,10 +2180,12 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               }}>
                 <option value="">Select invoice to receive</option>
                 {records.filter(r => 
+                  r.status === 'ready' &&
+                  r.current_location === 'satara' &&
                   (r.doc_num?.startsWith('JR-KO') || r.docNum?.startsWith('JR-KO'))
                 ).map(r => (
                   <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
-                    {r.docNum || r.doc_num} — {r.name} ({r.status}) [{r.current_location}]
+                    {r.docNum || r.doc_num} — {r.name} (₹{r.finalAmount || r.final_amount})
                   </option>
                 ))}
               </select>
