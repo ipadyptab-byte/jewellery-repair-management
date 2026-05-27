@@ -146,6 +146,9 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
       ? (rec.final_amount || 0)
       : (rec.estimated_cost || rec.amount || 0)
 
+    // Check if amount is 0 or null/undefined
+    const displayAmount = (amount === 0 || amount === null || amount === undefined) ? 'Will Inform Later' : '₹' + amount.toLocaleString('en-IN')
+
     const docNumber = rec.doc_num // Already includes full doc_num like 'JR1001' or 'JR-KO-0001'
 
     return (
@@ -231,7 +234,7 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
               </table>
 
               <div className="total">
-                {isFinal ? 'Final Amount: ' : 'Estimated Amount: '} {amount === 0 ? 'Will Inform Later' : '₹' + amount.toLocaleString('en-IN')}
+                {isFinal ? 'Final Amount: ' : 'Estimated Amount: '} {displayAmount}
               </div>
 
               <div className="footer">
