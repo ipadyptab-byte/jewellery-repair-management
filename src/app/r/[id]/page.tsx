@@ -4,14 +4,12 @@ import { sql } from '@/lib/db'
 import { notFound } from 'next/navigation'
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
   searchParams?: { exp?: string }
 }
 
 export default async function InvoicePage({ params, searchParams }: PageProps) {
-  // In Next.js 15, params is a Promise
-  const resolvedParams = await params
-  const { id } = resolvedParams
+  const { id } = await params
 
   // Debug logging
   console.log('Invoice page requested - id:', id)
@@ -254,9 +252,14 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
     console.error('Invoice page error:', err)
     return (
       <html>
-        <body style={{ textAlign: 'center', padding: '40px' }}>
-          <h2>Server Error</h2>
+        <body style={{ textAlign: 'center', padding: '40px', fontFamily: 'Arial' }}>
+          <h2 style={{ color: '#c62828' }}>Server Error</h2>
           <p>Please try again later.</p>
+          {process.env.NODE_ENV === 'development' && err && (
+            <pre style={{ textAlign: 'left', background: '#f5f5f5', padding: '10px', marginTop: '20px' }}>
+              {String(err)}
+            </pre>
+          )}
         </body>
       </html>
     )
