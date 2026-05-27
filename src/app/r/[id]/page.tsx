@@ -144,16 +144,12 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
       ? (rec.final_amount || rec.amount || 0)
       : (rec.estimated_cost || rec.amount || 0)
 
-    // Ensure amount is a number (it might be a string "0" from DB)
-    const amountNum = Number(amount) || 0
-    
     // Check if amount is 0, null, or undefined - show "Will Inform Later" in all cases
+    const amountNum = Number(amount) || 0
     const isZeroOrNull = amountNum === 0 || amount === null || amount === undefined
     const displayAmount = isZeroOrNull ? 'Will Inform Later' : '₹' + amountNum.toLocaleString('en-IN')
 
     const docNumber = rec.doc_num // Already includes full doc_num like 'JR1001' or 'JR-KO-0001'
-    
-    console.log('Invoice page - docNum:', docNumber, 'isFinal:', isFinal, 'estimated_cost:', rec.estimated_cost, 'amount:', rec.amount, 'final_amount:', rec.final_amount, 'raw amount value:', amount, 'isZeroOrNull:', isZeroOrNull, 'displayAmount:', displayAmount)
 
     return (
       <html>
