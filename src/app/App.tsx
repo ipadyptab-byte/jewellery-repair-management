@@ -242,11 +242,15 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
 
   doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.text('Charges', pad, y); y += 5
   if (type === 'final') {
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFont('helvetica', 'normal'); doc.text(`&#8377; ${rec.amount}`, pad + 50, y); y += 5
+    if (rec.amount || rec.estimated_cost) {
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFont('helvetica', 'normal'); doc.text(`&#8377; ${rec.amount}`, pad + 50, y); y += 5
+    }
     doc.setFont('helvetica', 'bold'); doc.text('Final Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(`&#8377; ${rec.finalAmount}`, pad + 50, y); y += 5
   } else {
-    doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(`&#8377; ${rec.amount}`, pad + 50, y); y += 5
-    doc.setFontSize(8); doc.setTextColor(120, 120, 120); doc.text('(Final amount confirmed on delivery)', pad, y); doc.setTextColor(0, 0, 0); y += 5
+    if (rec.amount || rec.estimated_cost) {
+      doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(`&#8377; ${rec.amount}`, pad + 50, y); y += 5
+      doc.setFontSize(8); doc.setTextColor(120, 120, 120); doc.text('(Final amount confirmed on delivery)', pad, y); doc.setTextColor(0, 0, 0); y += 5
+    }
   }
   y += 2; doc.line(pad, y, W - pad, y); y += 6
 
@@ -330,11 +334,11 @@ function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shop
       <div class="row"><span class="label">Metal:</span><span class="value">${metal}</span></div>
       <div class="divider"></div>
       ${isFinal ? `
-      <div class="row"><span class="label">Estimated:</span><span class="value">Rs ${amount}</span></div>
+      ${amount ? `<div class="row"><span class="label">Estimated:</span><span class="value">Rs ${amount}</span></div>` : ''}
       <div class="row bold big"><span class="label">Final:</span><span class="value">Rs ${finalAmount}</span></div>
-      ` : `
+      ` : amount ? `
       <div class="row bold big"><span class="label">Estimated:</span><span class="value">Rs ${amount}</span></div>
-      `}
+      ` : ''}
       <div class="divider"></div>
       <div class="footer">Thank you for trusting us!</div>
       <div class="btn-row">
@@ -1173,7 +1177,7 @@ export default function App() {
   const saveReceipt = async (): Promise<RepairRecord | null> => {
     // Validate: at least one jewellery item
     const validItems = repairItems.filter(i => i.metal && i.type && i.weight);
-    if (!rName || !rMobile || validItems.length === 0 || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields (at least one jewellery item).', false); return null }
+    if (!rName || !rMobile || validItems.length === 0 || !rDays || !rSalesman) { showMessage('receive', 'Please fill all required fields (at least one jewellery item).', false); return null }
     if (!/^\d{10}$/.test(rMobile)) { showMessage('receive', 'Enter valid 10-digit mobile.', false); return null }
 
     try {
@@ -1198,7 +1202,7 @@ export default function App() {
         phone_number: rMobile,
         item_type: firstItem.type,
         description: rDesc || '',
-        estimated_cost: parseFloat(rAmount),
+        estimated_cost: rAmount ? parseFloat(rAmount) : null,
         status: 'received',
         master_id: null,
         notes: '',
@@ -1272,7 +1276,7 @@ export default function App() {
     setRepairItems(items);
     
     setRDays(record.deliveryDate ? Math.ceil((new Date(record.deliveryDate).getTime() - new Date(record.receivedDate || record.received_date || new Date()).getTime()) / (1000 * 60 * 60 * 24)).toString() : '7');
-    setRAmount((record.amount || record.estimated_cost || 0).toString());
+    setRAmount(String(record.amount || record.estimated_cost || ''));
     setRSalesman(record.salesman || '');
     setRDesc(record.desc || record.description || '');
     setPage('receive');
@@ -1287,7 +1291,7 @@ export default function App() {
   const updateReceipt = async () => {
     if (!editingRecord) return;
     const validItems = repairItems.filter(i => i.metal && i.type && i.weight);
-    if (!rName || !rMobile || validItems.length === 0 || !rDays || !rAmount || !rSalesman) { showMessage('receive', 'Please fill all required fields (at least one jewellery item).', false); return }
+    if (!rName || !rMobile || validItems.length === 0 || !rDays || !rSalesman) { showMessage('receive', 'Please fill all required fields (at least one jewellery item).', false); return }
     if (!/^\d{10}$/.test(rMobile)) { showMessage('receive', 'Enter valid 10-digit mobile.', false); return }
 
     try {
@@ -1301,7 +1305,7 @@ export default function App() {
         phone_number: rMobile,
         item_type: firstItem.type,
         description: rDesc || '',
-        estimated_cost: parseFloat(rAmount),
+        estimated_cost: rAmount ? parseFloat(rAmount) : null,
         status: editingRecord.status,
         master_id: editingRecord.master_id,
         notes: editingRecord.notes || '',
@@ -2031,7 +2035,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
           </div>
           <div className="grid3">
             <div className="field"><label>Est. days <span className="req">*</span></label><input type="number" min="1" value={rDays} onChange={e => setRDays(e.target.value)} placeholder="e.g. 7" /></div>
-            <div className="field"><label>Est. amount (&#8377;) <span className="req">*</span></label><input type="number" value={rAmount} onChange={e => setRAmount(e.target.value)} placeholder="e.g. 500" /></div>
+            <div className="field"><label>Est. amount (&#8377;)</label><input type="number" value={rAmount} onChange={e => setRAmount(e.target.value)} placeholder="e.g. 500" /></div>
             <div className="field"><label>Salesman <span className="req">*</span></label><select value={rSalesman} onChange={e => setRSalesman(e.target.value)}><option value="">Select salesman</option>{salesmen.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
           </div>
           <div className="field"><label>Repair description</label><textarea rows={2} value={rDesc} onChange={e => setRDesc(e.target.value)} placeholder="Describe the repair work..." /></div>
