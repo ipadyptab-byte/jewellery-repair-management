@@ -374,8 +374,13 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp, shopName, shopAddress }: { rec: RepairRecord; type: 'received' | 'final'; baseUrl: string; expDays: number; onMsg: (m: string, ok: boolean) => void; onSendWhatsApp: () => Promise<void>; shopName?: string; shopAddress?: string }) {
   const { url, expDate } = generateInvoiceLink(rec.docNum || rec.doc_num, type, baseUrl, expDays)
   const displayExpiry = expDays === 0 ? '24 hours' : `${expDays} days`
+  
+  // Convert amount to number for comparison (DB might return "0" as string)
+  const estAmount = Number(rec.amount || rec.estimated_cost) || 0
+  const estChargesDisplay = estAmount === 0 ? 'Will Inform Later' : `&#8377; ${estAmount}`
+  
   const waMsg = type === 'received'
-    ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* ${(rec.amount || rec.estimated_cost) ? ((rec.amount || rec.estimated_cost) === 0 ? 'Will Inform Later' : '&#8377; ' + (rec.amount || rec.estimated_cost)) : 'Will Inform Later'}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${displayExpiry} — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
+    ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* ${estChargesDisplay}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${displayExpiry} — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
     : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* &#8377; ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${displayExpiry} — expires ${expDate})_\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
 
   const copy = () => navigator.clipboard.writeText(url).then(() => onMsg('Link copied!', true)).catch(() => onMsg('Copy failed', false))
