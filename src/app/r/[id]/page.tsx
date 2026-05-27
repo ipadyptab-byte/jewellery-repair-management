@@ -248,16 +248,17 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
         </body>
       </html>
     )
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('Invoice page error:', err)
+    const errorMessage = err instanceof Error ? err.message : String(err)
     return (
       <html>
         <body style={{ textAlign: 'center', padding: '40px', fontFamily: 'Arial' }}>
           <h2 style={{ color: '#c62828' }}>Server Error</h2>
           <p>Please try again later.</p>
-          {process.env.NODE_ENV === 'development' && err && (
+          {process.env.NODE_ENV === 'development' && (
             <pre style={{ textAlign: 'left', background: '#f5f5f5', padding: '10px', marginTop: '20px' }}>
-              {String(err)}
+              {errorMessage}
             </pre>
           )}
         </body>
