@@ -231,8 +231,7 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
               </table>
 
               <div className="total">
-                {isFinal ? 'Final Amount: ' : 'Estimated Amount: '} ₹
-                {amount.toLocaleString('en-IN')}
+                {isFinal ? 'Final Amount: ' : 'Estimated Amount: '} {amount === 0 ? 'Will Inform Later' : '₹' + amount.toLocaleString('en-IN')}
               </div>
 
               <div className="footer">
