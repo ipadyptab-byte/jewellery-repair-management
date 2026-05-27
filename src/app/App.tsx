@@ -241,19 +241,16 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
   y += 2; doc.line(pad, y, W - pad, y); y += 6
 
   doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.text('Charges', pad, y); y += 5
+  const estAmtValue = rec.amount || rec.estimated_cost
+  const estAmtDisplay = !estAmtValue ? 'Will Inform Later' : `&#8377; ${estAmtValue}`
+  
   if (type === 'final') {
-    if (rec.amount || rec.estimated_cost) {
-      const estAmt = (rec.amount || rec.estimated_cost) === 0 ? 'Will Inform Later' : `&#8377; ${rec.amount}`
-      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFont('helvetica', 'normal'); doc.text(estAmt, pad + 50, y); y += 5
-    }
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFont('helvetica', 'normal'); doc.text(estAmtDisplay, pad + 50, y); y += 5
     doc.setFont('helvetica', 'bold'); doc.text('Final Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(`&#8377; ${rec.finalAmount}`, pad + 50, y); y += 5
   } else {
-    if (rec.amount || rec.estimated_cost) {
-      const estAmt = (rec.amount || rec.estimated_cost) === 0 ? 'Will Inform Later' : `&#8377; ${rec.amount}`
-      doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(estAmt, pad + 50, y); y += 5
-      if ((rec.amount || rec.estimated_cost) !== 0) {
-        doc.setFontSize(8); doc.setTextColor(120, 120, 120); doc.text('(Final amount confirmed on delivery)', pad, y); doc.setTextColor(0, 0, 0); y += 5
-      }
+    doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(estAmtDisplay, pad + 50, y); y += 5
+    if (estAmtValue) {
+      doc.setFontSize(8); doc.setTextColor(120, 120, 120); doc.text('(Final amount confirmed on delivery)', pad, y); doc.setTextColor(0, 0, 0); y += 5
     }
   }
   y += 2; doc.line(pad, y, W - pad, y); y += 6
@@ -338,11 +335,11 @@ function printThermalReceipt(rec: RepairRecord, type: 'received' | 'final', shop
       <div class="row"><span class="label">Metal:</span><span class="value">${metal}</span></div>
       <div class="divider"></div>
       ${isFinal ? `
-      ${amount ? `<div class="row"><span class="label">Estimated:</span><span class="value">${amount === 0 ? 'Will Inform Later' : 'Rs ' + amount}</span></div>` : ''}
+      <div class="row"><span class="label">Estimated:</span><span class="value">${amount === 0 ? 'Will Inform Later' : 'Rs ' + amount}</span></div>
       <div class="row bold big"><span class="label">Final:</span><span class="value">Rs ${finalAmount}</span></div>
-      ` : amount ? `
+      ` : `
       <div class="row bold big"><span class="label">Estimated:</span><span class="value">${amount === 0 ? 'Will Inform Later' : 'Rs ' + amount}</span></div>
-      ` : ''}
+      `}
       <div class="divider"></div>
       <div class="footer">Thank you for trusting us!</div>
       <div class="btn-row">
@@ -378,7 +375,7 @@ function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp, shop
   const { url, expDate } = generateInvoiceLink(rec.docNum || rec.doc_num, type, baseUrl, expDays)
   const displayExpiry = expDays === 0 ? '24 hours' : `${expDays} days`
   const waMsg = type === 'received'
-    ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* ${(rec.amount || rec.estimated_cost || 0) === 0 ? 'Will Inform Later' : '&#8377; ' + (rec.amount || rec.estimated_cost)}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${displayExpiry} — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
+    ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* ${(rec.amount || rec.estimated_cost) ? ((rec.amount || rec.estimated_cost) === 0 ? 'Will Inform Later' : '&#8377; ' + (rec.amount || rec.estimated_cost)) : 'Will Inform Later'}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${displayExpiry} — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
     : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* &#8377; ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${displayExpiry} — expires ${expDate})_\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
 
   const copy = () => navigator.clipboard.writeText(url).then(() => onMsg('Link copied!', true)).catch(() => onMsg('Copy failed', false))
@@ -1763,21 +1760,17 @@ export default function App() {
               <div className="divider"></div>
               {printRec.type === 'final' ? (
                 <>
-                  {(printRec.rec.amount || printRec.rec.estimated_cost) ? (
-                    <div className="row"><span className="label">Estimated:</span><span className="value">{(printRec.rec.amount || printRec.rec.estimated_cost) === 0 ? 'Will Inform Later' : 'Rs ' + (printRec.rec.amount || printRec.rec.estimated_cost)}</span></div>
-                  ) : null}
+                  <div className="row"><span className="label">Estimated:</span><span className="value">{(printRec.rec.amount || printRec.rec.estimated_cost) === 0 ? 'Will Inform Later' : 'Rs ' + (printRec.rec.amount || printRec.rec.estimated_cost)}</span></div>
                   <div className="row bold big"><span className="label">Final:</span><span className="value">Rs {printRec.rec.finalAmount || printRec.rec.final_amount || 0}</span></div>
                 </>
               ) : (
-                (printRec.rec.amount || printRec.rec.estimated_cost) ? (
-                  <div className="row bold big"><span className="label">Estimated:</span><span className="value">{(printRec.rec.amount || printRec.rec.estimated_cost) === 0 ? 'Will Inform Later' : 'Rs ' + (printRec.rec.amount || printRec.rec.estimated_cost)}</span></div>
-                ) : null
+                <div className="row bold big"><span className="label">Estimated:</span><span className="value">{(printRec.rec.amount || printRec.rec.estimated_cost) === 0 ? 'Will Inform Later' : 'Rs ' + (printRec.rec.amount || printRec.rec.estimated_cost)}</span></div>
               )}
               <div className="divider"></div>
               <div className="footer">Thank you for trusting us!</div>
             </div>
             <div className="btn-row" style={{ marginTop: '15px' }}>
-              <button className="btn btn-primary" onClick={() => { if (printRec) { const rec = printRec.rec; const type = printRec.type; const shopName = cfgShop || 'Devi Jewellers'; const address = cfgAddr || 'Nashik, Maharashtra'; const isFinal = type === 'final'; const docNo = rec.docNum || rec.doc_num || ''; const dateVal = fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString()); const customer = rec.name || rec.customer_name || ''; const mobile = rec.mobile || ''; const item = rec.jewellery || rec.item_type || ''; const metal = rec.metal || ''; const amount = rec.amount || rec.estimated_cost || 0; const finalAmount = rec.finalAmount || rec.final_amount || 0; const printContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Print Receipt</title><style>*{box-sizing:border-box;margin:0;padding:0}@page{size:76mm 150mm;margin:0}html,body{width:72mm;margin:0;padding:1mm;font-family:Arial Black,Arial,Helvetica,sans-serif;font-size:14px;line-height:1.2;color:#000;background:#fff;-webkit-font-smoothing:none}.header{text-align:center;font-weight:900;font-size:18px;margin-bottom:2px;color:#000}.address{text-align:center;font-weight:bold;font-size:10px;margin-bottom:4px;color:#000}.divider{border-top:2px solid #000;margin:4px 0}.title{text-align:center;font-weight:900;font-size:16px;margin:4px 0;color:#000}.row{display:flex;justify-content:space-between;padding:2px 0;color:#000;font-weight:bold}.label{color:#000;font-weight:bold}.value{font-weight:900;color:#000}.bold{font-weight:900}.big{font-size:16px}.footer{text-align:center;font-weight:bold;font-size:10px;margin-top:5px;color:#000}</style></head><body><div class="header">${shopName}</div><div class="address">${address}</div><div class="divider"></div><div class="title">${isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div><div class="divider"></div><div class="row"><span class="label">Doc No:</span><span class="value">${docNo}</span></div><div class="row"><span class="label">Date:</span><span class="value">${dateVal}</span></div><div class="row"><span class="label">Customer:</span><span class="value">${customer}</span></div><div class="row"><span class="label">Mobile:</span><span class="value">${mobile}</span></div><div class="divider"></div><div class="row"><span class="label">Item:</span><span class="value">${item}</span></div><div class="row"><span class="label">Metal:</span><span class="value">${metal}</span></div><div class="divider"></div>${isFinal ? (amount ? `<div class="row"><span class="label">Estimated:</span><span class="value">${amount === 0 ? 'Will Inform Later' : 'Rs ' + amount}</span></div>` : '') + `<div class="row bold big"><span class="label">Final:</span><span class="value">Rs ${finalAmount}</span></div>` : (amount ? `<div class="row bold big"><span class="label">Estimated:</span><span class="value">${amount === 0 ? 'Will Inform Later' : 'Rs ' + amount}</span></div>` : '')}<div class="divider"></div><div class="footer">Thank you for trusting us!</div><script>window.onload=function(){window.print();window.close()}</script></body></html>`; const printWindow = window.open('', '_blank'); if (printWindow) { printWindow.document.open(); printWindow.document.write(printContent); printWindow.document.close(); } setPrintRec(null); setPage('dashboard') } }}>🖨️ Print</button>
+              <button className="btn btn-primary" onClick={() => { if (printRec) { const rec = printRec.rec; const type = printRec.type; const shopName = cfgShop || 'Devi Jewellers'; const address = cfgAddr || 'Nashik, Maharashtra'; const isFinal = type === 'final'; const docNo = rec.docNum || rec.doc_num || ''; const dateVal = fmtDate(rec.receivedDate || rec.created_at || new Date().toISOString()); const customer = rec.name || rec.customer_name || ''; const mobile = rec.mobile || ''; const item = rec.jewellery || rec.item_type || ''; const metal = rec.metal || ''; const amount = rec.amount || rec.estimated_cost || 0; const finalAmount = rec.finalAmount || rec.final_amount || 0; const printContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Print Receipt</title><style>*{box-sizing:border-box;margin:0;padding:0}@page{size:76mm 150mm;margin:0}html,body{width:72mm;margin:0;padding:1mm;font-family:Arial Black,Arial,Helvetica,sans-serif;font-size:14px;line-height:1.2;color:#000;background:#fff;-webkit-font-smoothing:none}.header{text-align:center;font-weight:900;font-size:18px;margin-bottom:2px;color:#000}.address{text-align:center;font-weight:bold;font-size:10px;margin-bottom:4px;color:#000}.divider{border-top:2px solid #000;margin:4px 0}.title{text-align:center;font-weight:900;font-size:16px;margin:4px 0;color:#000}.row{display:flex;justify-content:space-between;padding:2px 0;color:#000;font-weight:bold}.label{color:#000;font-weight:bold}.value{font-weight:900;color:#000}.bold{font-weight:900}.big{font-size:16px}.footer{text-align:center;font-weight:bold;font-size:10px;margin-top:5px;color:#000}</style></head><body><div class="header">${shopName}</div><div class="address">${address}</div><div class="divider"></div><div class="title">${isFinal ? 'FINAL INVOICE' : 'REPAIR RECEIPT'}</div><div class="divider"></div><div class="row"><span class="label">Doc No:</span><span class="value">${docNo}</span></div><div class="row"><span class="label">Date:</span><span class="value">${dateVal}</span></div><div class="row"><span class="label">Customer:</span><span class="value">${customer}</span></div><div class="row"><span class="label">Mobile:</span><span class="value">${mobile}</span></div><div class="divider"></div><div class="row"><span class="label">Item:</span><span class="value">${item}</span></div><div class="row"><span class="label">Metal:</span><span class="value">${metal}</span></div><div class="divider"></div>${isFinal ? `<div class="row"><span class="label">Estimated:</span><span class="value">${amount === 0 ? 'Will Inform Later' : 'Rs ' + amount}</span></div><div class="row bold big"><span class="label">Final:</span><span class="value">Rs ${finalAmount}</span></div>` : `<div class="row bold big"><span class="label">Estimated:</span><span class="value">${amount === 0 ? 'Will Inform Later' : 'Rs ' + amount}</span></div>`}<div class="divider"></div><div class="footer">Thank you for trusting us!</div><script>window.onload=function(){window.print();window.close()}</script></body></html>`; const printWindow = window.open('', '_blank'); if (printWindow) { printWindow.document.open(); printWindow.document.write(printContent); printWindow.document.close(); } setPrintRec(null); setPage('dashboard') } }}>🖨️ Print</button>
               <button className="btn" style={{ backgroundColor: '#25D366', color: 'white' }} onClick={async () => { if (printRec) { try { await sendWhatsApp(printRec.rec, printRec.type); alert('WhatsApp sent!'); } catch { alert('Failed to send WhatsApp'); } } }}>💬 WhatsApp</button>
               <button className="btn" onClick={() => setPrintRec(null)}>🔙 Return to Dashboard</button>
             </div>
