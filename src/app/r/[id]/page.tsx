@@ -9,7 +9,13 @@ interface PageProps {
 }
 
 export default async function InvoicePage({ params, searchParams }: PageProps) {
-  const { id } = params
+  // In Next.js 15, params is a Promise
+  const resolvedParams = await params
+  const { id } = resolvedParams
+
+  // Debug logging
+  console.log('Invoice page requested - id:', id)
+  console.log('searchParams:', searchParams)
 
   // ✅ Extract doc_num from ID
   // Format: INV-{docNum}[-suffix][-token] or INV-{docNum}[-final][-token]
@@ -23,10 +29,11 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
     if (rest.includes('-final-')) {
       docNum = rest.split('-final-')[0]
     } else {
-      // For formats like INV-JR-KO-0001-abc, extract the full doc_num
+      // For formats like INV-JR-KO-0001-abc or INV-JR1116-token
       // The doc_num is everything before the last part if it looks like a token
       const parts = rest.split('-')
-      if (parts.length > 2 && parts[parts.length - 1].length < 10) {
+      // Check if last part looks like a token (short alphanumeric string)
+      if (parts.length >= 2 && parts[parts.length - 1].length < 15 && /^[a-z0-9]+$/i.test(parts[parts.length - 1])) {
         // Looks like a token at the end, join all but last
         docNum = parts.slice(0, -1).join('-')
       } else {
@@ -36,6 +43,8 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
   } else {
     docNum = id
   }
+
+  console.log('Extracted docNum:', docNum, 'from id:', id)
 
   // 🔐 Expiry check
   if (searchParams?.exp) {
@@ -88,6 +97,7 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
     )
 
     if (result.rows.length === 0) {
+      console.log('Record not found for doc_num:', docNum, 'original id:', id)
       notFound()
     }
 
@@ -235,6 +245,7 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
       </html>
     )
   } catch (err) {
+    console.error('Invoice page error:', err)
     return (
       <html>
         <body style={{ textAlign: 'center', padding: '40px' }}>
