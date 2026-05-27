@@ -75,6 +75,10 @@ export async function GET(
     // Generate HTML invoice (view-only, no print)
     const amount = isFinal ? (rec.final_amount || rec.amount || 0) : (rec.estimated_cost || rec.amount || 0)
     
+    // Check if amount is 0, null, or undefined - show "Will Inform Later" in all cases
+    const isZeroOrNull = !amount
+    const displayAmount = isZeroOrNull ? 'Will Inform Later' : '&#8377;' + amount.toLocaleString('en-IN')
+    
     const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -160,7 +164,7 @@ export async function GET(
       </tbody>
     </table>
     <div class="total">
-      ${isFinal ? 'Final Amount: ' : 'Estimated Amount: '} &#8377;${amount.toLocaleString('en-IN')}
+      ${isFinal ? 'Final Amount: ' : 'Estimated Amount: '} ${displayAmount}
     </div>
     <div class="footer">
       <p>Thank you for trusting ${shopName}!</p>
