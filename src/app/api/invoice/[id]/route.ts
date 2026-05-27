@@ -75,13 +75,16 @@ export async function GET(
     // Generate HTML invoice (view-only, no print)
     const amount = isFinal ? (rec.final_amount || rec.amount || 0) : (rec.estimated_cost || rec.amount || 0)
     
+    // Ensure amount is a number (it might be a string "0" from DB)
+    const amountNum = Number(amount) || 0
+    
     // Debug: Log actual database values
-    console.log('Invoice API - docNum:', docNum, 'isFinal:', isFinal, 'estimated_cost:', rec.estimated_cost, 'amount:', rec.amount, 'final_amount:', rec.final_amount, 'raw amount value:', amount)
+    console.log('Invoice API - docNum:', docNum, 'isFinal:', isFinal, 'estimated_cost:', rec.estimated_cost, 'amount:', rec.amount, 'final_amount:', rec.final_amount, 'raw amount value:', amount, 'amountNum:', amountNum)
     
     // Check if amount is 0, null, or undefined - show "Will Inform Later" in all cases
-    const isZeroOrNull = !amount
+    const isZeroOrNull = amountNum === 0 || amount === null || amount === undefined
     console.log('Invoice API - isZeroOrNull:', isZeroOrNull)
-    const displayAmount = isZeroOrNull ? 'Will Inform Later' : '&#8377;' + amount.toLocaleString('en-IN')
+    const displayAmount = isZeroOrNull ? 'Will Inform Later' : '&#8377;' + amountNum.toLocaleString('en-IN')
     
     const html = `<!DOCTYPE html>
 <html>
