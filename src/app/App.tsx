@@ -1765,11 +1765,11 @@ export default function App() {
               <div className="divider"></div>
               {printRec.type === 'final' ? (
                 <>
-                  <div className="row"><span className="label">Estimated:</span><span className="value">{Number(printRec.rec.amount || printRec.rec.estimated_cost) === 0 ? 'Will Inform Later' : 'Rs ' + (Number(printRec.rec.amount) || printRec.rec.estimated_cost)}</span></div>
+                  <div className="row"><span className="label">Estimated:</span><span className="value">{(() => { const amt = Number(printRec.rec.amount ?? printRec.rec.estimated_cost) || 0; return amt === 0 ? 'Will Inform Later' : `Rs ${amt}`; })()}</span></div>
                   <div className="row bold big"><span className="label">Final:</span><span className="value">Rs {printRec.rec.finalAmount || printRec.rec.final_amount || 0}</span></div>
                 </>
               ) : (
-                <div className="row bold big"><span className="label">Estimated:</span><span className="value">{Number(printRec.rec.amount || printRec.rec.estimated_cost) === 0 ? 'Will Inform Later' : 'Rs ' + (Number(printRec.rec.amount) || printRec.rec.estimated_cost)}</span></div>
+                <div className="row bold big"><span className="label">Estimated:</span><span className="value">{(() => { const amt = Number(printRec.rec.amount ?? printRec.rec.estimated_cost) || 0; return amt === 0 ? 'Will Inform Later' : `Rs ${amt}`; })()}</span></div>
               )}
               <div className="divider"></div>
               <div className="footer">Thank you for trusting us!</div>
