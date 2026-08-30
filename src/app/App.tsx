@@ -391,8 +391,6 @@ export default function App() {
   const karagirs   = safeMasters.filter(m => m.type === 'karagir')
   const locations  = safeMasters.filter(m => m.type === 'location')
 
-  const cfgLinkBase = settings['linkBase'] || 'https://invoice.devijewellers.in'
-  const cfgExpiry   = parseInt(settings['expiry'] || '10') || 10
 
   // Receive form
   const [rName, setRName] = useState(''); const [rMobile, setRMobile] = useState(''); const [rMetal, setRMetal] = useState(''); const [rType, setRType] = useState(''); const [rWeight, setRWeight] = useState(''); const [rDays, setRDays] = useState(''); const [rAmount, setRAmount] = useState(''); const [rSalesman, setRSalesman] = useState(''); const [rDesc, setRDesc] = useState(''); const [savedRec, setSavedRec] = useState<RepairRecord | null>(null)
@@ -669,7 +667,6 @@ export default function App() {
   const goBack   = () => { setPage('dashboard'); window.scrollTo(0, 0); loadData() }
 
   const koRecord = records.find(r => r.docNum === koDoc)
-  const kiRecord = records.find(r => r.docNum === kiDoc)
 
   const stats = {
     total: records.length,
