@@ -29,6 +29,7 @@
     --border2:#444444;
   }
 }
+<<<<<<< HEAD
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased}
 @supports (padding-top: env(safe-area-inset-top)) {
   body {
@@ -63,6 +64,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;f
   border: 1px solid var(--border);
 }
 
+=======
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh}
+.app{max-width:900px;margin:0 auto;padding:1rem}
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
 
 /* Header */
 .header{background:var(--brand);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:1.25rem}

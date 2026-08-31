@@ -12,11 +12,14 @@ export async function GET() {
     console.log('Settings query result rows:', result.rows.length);
     console.log('Settings rows:', JSON.stringify(result.rows));
 
+<<<<<<< HEAD
     const defaultLocations = [
       { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
       { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
     ];
 
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
     // Convert key-value pairs to structured object - use keys from schema
     const settings: any = {
       businessName: 'Devi Jewellers',
@@ -31,8 +34,11 @@ export async function GET() {
       taxRate: 0,
       invoiceLinkBase: '',
       invoiceExpiry: 10,
+<<<<<<< HEAD
       location: 'satara',
       locations: defaultLocations,
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
       // WhatsApp Route Mobile credentials
       whatsappRmUser: '',
       whatsappRmPass: '',
@@ -99,6 +105,7 @@ export async function GET() {
         case 'location':
           settings.location = row.value || 'satara';
           break;
+<<<<<<< HEAD
         case 'locations':
           try {
             const parsed = typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
@@ -109,6 +116,8 @@ export async function GET() {
             console.error('Error parsing locations JSON:', e);
           }
           break;
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
         case 'koregaon_seq':
           settings.koregaonSeq = parseInt(row.value) || 0;
           break;
@@ -134,12 +143,16 @@ export async function GET() {
       whatsappApiKey: '',
       whatsappApiUrl: '',
       currency: 'INR',
+<<<<<<< HEAD
       taxRate: 0,
       location: 'satara',
       locations: [
         { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
         { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
       ]
+=======
+      taxRate: 0
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
     });
   }
 }
@@ -161,7 +174,10 @@ export async function POST(request: NextRequest) {
       invoiceLinkBase,
       invoiceExpiry,
       location,
+<<<<<<< HEAD
       locations,
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
       // WhatsApp Route Mobile credentials
       whatsappRmUser,
       whatsappRmPass,
@@ -205,7 +221,10 @@ export async function POST(request: NextRequest) {
     if (invoiceLinkBase !== undefined) settingsMap['invoice_link_base'] = invoiceLinkBase || '';
     if (invoiceExpiry !== undefined) settingsMap['invoice_expiry_days'] = String(invoiceExpiry);
     if (location !== undefined) settingsMap['location'] = location || 'satara';
+<<<<<<< HEAD
     if (locations !== undefined) settingsMap['locations'] = typeof locations === 'string' ? locations : JSON.stringify(locations);
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
     if (currency !== undefined) settingsMap['currency'] = currency || 'INR';
     if (taxRate !== undefined) settingsMap['tax_rate'] = String(taxRate);
     // Templates

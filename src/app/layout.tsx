@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
@@ -35,12 +36,26 @@ export const metadata: Metadata = {
     ],
     shortcut: '/favicon.ico'
   }
+=======
+import type { Metadata } from 'next'
+import './globals.css'
+
+export const metadata: Metadata = {
+  title: 'Devi Jewellers — Repair Management',
+  description: 'Jewellery Repair Management System — Gold | Silver | Diamonds | Pearls',
+  icons: { 
+    icon: '/favicon.ico',
+    apple: '/favicon.png',
+    shortcut: '/favicon.ico'
+  },
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+<<<<<<< HEAD
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -50,10 +65,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="msapplication-TileColor" content="#c0003a" />
         <meta name="msapplication-TileImage" content="/icon.png" />
         <meta name="msapplication-tap-highlight" content="no" />
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
       </head>
       <body>{children}</body>
     </html>
   )
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3

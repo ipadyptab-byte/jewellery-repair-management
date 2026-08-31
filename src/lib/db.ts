@@ -1,5 +1,6 @@
 import pg from 'pg'
 
+<<<<<<< HEAD
 // ── In-Memory Store & Mock Data (Fallback when PostgreSQL is not configured / reachable) ──
 interface MemoryStore {
   repairRecords: any[];
@@ -447,6 +448,38 @@ function createClientWrapper() {
 export function sql() {
   return createClientWrapper()
 }
+=======
+let sql: pg.Pool | null = null
+
+// Lazy initialization of database connection
+function getSql() {
+  if (!sql) {
+    const databaseUrl = process.env.DATABASE_URL_repair
+    console.log('DATABASE_URL_repair found:', !!databaseUrl);
+    if (databaseUrl) {
+      console.log('Database URL prefix:', databaseUrl.slice(0, 30) + '...');
+    }
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL_repair environment variable is not set')
+    }
+    // Add SSL compatibility for Supabase
+    let connectionString = databaseUrl
+    if (!databaseUrl.includes('uselibpqcompat')) {
+      connectionString = databaseUrl + (databaseUrl.includes('?') ? '&' : '?') + 'uselibpqcompat=true'
+    }
+    
+    sql = new pg.Pool({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    })
+  }
+  return sql
+}
+
+export { getSql as sql }
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
 
 // Database schema types
 export interface RepairRecord {
@@ -491,4 +524,7 @@ export interface Settings {
   created_at?: string
   updated_at?: string
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3

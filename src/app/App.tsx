@@ -519,11 +519,14 @@ export default function App() {
     }
   }
 
+<<<<<<< HEAD
   const defaultLocations = [
     { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
     { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
   ]
 
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
   // Settings
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
   const [cfgLocation, setCfgLocation] = useState(() => {
@@ -533,6 +536,7 @@ export default function App() {
     return 'satara'
   }) // satara or koregaon
   
+<<<<<<< HEAD
   // Location Master - can be extended with more locations
   // Each location has its own document series sequence
   const [locations, setLocations] = useState<{id: string, name: string, prefix: string, next_seq: number}[]>(() => {
@@ -569,10 +573,15 @@ export default function App() {
 
   // Save location to localStorage and database when changed
   const handleSetLocation = async (loc: string) => {
+=======
+  // Save location to localStorage when changed
+  const handleSetLocation = (loc: string) => {
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
     if (typeof window !== 'undefined') {
       localStorage.setItem('devi-jewellers-location', loc)
     }
     setCfgLocation(loc)
+<<<<<<< HEAD
     try {
       await fetch('/api/settings', {
         method: 'POST',
@@ -591,10 +600,19 @@ export default function App() {
     if (!newLocationName || !newLocationId) {
       showMessage('location', 'Please enter location name and ID', false)
       showMessage('master-location', 'Please enter location name and ID', false)
+=======
+  }
+  
+  // Add new location to master
+  const addLocation = () => {
+    if (!newLocationName || !newLocationId) {
+      showMessage('location', 'Please enter location name and ID', false)
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
       return
     }
     const id = newLocationId.toLowerCase().replace(/[^a-z0-9]/g, '')
     const nameSlug = newLocationName.trim()
+<<<<<<< HEAD
     if (!id) {
       showMessage('location', 'Please enter a valid alphanumeric ID', false)
       showMessage('master-location', 'Please enter a valid alphanumeric ID', false)
@@ -606,10 +624,18 @@ export default function App() {
       return
     }
     const updated = [...locations, { 
+=======
+    if (locations.find(l => l.id === id)) {
+      showMessage('location', 'Location ID already exists', false)
+      return
+    }
+    setLocations(prev => [...prev, { 
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
       id, 
       name: nameSlug, 
       prefix: `JR-${id.toUpperCase()}`, 
       next_seq: 0 
+<<<<<<< HEAD
     }]
     setLocations(updated)
     setNewLocationName('')
@@ -662,12 +688,54 @@ export default function App() {
     await saveLocationsToDb(updated)
     showMessage('location', 'Location name updated and saved', true)
     showMessage('master-location', 'Location name updated and saved', true)
+=======
+    }])
+    setNewLocationName('')
+    setNewLocationId('')
+    showMessage('location', `Location "${nameSlug}" added!`, true)
+  }
+  
+  // Remove location (cannot remove main and cannot remove if records exist for that location)
+  const removeLocation = (id: string) => {
+    if (id === 'satara') {
+      showMessage('location', 'Cannot remove main location', false)
+      return
+    }
+    // Check if records exist for this location
+    const hasRecords = records.some(r => r.location === id)
+    if (hasRecords) {
+      showMessage('location', 'Cannot remove - records exist for this location', false)
+      return
+    }
+    if (confirm(`Remove location "${id}"? This cannot be undone.`)) {
+      setLocations(prev => prev.filter(l => l.id !== id))
+      if (cfgLocation === id) handleSetLocation('satara')
+      showMessage('location', `Location "${id}" removed`, true)
+    }
+  }
+  
+  // Edit location name
+  const updateLocationName = (id: string, newName: string) => {
+    setLocations(prev => prev.map(l => l.id === id ? { ...l, name: newName } : l))
+    setEditLocationId(null)
+    showMessage('location', 'Location name updated', true)
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
   }
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [logoBase64, setLogoBase64] = useState<string>('')
   const [koregaonSeq, setKoregaonSeq] = useState(0)
   
+<<<<<<< HEAD
+=======
+  // Location Master - can be extended with more locations
+  // Each location has its own document series sequence
+  const [locations, setLocations] = useState<{id: string, name: string, prefix: string, next_seq: number}[]>([
+    { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
+    { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
+  ])
+  
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
   const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl3Name, setTpl3Name] = useState('2739573333095990'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl3Body, setTpl3Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en'); const [tpl3Lang, setTpl3Lang] = useState('en')
 
   // Load logo on mount
@@ -695,6 +763,7 @@ export default function App() {
   const [transferDoc, setTransferDoc] = useState('')
   const [transferRec, setTransferRec] = useState<RepairRecord | null>(null)
 
+<<<<<<< HEAD
   // PWA State & Cross-platform Install Handlers
   const [installPrompt, setInstallPrompt] = useState<any>(null)
   const [isPwaInstalled, setIsPwaInstalled] = useState(false)
@@ -759,6 +828,8 @@ export default function App() {
   }
 
 
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
   // Save all settings (Shop Info + WhatsApp Credentials + Invoice Settings) - single button
   const saveAllSettings = async () => {
     console.log('💾 Saving all settings in ONE API call...');
@@ -778,7 +849,10 @@ export default function App() {
           shopAddress: cfgAddr,
           // Location
           location: cfgLocation,
+<<<<<<< HEAD
           locations: locations,
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
           // WhatsApp + Invoice
           whatsappRmUser: rmUser,
           whatsappRmPass: rmPass,
@@ -832,12 +906,15 @@ export default function App() {
           if (settings.docSeq) setDocSeq(settings.docSeq);
           if (settings.koregaonSeq !== undefined) setKoregaonSeq(settings.koregaonSeq);
           if (settings.location) setCfgLocation(settings.location);
+<<<<<<< HEAD
           if (settings.locations && Array.isArray(settings.locations) && settings.locations.length > 0) {
             setLocations(settings.locations);
             if (typeof window !== 'undefined') {
               localStorage.setItem('devi-jewellers-locations', JSON.stringify(settings.locations));
             }
           }
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
         }
       } else {
         showMessage('creds', 'Failed to save: ' + (result.error || 'Unknown error'), false);
@@ -1044,6 +1121,7 @@ export default function App() {
           if (settings.shopAddress) setCfgAddr(settings.shopAddress);
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
           if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
+<<<<<<< HEAD
           if (settings.location) setCfgLocation(settings.location);
           if (settings.locations && Array.isArray(settings.locations) && settings.locations.length > 0) {
             setLocations(settings.locations);
@@ -1051,6 +1129,8 @@ export default function App() {
               localStorage.setItem('devi-jewellers-locations', JSON.stringify(settings.locations));
             }
           }
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
           
           // WhatsApp settings - load from multiple possible sources for robustness
           if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
@@ -1114,6 +1194,7 @@ export default function App() {
           if (settings.shopAddress) setCfgAddr(settings.shopAddress);
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
           if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
+<<<<<<< HEAD
           if (settings.location) setCfgLocation(settings.location);
           if (settings.locations && Array.isArray(settings.locations) && settings.locations.length > 0) {
             setLocations(settings.locations);
@@ -1121,6 +1202,8 @@ export default function App() {
               localStorage.setItem('devi-jewellers-locations', JSON.stringify(settings.locations));
             }
           }
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
           
           // WhatsApp settings
           if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
@@ -1875,13 +1958,18 @@ export default function App() {
     <div className="app">
       {/* HEADER */}
       <div className="header">
+<<<<<<< HEAD
         <div className="header-top" style={{ flexWrap: 'wrap', gap: '8px' }}>
+=======
+        <div className="header-top">
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
           <div className="icon-box"><img src="/icon.png" alt="Devi Jewellers" /></div>
           <div className="header-text">
             <div className="shop-name">देवी ज्वेलर्स — Devi Jewellers</div>
             <div className="shop-sub">Jewellery Repair Management System</div>
             <div className="shop-tag">अनमोल क्षणांचे सोनेरी साक्षीदार</div>
           </div>
+<<<<<<< HEAD
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', flexWrap: 'wrap' }}>
             <button 
               onClick={triggerPwaInstall}
@@ -1916,6 +2004,20 @@ export default function App() {
               <div style={{ fontSize: '9px', opacity: 0.85 }}>📍 LOCATION</div>
               <div>{(locations.find(l => l.id === cfgLocation)?.name?.split(' ')[0] || cfgLocation).toUpperCase()}</div>
             </div>
+=======
+          <div className="location-badge" style={{
+            background: cfgLocation === 'satara' ? '#c0003a' : '#185FA5',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            textAlign: 'center',
+            minWidth: '100px'
+          }}>
+            <div style={{ fontSize: '10px', opacity: 0.8 }}>📍 LOCATION</div>
+            <div>{cfgLocation === 'satara' ? 'SATARA' : 'KOREGAON'}</div>
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
           </div>
         </div>
         <div className="header-strip">
@@ -2683,10 +2785,15 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
         <div className="card" style={{ padding: '1rem' }}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+<<<<<<< HEAD
             {(['salesman', 'jewellery', 'metal', 'karagir', 'location'] as const).map(t => (
               <button key={t} className="btn" onClick={() => setMasterTab(t)} style={masterTab === t ? { borderColor: 'var(--brand)', color: 'var(--brand)' } : {}}>
                 {t === 'location' ? '📍 Location Master' : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
+=======
+            {(['salesman', 'jewellery', 'metal', 'karagir'] as const).map(t => (
+              <button key={t} className="btn" onClick={() => setMasterTab(t)} style={masterTab === t ? { borderColor: 'var(--brand)', color: 'var(--brand)' } : {}}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
             ))}
           </div>
         </div>
@@ -2811,6 +2918,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             ))}
           </div>
         )}
+<<<<<<< HEAD
         {masterTab === 'location' && (
           <div className="card">
             <div className="card-title">📍 Location Master <span className="count-badge">{locations.length}</span></div>
@@ -2906,6 +3014,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             </div>
           </div>
         )}
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
       </div>
 
       {/* ── SETTINGS ── */}
@@ -2966,6 +3076,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <div className="field"><label>API version</label><select value={rmApiver} onChange={e => setRmApiver(e.target.value)}><option value="v17.0">v17.0 (recommended)</option><option value="v18.0">v18.0</option><option value="v19.0">v19.0</option><option value="v20.0">v20.0</option></select></div>
               </div>
               <div className="divider" />
+<<<<<<< HEAD
               <div className="sec-label">Location Settings &amp; Branches</div>
               
               {/* Add New Location */}
@@ -3061,11 +3172,69 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                       </div>
                     )
                   })}
+=======
+              <div className="sec-label">Location Settings</div>
+              
+              {/* Location Master List */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>📍 Location Master</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {locations.map(loc => (
+                    <div key={loc.id} style={{ 
+                      background: loc.id === cfgLocation ? 'var(--brand)' : '#e0e0e0',
+                      color: loc.id === cfgLocation ? 'white' : 'var(--text)',
+                      padding: '8px 12px', borderRadius: 6, fontSize: 13,
+                      display: 'flex', alignItems: 'center', gap: 8
+                    }}>
+                      {editLocationId === loc.id ? (
+                        <input 
+                          value={loc.name} 
+                          onChange={e => updateLocationName(loc.id, e.target.value)}
+                          onBlur={() => setEditLocationId(null)}
+                          onKeyDown={e => e.key === 'Enter' && setEditLocationId(null)}
+                          autoFocus
+                          onClick={e => e.stopPropagation()}
+                          style={{ padding: 4, fontSize: 13 }}
+                        />
+                      ) : (
+                        <span onClick={() => setEditLocationId(loc.id)} title="Click to edit" style={{ cursor: 'pointer' }}>
+                          {loc.name}
+                        </span>
+                      )}
+                      <span style={{ fontSize: 10, opacity: 0.7 }}>({loc.prefix})</span>
+                      {loc.id !== 'satara' && (
+                        <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, fontSize: 16 }}
+                          onClick={() => removeLocation(loc.id)}>×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Add New Location */}
+              <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>+ Add New Location</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input 
+                    placeholder="Location name (e.g., Pune Branch)" 
+                    value={newLocationName}
+                    onChange={e => setNewLocationName(e.target.value)}
+                    style={{ flex: 1, minWidth: 150 }}
+                  />
+                  <input 
+                    placeholder="ID (e.g., pune)" 
+                    value={newLocationId}
+                    onChange={e => setNewLocationId(e.target.value)}
+                    style={{ width: 80 }}
+                  />
+                  <button className="btn btn-primary" onClick={addLocation}>Add</button>
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
                 </div>
               </div>
               
               {/* Current Location Selector */}
               <div className="grid2">
+<<<<<<< HEAD
                 <div className="field"><label>Switch Active Working Location</label>
                   <select value={cfgLocation} onChange={e => handleSetLocation(e.target.value)}>
                     {locations.map(loc => (
@@ -3073,6 +3242,15 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                     ))}
                   </select>
                   <div className="hint">Select which branch receipts and repairs will be created under</div>
+=======
+                <div className="field"><label>Switch to Location</label>
+                  <select value={cfgLocation} onChange={e => handleSetLocation(e.target.value)}>
+                    {locations.map(loc => (
+                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    ))}
+                  </select>
+                  <div className="hint">Select which location to work as</div>
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
                 </div>
               </div>
               <div className="divider" />
@@ -3226,6 +3404,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
           )}
         </div>
       </div>
+<<<<<<< HEAD
 
       {/* ── PWA INSTALL MODAL FOR ALL DEVICES ── */}
       {showPwaGuide && (
@@ -3350,6 +3529,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
           </div>
         </div>
       )}
+=======
+>>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
     </div>
   )
 }
