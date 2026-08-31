@@ -535,74 +535,28 @@ export default function App() {
     }
     setCfgLocation(loc)
   }
-
-  // Location Master - persistent across reloads and servers
-  const [locations, setLocations] = useState<{id: string, name: string, prefix: string, next_seq: number}[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('devi-jewellers-locations')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed
-        }
-      } catch (e) {}
-    }
-    return [
-      { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
-      { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
-    ]
-  })
-  const [newLocationName, setNewLocationName] = useState('')
-  const [newLocationId, setNewLocationId] = useState('')
-  const [editLocationId, setEditLocationId] = useState<string | null>(null)
-
-  // Direct persistence helper for locations
-  const persistLocations = async (newLocations: {id: string, name: string, prefix: string, next_seq: number}[]) => {
-    setLocations(newLocations)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('devi-jewellers-locations', JSON.stringify(newLocations))
-    }
-    try {
-      const res = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locationsList: newLocations })
-      })
-      if (!res.ok) {
-        console.error('Failed to save locations to server:', await res.text())
-      }
-    } catch (err) {
-      console.error('Failed to save locations to server:', err)
-    }
-  }
-
+  
   // Add new location to master
-  const addLocation = async () => {
-    const trimmedName = newLocationName.trim()
-    const rawId = newLocationId.trim()
-    if (!trimmedName || !rawId) {
+  const addLocation = () => {
+    if (!newLocationName || !newLocationId) {
       showMessage('location', 'Please enter location name and ID', false)
       return
     }
-    const id = rawId.toLowerCase().replace(/[^a-z0-9]/g, '')
-    if (!id) {
-      showMessage('location', 'Please enter a valid alphanumeric ID (e.g. pune)', false)
-      return
-    }
+    const id = newLocationId.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const nameSlug = newLocationName.trim()
     if (locations.find(l => l.id === id)) {
       showMessage('location', 'Location ID already exists', false)
       return
     }
-    const newLocs = [...locations, { 
+    setLocations(prev => [...prev, { 
       id, 
-      name: trimmedName, 
+      name: nameSlug, 
       prefix: `JR-${id.toUpperCase()}`, 
       next_seq: 0 
-    }]
-    await persistLocations(newLocs)
+    }])
     setNewLocationName('')
     setNewLocationId('')
-    showMessage('location', `Location "${trimmedName}" added & saved!`, true)
+    showMessage('location', `Location "${nameSlug}" added!`, true)
   }
   
   // Remove location (cannot remove main and cannot remove if records exist for that location)
@@ -649,20 +603,13 @@ export default function App() {
       }
     }
     
-    const updatedLocs = locations.filter(l => l.id !== id)
-    await persistLocations(updatedLocs)
+    setLocations(prev => prev.filter(l => l.id !== id))
     if (cfgLocation === id) handleSetLocation('satara')
     showMessage('location', `Location "${id}" removed`, true)
   }
-  
-  const updateLocationName = async (id: string, newName: string) => {
-    const trimmed = newName.trim()
-    if (!trimmed) {
-      setEditLocationId(null)
-      return
-    }
-    const updatedLocs = locations.map(l => l.id === id ? { ...l, name: trimmed } : l)
-    await persistLocations(updatedLocs)
+    // Check if records exist for this location
+  const updateLocationName = (id: string, newName: string) => {
+    setLocations(prev => prev.map(l => l.id === id ? { ...l, name: newName } : l))
     setEditLocationId(null)
     showMessage('location', 'Location name updated', true)
   }
@@ -670,6 +617,26 @@ export default function App() {
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [logoBase64, setLogoBase64] = useState<string>('')
   const [koregaonSeq, setKoregaonSeq] = useState(0)
+  
+  // Location Master - can be extended with more locations
+  // Each location has its own document series sequence
+  
+    const [locations, setLocations] = useState<{id: string, name: string, prefix: string, next_seq: number}[]>([
+    { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
+    { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
+  ])
+
+  // Auto-save locations when they change
+  useEffect(() => {
+    if (locations && locations.length > 0) {
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locationsList: locations })
+      }).catch(console.error);
+    }
+  }, [locations]);
+
   
   const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl3Name, setTpl3Name] = useState('2739573333095990'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl3Body, setTpl3Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en'); const [tpl3Lang, setTpl3Lang] = useState('en')
 
@@ -686,6 +653,9 @@ export default function App() {
   }, [])
   const [connStatus, setConnStatus] = useState<'no' | 'ok' | 'checking'>('no')
   const [settingsTab, setSettingsTab] = useState('creds')
+  const [newLocationName, setNewLocationName] = useState('')
+  const [newLocationId, setNewLocationId] = useState('')
+  const [editLocationId, setEditLocationId] = useState<string | null>(null)
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
   const [printRec, setPrintRec] = useState<{rec: RepairRecord; type: 'received' | 'final'} | null>(null)
@@ -969,12 +939,6 @@ export default function App() {
           
           // Update all state from database directly
           console.log('🔄 Setting state from DB:');
-          if (settings.locationsList && Array.isArray(settings.locationsList) && settings.locationsList.length > 0) {
-            setLocations(settings.locationsList);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('devi-jewellers-locations', JSON.stringify(settings.locationsList));
-            }
-          }
           if (settings.businessName) { console.log('  - setCfgShop:', settings.businessName); setCfgShop(settings.businessName); }
           if (settings.shopOwner) setCfgOwner(settings.shopOwner);
           if (settings.shopPhone) setCfgPhone(settings.shopPhone);
@@ -1040,9 +1004,6 @@ export default function App() {
           // Load all settings from database immediately
           if (settings.locationsList && Array.isArray(settings.locationsList) && settings.locationsList.length > 0) {
             setLocations(settings.locationsList);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('devi-jewellers-locations', JSON.stringify(settings.locationsList));
-            }
           }
           if (settings.businessName) setCfgShop(settings.businessName);
           if (settings.shopOwner) setCfgOwner(settings.shopOwner);
@@ -1249,20 +1210,19 @@ export default function App() {
 
   const stats = {
     // Filter by location for Koregaon
-    total: records.filter(r => cfgLocation === 'koregaon' ? (r.location === 'koregaon' || r.current_location === 'koregaon') : true).length,
+    total: records.filter(r => cfgLocation !== 'satara' ? (r.location === cfgLocation || r.current_location === cfgLocation) : true).length,
     pending: records.filter(r => {
-      if (cfgLocation === 'koregaon' && !(r.location === 'koregaon' || r.current_location === 'koregaon')) return false
+      if (cfgLocation !== 'satara' && !(r.location === cfgLocation || r.current_location === cfgLocation)) return false
       return r.status === 'received' || r.status === 'with_karagir'
     }).length,
     ready: records.filter(r => {
-      if (cfgLocation === 'koregaon') {
-        // For Koregaon: show records at koregaon that are ready to deliver
-        return r.current_location === 'koregaon' && r.status === 'ready'
+      if (cfgLocation !== 'satara') {
+        return r.current_location === cfgLocation && r.status === 'ready'
       }
       return r.status === 'ready'
     }).length,
     overdue: records.filter(r => {
-      if (cfgLocation === 'koregaon' && !(r.location === 'koregaon' || r.current_location === 'koregaon')) return false
+      if (cfgLocation !== 'satara' && !(r.location === cfgLocation || r.current_location === cfgLocation)) return false
       return effStatus(r) === 'overdue'
     }).length,
   }
@@ -1276,11 +1236,23 @@ export default function App() {
 
     try {
       // Generate doc number based on location
-      const isKoregaon = cfgLocation === 'koregaon'
-      const seq = isKoregaon ? koregaonSeq + 1 : docSeq + 1
-      const docNum = isKoregaon 
-        ? 'JR-KO-' + String(seq).padStart(4, '0')  // JR-KO-0001
-        : 'JR' + String(seq).padStart(4, '0')      // JR0001
+      const locObj = locations.find(l => l.id === cfgLocation) || locations[0]
+      const prefix = locObj.prefix
+      let maxSeq = 0
+      records.forEach(r => {
+        const dn = r.docNum || r.doc_num || ''
+        if (dn.startsWith(prefix)) {
+          let numStr = dn.substring(prefix.length)
+          if (numStr.startsWith('-')) numStr = numStr.substring(1)
+          const num = parseInt(numStr)
+          if (!isNaN(num) && num > maxSeq) maxSeq = num
+        }
+      })
+      const seq = maxSeq + 1
+      const isSatara = cfgLocation === 'satara'
+      const docNum = isSatara 
+        ? prefix + String(seq).padStart(4, '0')
+        : prefix + '-' + String(seq).padStart(4, '0')
       const receivedDate = new Date().toISOString()
       const deliveryDate = addDays(receivedDate, parseInt(rDays)).toISOString()
 
@@ -1328,12 +1300,7 @@ export default function App() {
 
       const savedRecord = await response.json();
       setRecords(prev => [...prev, convertFromDB(savedRecord)]);
-      // Update sequence based on location
-      if (isKoregaon) {
-        setKoregaonSeq(seq);
-      } else {
-        setDocSeq(seq);
-      }
+      
       setSavedRec(convertFromDB(savedRecord));
       showMessage('receive', `Saved! Document: ${docNum}`, true);
       return convertFromDB(savedRecord);
@@ -1786,7 +1753,7 @@ export default function App() {
   // Filter records by location for Koregaon
   // Satara shows all (both Satara + Koregaon)
   // Koregaon shows only own records (where location = 'koregaon')
-  const filteredRecords = records.filter(r => cfgLocation === 'koregaon' ? r.location === 'koregaon' : true)
+  const filteredRecords = records.filter(r => cfgLocation !== 'satara' ? r.location === cfgLocation : true)
   const grp: any = {}
   // @ts-ignore
   grp.overdue = filteredRecords.filter(r => effStatus(r) === 'overdue')
@@ -1797,7 +1764,7 @@ export default function App() {
   // @ts-ignore
   grp.received = filteredRecords.filter(r => effStatus(r) === 'received')
   // Add transferred for Koregaon items at Satara
-  if (cfgLocation === 'koregaon') {
+  if (cfgLocation !== 'satara') {
     // @ts-ignore
     grp.transferred = filteredRecords.filter(r => r.current_location === 'satara' && r.status !== 'ready')
   }
@@ -1824,7 +1791,7 @@ export default function App() {
             minWidth: '100px'
           }}>
             <div style={{ fontSize: '10px', opacity: 0.8 }}>📍 LOCATION</div>
-            <div>{cfgLocation === 'satara' ? 'SATARA' : 'KOREGAON'}</div>
+            <div>{locations.find(l => l.id === cfgLocation)?.name.split(' ')[0].toUpperCase() || 'BRANCH'}</div>
           </div>
         </div>
         <div className="header-strip">
@@ -1903,8 +1870,8 @@ export default function App() {
             </>
           )}
           
-          {/* Transfer tile for Koregaon only */}
-          {cfgLocation === 'koregaon' && (
+          {/* Transfer tile for branches */}
+            {cfgLocation !== 'satara' && (
             <div className="dash-tile" onClick={() => openPage('transfer')}>
               <div className="tile-icon" style={{ background: '#E0E7FF' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4338CA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></svg></div>
               <div className="tile-label">Transfer</div>
@@ -1963,8 +1930,8 @@ export default function App() {
                 <select value={deliverDoc || ''} onChange={e => setDeliverDoc(e.target.value)}>
                   <option value="">Select ready invoice</option>
                   {records.filter(r => {
-                    // For Koregaon: show only records that are at koregaon and received from Satara (transfer_status)
-                    if (cfgLocation === 'koregaon') return r.current_location === 'koregaon' && r.status === 'ready' && (r.transfer_status === 'received_from_satara' || (r.docNum || r.doc_num || '').startsWith('JR-KO-'))
+                    // For Branches: show only records that are at branch and received from Satara (transfer_status)
+                    if (cfgLocation !== 'satara') return r.current_location === cfgLocation && r.status === 'ready' && (r.transfer_status === 'received_from_satara' || r.location === cfgLocation)
                     // For Satara: show all ready records
                     return r.status === 'ready'
                   }).map((r: RepairRecord, _idx: number) => (
@@ -2178,8 +2145,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <select value={koDoc} onChange={e => { setKoDoc(e.target.value); setKoLoaded(false) }}>
                 <option value="">-- Select received order --</option>
                 {koEditing 
-                  ? records.filter(r => r.status === 'with_karagir').map((r, _idx) => <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
-                  : records.filter(r => r.status === 'received').map((r, _idx) => <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  ? records.filter(r => r.status === 'with_karagir' && r.current_location === 'satara').map((r, _idx) => <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  : records.filter(r => r.status === 'received' && r.current_location === 'satara').map((r, _idx) => <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
                 }
               </select>
             </div>
@@ -2228,7 +2195,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <option value="">-- Select --</option>
                 {kiEditing 
                   ? records.filter(r => r.status === 'ready').map((r, _idx) => <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
-                  : records.filter(r => r.status === 'with_karagir').map((r, _idx) => <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  : records.filter(r => r.status === 'with_karagir' && r.current_location === 'satara').map((r, _idx) => <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
                 }
               </select>
             </div>
@@ -2249,7 +2216,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 {kiEditing && records.find(r => r.docNum === kiDoc && r.status === 'ready') && (
                   <button className="btn" style={{ background: '#dc2626' }} onClick={() => { if (confirm('Reset final invoice? Status will change back to "With Karagir".')) { setRecords(prev => prev.map(r => r.docNum === kiDoc ? { ...r, finalAmount: 0, final_amount: 0, completedDate: null, completed_date: null, quality: '', status: 'with_karagir' } : r)); showMessage('ki', `Reset final invoice for ${kiDoc}`, true); setKiDoc(''); setKiLoaded(false); setKiAmount(''); setKiEditing(false) } }}>🗑️ Delete / Reset</button>
                 )}
-                <button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec && !kiEditing) { if (trReady && cfgLocation === 'satara' && !rec.docNum?.startsWith('JR-KO-') && !rec.doc_num?.startsWith('JR-KO-')) { const received = rec.receivedDate || rec.received_date; const delivery = rec.deliveryDate || rec.delivery_date; const expDays = (received && delivery) ? Math.max(1, Math.ceil((new Date(delivery).getTime() - new Date(received).getTime()) / (1000 * 60 * 60 * 24))) : cfgExpiry; sendWhatsApp(rec, 'final', expDays).catch(console.error); } setSavedRec(rec); setPrintRec(null); } }}>{kiEditing ? '💾 Update' : <><IcPdf />Confirm & Print Thermal Invoice</>}</button>
+                <button className="btn btn-primary" onClick={async () => { const rec = await saveKI(); if (rec && !kiEditing) { if (trReady && cfgLocation === 'satara' && rec.location === 'satara') { const received = rec.receivedDate || rec.received_date; const delivery = rec.deliveryDate || rec.delivery_date; const expDays = (received && delivery) ? Math.max(1, Math.ceil((new Date(delivery).getTime() - new Date(received).getTime()) / (1000 * 60 * 60 * 24))) : cfgExpiry; sendWhatsApp(rec, 'final', expDays).catch(console.error); } setSavedRec(rec); setPrintRec(null); } }}>{kiEditing ? '💾 Update' : <><IcPdf />Confirm & Print Thermal Invoice</>}</button>
               </div>
             </>
           )}
@@ -2283,28 +2250,28 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
       </div>
 
       {/* ── TRANSFER (Satara & Koregaon) ── */}
-      {(cfgLocation === 'koregaon' || cfgLocation === 'satara') && (
+      {(cfgLocation !== 'satara' || cfgLocation === 'satara') && (
       <div className={`page ${page === 'transfer' ? 'active' : ''}`}>
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
         
         {/* Transfer tabs - different for each location */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          {cfgLocation === 'koregaon' && (
+          {cfgLocation !== 'satara' && (
             <>
               <button className={`btn ${transferPage === 'incoming' ? 'btn-primary' : ''}`} onClick={() => setTransferPage('incoming')}>📥 Receive from Satara</button>
               <button className={`btn ${transferPage === 'outgoing' ? 'btn-primary' : ''}`} onClick={() => setTransferPage('outgoing')}>📤 Send to Satara</button>
             </>
           )}
           {cfgLocation === 'satara' && (
-            <button className={`btn ${transferPage === 'outgoing' ? 'btn-primary' : ''}`} onClick={() => setTransferPage('outgoing')}>📤 Send to Koregaon</button>
+            <button className={`btn ${transferPage === 'outgoing' ? 'btn-primary' : ''}`} onClick={() => setTransferPage('outgoing')}>📤 Send to Branch</button>
           )}
         </div>
 
         {/* At Satara: Send ready items to Koregaon */}
         {cfgLocation === 'satara' && transferPage !== 'incoming' && (
           <div className="card">
-            <div className="card-title">📤 Send to Koregaon</div>
-            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Select ready items to send to Koregaon</p>
+            <div className="card-title">📤 Send to Branch</div>
+            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Select ready items to send to branch</p>
             
             <div className="field">
               <label>Select Invoice <span className="req">*</span></label>
@@ -2343,31 +2310,31 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         doc_num: transferRec.docNum || transferRec.doc_num,
-                        transfer_status: 'sent_to_koregaon'
+                        transfer_status: 'sent_to_' + transferRec.location
                       })
                     })
                     if (response.ok) {
                       const recs = await fetch('/api/records')
                       if (recs.ok) setRecords((await recs.json()).map(convertFromDB))
-                      showMessage('transfer', 'Item sent to Koregaon!', true)
+                      showMessage('transfer', 'Item sent to branch!', true)
                       setTransferDoc('')
                       setTransferRec(null)
                     }
                   } catch (e) {
                     showMessage('transfer', 'Failed to send item', false)
                   }
-                }}>📤 Send to Koregaon</button>
+                }}>📤 Send to Branch</button>
               </div>
             )}
             
             {records.filter(r => r.current_location === 'satara' && r.status === 'ready').length === 0 && (
-              <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No items ready to send to Koregaon.</p>
+              <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No items ready to send to branches.</p>
             )}
           </div>
         )}
 
         {/* Incoming: Receive from Satara (Koregaon only) */}
-        {cfgLocation === 'koregaon' && transferPage === 'incoming' && (
+        {cfgLocation !== 'satara' && transferPage === 'incoming' && (
           <div className="card">
             <div className="card-title">📥 Receive from Satara</div>
             <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Select repaired items received from Satara</p>
@@ -2383,7 +2350,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <option value="">Select invoice to receive</option>
                 {records.filter(r => 
                   // Show items sent to Koregaon OR ready at Satara (from Receive from Karagir)
-                  (r.current_location === 'satara' && (r.status === 'ready' || r.status === 'with_karagir') && r.transfer_status === 'sent_to_koregaon') ||
+                  (r.current_location === 'satara' && (r.status === 'ready' || r.status === 'with_karagir') && r.transfer_status === 'sent_to_' + cfgLocation) ||
                   (r.current_location === 'satara' && r.status === 'ready')
                 ).map((r, _idx) => (
                   <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || r.doc_num}>
@@ -2404,7 +2371,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </div>
             )}
             
-            {transferRec && (transferRec.current_location === 'satara' || transferRec.current_location === 'koregaon') && (transferRec.status === 'with_karagir' || transferRec.status === 'ready') && (
+            {transferRec && (transferRec.current_location === 'satara' || transferRec.current_location === cfgLocation) && (transferRec.status === 'with_karagir' || transferRec.status === 'ready') && (
               <div className="btn-row">
                 <button className="btn btn-primary" onClick={async () => {
                   try {
@@ -2414,7 +2381,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         doc_num: transferRec.docNum || transferRec.doc_num,
-                        current_location: 'koregaon',
+                        current_location: cfgLocation,
                         transfer_status: 'received_from_satara',
                         // Keep the status as is - if ready stays ready
                         status: isReady ? 'ready' : 'with_karagir'
@@ -2424,7 +2391,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                       // Reload records
                       const recs = await fetch('/api/records')
                       if (recs.ok) setRecords((await recs.json()).map(convertFromDB))
-                      showMessage('transfer', 'Item received at Koregaon!', true)
+                      showMessage('transfer', 'Item received at branch!', true)
                       
                       // If item was ready, send "Ready for delivery" WhatsApp to customer
                       if (isReady && trReady) {
@@ -2444,11 +2411,11 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </div>
             )}
             
-            {transferRec && transferRec.current_location !== 'koregaon' && (
-              <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item is not at Koregaon</p>
+            {transferRec && transferRec.current_location !== cfgLocation && (
+              <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item is not at this branch</p>
             )}
             
-            {records.filter(r => (r.current_location === 'satara' && (r.status === 'ready' || r.status === 'with_karagir') && r.transfer_status === 'sent_to_koregaon') || (r.current_location === 'satara' && r.status === 'ready')).length === 0 && (
+            {records.filter(r => (r.current_location === 'satara' && (r.status === 'ready' || r.status === 'with_karagir') && r.transfer_status === 'sent_to_' + cfgLocation) || (r.current_location === 'satara' && r.status === 'ready')).length === 0 && (
               <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No items to receive from Satara.</p>
             )}
           </div>
@@ -2458,7 +2425,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         {transferPage === 'outgoing' && (
           <div className="card">
             <div className="card-title">📤 Send to Satara</div>
-            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Select items received at Koregaon to send to Satara for karagir repair</p>
+            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Select items received at this branch to send to Satara for karagir repair</p>
             
             {/* Filter records: only those at koregaon with status 'received' */}
             <div className="field">
@@ -2470,8 +2437,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               }}>
                 <option value="">Select invoice to send</option>
                 {records.filter(r => 
-                  r.location === 'koregaon' && 
-                  r.current_location === 'koregaon' && 
+                  r.location === cfgLocation && 
+                  r.current_location === cfgLocation && 
                   r.status === 'received'
                 ).map((r, _idx) => (
                   <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || r.doc_num}>
@@ -2489,7 +2456,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </div>
             )}
             
-            {transferRec && transferRec.current_location === 'koregaon' && transferRec.status === 'received' && (
+            {transferRec && transferRec.current_location === cfgLocation && transferRec.status === 'received' && (
               <div className="btn-row">
                 <button className="btn btn-primary" onClick={async () => {
                   try {
@@ -2516,11 +2483,12 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               </div>
             )}
             
-            {transferRec && !(transferRec.current_location === 'koregaon' && transferRec.status === 'received') && (
+            {transferRec && !(transferRec.current_location === cfgLocation && transferRec.status === 'received') && (
               <p style={{ color: 'var(--text2)', fontSize: 13 }}>This item cannot be sent to Satara</p>
             )}
             
-            {records.filter(r => r.location === 'koregaon' && r.current_location === 'koregaon' && r.status === 'received').length === 0 && (
+            {records.filter(r => r.location === cfgLocation && 
+                  r.current_location === cfgLocation && r.status === 'received').length === 0 && (
               <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 16 }}>No items to send to Satara.</p>
             )}
           </div>
@@ -2565,8 +2533,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
           {records.length === 0 && <p style={{ color: 'var(--text2)', fontSize: 13 }}>No records yet.</p>}
           {/* Filter records by location for Koregaon - show only Koregaon original records */}
           {[...records].filter(r => {
-            if (cfgLocation === 'koregaon') {
-              return r.location === 'koregaon'
+            if (cfgLocation !== 'satara') {
+              return r.location === cfgLocation
             }
             return true
           }).reverse().map((r, _idx) => {
@@ -2824,19 +2792,16 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                     placeholder="Location name (e.g., Pune Branch)" 
                     value={newLocationName}
                     onChange={e => setNewLocationName(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && addLocation()}
                     style={{ flex: 1, minWidth: 150 }}
                   />
                   <input 
                     placeholder="ID (e.g., pune)" 
                     value={newLocationId}
                     onChange={e => setNewLocationId(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && addLocation()}
-                    style={{ width: 100 }}
+                    style={{ width: 80 }}
                   />
-                  <button className="btn btn-primary" onClick={addLocation}>+ Add</button>
+                  <button className="btn btn-primary" onClick={addLocation}>Add</button>
                 </div>
-                <Msg text={msg['location']?.text || ''} ok={msg['location']?.ok || false} />
               </div>
               
               {/* Current Location Selector */}
