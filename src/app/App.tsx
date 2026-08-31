@@ -519,11 +519,6 @@ export default function App() {
     }
   }
 
-  const defaultLocations = [
-    { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
-    { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
-  ]
-
   // Settings
   const [cfgShop, setCfgShop] = useState('Devi Jewellers'); const [cfgOwner, setCfgOwner] = useState(''); const [cfgPhone, setCfgPhone] = useState(''); const [cfgGst, setCfgGst] = useState(''); const [cfgCity, setCfgCity] = useState(''); const [cfgAddr, setCfgAddr] = useState('')
   const [cfgLocation, setCfgLocation] = useState(() => {
@@ -533,140 +528,115 @@ export default function App() {
     return 'satara'
   }) // satara or koregaon
   
-  // Location Master - can be extended with more locations
-  // Each location has its own document series sequence
-  const [locations, setLocations] = useState<{id: string, name: string, prefix: string, next_seq: number}[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('devi-jewellers-locations')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed
-        }
-      } catch (e) {}
-    }
-    return defaultLocations
-  })
-
-  // Helper to persist locations to database and localStorage
-  const saveLocationsToDb = async (locs: {id: string, name: string, prefix: string, next_seq: number}[]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('devi-jewellers-locations', JSON.stringify(locs))
-    }
-    try {
-      const res = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locations: locs })
-      })
-      if (!res.ok) {
-        console.error('Failed to save locations to database:', res.status)
-      }
-    } catch (err) {
-      console.error('Error saving locations to DB:', err)
-    }
-  }
-
-  // Save location to localStorage and database when changed
-  const handleSetLocation = async (loc: string) => {
+  // Save location to localStorage when changed
+  const handleSetLocation = (loc: string) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('devi-jewellers-location', loc)
     }
     setCfgLocation(loc)
-    try {
-      await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ location: loc })
-      })
-    } catch (err) {
-      console.error('Error saving location preference:', err)
-    }
   }
   
-  const [locToDelete, setLocToDelete] = useState<{ id: string, name: string, recordsCount: number } | null>(null)
-
-  // Add new location to master and persist to DB
-  const addLocation = async () => {
+  // Add new location to master
+  const addLocation = () => {
     if (!newLocationName || !newLocationId) {
       showMessage('location', 'Please enter location name and ID', false)
-      showMessage('master-location', 'Please enter location name and ID', false)
       return
     }
     const id = newLocationId.toLowerCase().replace(/[^a-z0-9]/g, '')
     const nameSlug = newLocationName.trim()
-    if (!id) {
-      showMessage('location', 'Please enter a valid alphanumeric ID', false)
-      showMessage('master-location', 'Please enter a valid alphanumeric ID', false)
-      return
-    }
     if (locations.find(l => l.id === id)) {
       showMessage('location', 'Location ID already exists', false)
-      showMessage('master-location', 'Location ID already exists', false)
       return
     }
-    const updated = [...locations, { 
+    setLocations(prev => [...prev, { 
       id, 
       name: nameSlug, 
       prefix: `JR-${id.toUpperCase()}`, 
       next_seq: 0 
-    }]
-    setLocations(updated)
+    }])
     setNewLocationName('')
     setNewLocationId('')
-    await saveLocationsToDb(updated)
-    showMessage('location', `Location "${nameSlug}" added to database!`, true)
-    showMessage('master-location', `Location "${nameSlug}" added to database!`, true)
+    showMessage('location', `Location "${nameSlug}" added!`, true)
   }
   
-  // Prompt location deletion with modal
-  const promptDeleteLocation = (id: string) => {
-    const loc = locations.find(l => l.id === id)
-    if (!loc) return
-    if (locations.length <= 1) {
-      showMessage('location', 'Cannot delete the only remaining location branch', false)
-      showMessage('master-location', 'Cannot delete the only remaining location branch', false)
+  // Remove location (cannot remove main and cannot remove if records exist for that location)
+  const removeLocation = async (id: string) => {
+    if (id === 'satara') {
+      showMessage('location', 'Cannot remove main location', false)
       return
     }
-    const count = records.filter(r => (r.location || 'satara') === id).length
-    setLocToDelete({ id: loc.id, name: loc.name, recordsCount: count })
-  }
-
-  // Confirm delete location
-  const confirmDeleteLocation = async () => {
-    if (!locToDelete) return
-    const id = locToDelete.id
-    const name = locToDelete.name
-    const updated = locations.filter(l => l.id !== id)
-    setLocations(updated)
-    if (cfgLocation === id) {
-      const fallback = updated[0]?.id || 'satara'
-      await handleSetLocation(fallback)
+    
+    // Check if records exist for this location
+    const locationRecords = records.filter(r => r.location === id)
+    if (locationRecords.length > 0) {
+      if (!confirm(`There are ${locationRecords.length} records in this location. Deleting the location will move these records to the main location (Satara). Do you want to proceed?`)) {
+        return
+      }
+      
+      try {
+        // We will just do it sequentially for simplicity
+        for (const record of locationRecords) {
+          await fetch('/api/records', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: record.id,
+              location: 'satara',
+              current_location: record.current_location === id ? 'satara' : record.current_location
+            })
+          });
+        }
+        
+        setRecords(prev => prev.map(r => r.location === id ? {
+          ...r, 
+          location: 'satara',
+          current_location: r.current_location === id ? 'satara' : r.current_location
+        } : r));
+      } catch (err) {
+        console.error('Failed to migrate records:', err);
+        showMessage('location', 'Failed to migrate records to Satara', false);
+        return;
+      }
+    } else {
+      if (!confirm(`Remove location "${id}"? This cannot be undone.`)) {
+        return
+      }
     }
-    await saveLocationsToDb(updated)
-    showMessage('location', `Location "${name}" deleted successfully`, true)
-    showMessage('master-location', `Location "${name}" deleted successfully`, true)
-    setLocToDelete(null)
+    
+    setLocations(prev => prev.filter(l => l.id !== id))
+    if (cfgLocation === id) handleSetLocation('satara')
+    showMessage('location', `Location "${id}" removed`, true)
   }
-
-  // Remove location (backward compatibility wrapper)
-  const removeLocation = async (id: string) => {
-    promptDeleteLocation(id)
-  }
-  
-  // Edit location name
-  const updateLocationName = async (id: string, newName: string) => {
-    const updated = locations.map(l => l.id === id ? { ...l, name: newName } : l)
-    setLocations(updated)
+    // Check if records exist for this location
+  const updateLocationName = (id: string, newName: string) => {
+    setLocations(prev => prev.map(l => l.id === id ? { ...l, name: newName } : l))
     setEditLocationId(null)
-    await saveLocationsToDb(updated)
-    showMessage('location', 'Location name updated and saved', true)
-    showMessage('master-location', 'Location name updated and saved', true)
+    showMessage('location', 'Location name updated', true)
   }
   const [rmUser, setRmUser] = useState(''); const [rmPass, setRmPass] = useState(''); const [rmWaba, setRmWaba] = useState(''); const [rmPhoneid, setRmPhoneid] = useState(''); const [rmWaphone, setRmWaphone] = useState(''); const [rmToken, setRmToken] = useState(''); const [rmApiUrl, setRmApiUrl] = useState('https://api.rmlconnect.net/wba/v1/messages'); const [rmApiver, setRmApiver] = useState('v17.0')
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [logoBase64, setLogoBase64] = useState<string>('')
   const [koregaonSeq, setKoregaonSeq] = useState(0)
+  
+  // Location Master - can be extended with more locations
+  // Each location has its own document series sequence
+  
+    const [locations, setLocations] = useState<{id: string, name: string, prefix: string, next_seq: number}[]>([
+    { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
+    { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
+  ])
+
+  // Auto-save locations when they change
+  useEffect(() => {
+    if (locations && locations.length > 0) {
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locationsList: locations })
+      }).catch(console.error);
+    }
+  }, [locations]);
+
   
   const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl3Name, setTpl3Name] = useState('2739573333095990'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl3Body, setTpl3Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en'); const [tpl3Lang, setTpl3Lang] = useState('en')
 
@@ -695,70 +665,6 @@ export default function App() {
   const [transferDoc, setTransferDoc] = useState('')
   const [transferRec, setTransferRec] = useState<RepairRecord | null>(null)
 
-  // PWA State & Cross-platform Install Handlers
-  const [installPrompt, setInstallPrompt] = useState<any>(null)
-  const [isPwaInstalled, setIsPwaInstalled] = useState(false)
-  const [showPwaGuide, setShowPwaGuide] = useState(false)
-  const [pwaTab, setPwaTab] = useState<'ios' | 'android' | 'windows'>('ios')
-  const [deviceType, setDeviceType] = useState<'ios' | 'android' | 'windows' | 'other'>('other')
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Check if already running in standalone PWA mode
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
-      setIsPwaInstalled(isStandalone)
-
-      const ua = window.navigator.userAgent.toLowerCase()
-      if (/iphone|ipad|ipod/.test(ua)) {
-        setDeviceType('ios')
-        setPwaTab('ios')
-      } else if (/android/.test(ua)) {
-        setDeviceType('android')
-        setPwaTab('android')
-      } else if (/windows|win32|win64/.test(ua)) {
-        setDeviceType('windows')
-        setPwaTab('windows')
-      }
-
-      const handleBeforeInstallPrompt = (e: any) => {
-        e.preventDefault()
-        setInstallPrompt(e)
-      }
-
-      const handleAppInstalled = () => {
-        setIsPwaInstalled(true)
-        setInstallPrompt(null)
-      }
-
-      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-      window.addEventListener('appinstalled', handleAppInstalled)
-
-      return () => {
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-        window.removeEventListener('appinstalled', handleAppInstalled)
-      }
-    }
-  }, [])
-
-  const triggerPwaInstall = async () => {
-    if (installPrompt) {
-      try {
-        installPrompt.prompt()
-        const { outcome } = await installPrompt.userChoice
-        if (outcome === 'accepted') {
-          setIsPwaInstalled(true)
-          setInstallPrompt(null)
-        }
-      } catch (err) {
-        console.error('Install prompt error:', err)
-        setShowPwaGuide(true)
-      }
-    } else {
-      setShowPwaGuide(true)
-    }
-  }
-
-
   // Save all settings (Shop Info + WhatsApp Credentials + Invoice Settings) - single button
   const saveAllSettings = async () => {
     console.log('💾 Saving all settings in ONE API call...');
@@ -778,7 +684,6 @@ export default function App() {
           shopAddress: cfgAddr,
           // Location
           location: cfgLocation,
-          locations: locations,
           // WhatsApp + Invoice
           whatsappRmUser: rmUser,
           whatsappRmPass: rmPass,
@@ -800,7 +705,8 @@ export default function App() {
           tpl3Lang: tpl3Lang || 'en',
           // Doc sequence
           docSeq: docSeq,
-          koregaonSeq: koregaonSeq
+          koregaonSeq: koregaonSeq,
+          locationsList: locations
         })
       });
       
@@ -814,6 +720,9 @@ export default function App() {
         const settingsRes = await fetch('/api/settings');
         if (settingsRes.ok) {
           const settings = await settingsRes.json();
+          if (settings.locationsList && Array.isArray(settings.locationsList) && settings.locationsList.length > 0) {
+            setLocations(settings.locationsList);
+          }
           if (settings.businessName) setCfgShop(settings.businessName);
           if (settings.shopOwner) setCfgOwner(settings.shopOwner);
           if (settings.shopPhone) setCfgPhone(settings.shopPhone);
@@ -832,12 +741,6 @@ export default function App() {
           if (settings.docSeq) setDocSeq(settings.docSeq);
           if (settings.koregaonSeq !== undefined) setKoregaonSeq(settings.koregaonSeq);
           if (settings.location) setCfgLocation(settings.location);
-          if (settings.locations && Array.isArray(settings.locations) && settings.locations.length > 0) {
-            setLocations(settings.locations);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('devi-jewellers-locations', JSON.stringify(settings.locations));
-            }
-          }
         }
       } else {
         showMessage('creds', 'Failed to save: ' + (result.error || 'Unknown error'), false);
@@ -1044,13 +947,6 @@ export default function App() {
           if (settings.shopAddress) setCfgAddr(settings.shopAddress);
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
           if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
-          if (settings.location) setCfgLocation(settings.location);
-          if (settings.locations && Array.isArray(settings.locations) && settings.locations.length > 0) {
-            setLocations(settings.locations);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('devi-jewellers-locations', JSON.stringify(settings.locations));
-            }
-          }
           
           // WhatsApp settings - load from multiple possible sources for robustness
           if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
@@ -1106,6 +1002,9 @@ export default function App() {
         if (settingsResponse.ok) {
           const settings = await settingsResponse.json();
           // Load all settings from database immediately
+          if (settings.locationsList && Array.isArray(settings.locationsList) && settings.locationsList.length > 0) {
+            setLocations(settings.locationsList);
+          }
           if (settings.businessName) setCfgShop(settings.businessName);
           if (settings.shopOwner) setCfgOwner(settings.shopOwner);
           if (settings.shopPhone) setCfgPhone(settings.shopPhone);
@@ -1114,13 +1013,6 @@ export default function App() {
           if (settings.shopAddress) setCfgAddr(settings.shopAddress);
           if (settings.invoiceLinkBase) setCfgLinkBase(settings.invoiceLinkBase);
           if (settings.invoiceExpiry) setCfgExpiry(settings.invoiceExpiry);
-          if (settings.location) setCfgLocation(settings.location);
-          if (settings.locations && Array.isArray(settings.locations) && settings.locations.length > 0) {
-            setLocations(settings.locations);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('devi-jewellers-locations', JSON.stringify(settings.locations));
-            }
-          }
           
           // WhatsApp settings
           if (settings.whatsappRmToken) setRmToken(settings.whatsappRmToken);
@@ -1875,47 +1767,25 @@ export default function App() {
     <div className="app">
       {/* HEADER */}
       <div className="header">
-        <div className="header-top" style={{ flexWrap: 'wrap', gap: '8px' }}>
+        <div className="header-top">
           <div className="icon-box"><img src="/icon.png" alt="Devi Jewellers" /></div>
           <div className="header-text">
             <div className="shop-name">देवी ज्वेलर्स — Devi Jewellers</div>
             <div className="shop-sub">Jewellery Repair Management System</div>
             <div className="shop-tag">अनमोल क्षणांचे सोनेरी साक्षीदार</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', flexWrap: 'wrap' }}>
-            <button 
-              onClick={triggerPwaInstall}
-              className="btn btn-sm"
-              style={{
-                background: isPwaInstalled ? 'rgba(255, 255, 255, 0.25)' : '#ffffff',
-                color: isPwaInstalled ? '#ffffff' : 'var(--brand)',
-                border: 'none',
-                borderRadius: '6px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '6px 12px',
-                fontSize: '12px'
-              }}
-              title="Install PWA on Windows, Android or iOS"
-            >
-              {isPwaInstalled ? '✅ App Ready' : (deviceType === 'windows' ? '💻 Install Desktop App' : deviceType === 'ios' ? '📱 Install iOS App' : '📲 Install App')}
-            </button>
-            <div className="location-badge" style={{
-              background: cfgLocation === 'satara' ? '#9e002a' : '#185FA5',
-              color: 'white',
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              fontSize: '13px',
-              textAlign: 'center',
-              minWidth: '95px'
-            }}>
-              <div style={{ fontSize: '9px', opacity: 0.85 }}>📍 LOCATION</div>
-              <div>{(locations.find(l => l.id === cfgLocation)?.name?.split(' ')[0] || cfgLocation).toUpperCase()}</div>
-            </div>
+          <div className="location-badge" style={{
+            background: cfgLocation === 'satara' ? '#c0003a' : '#185FA5',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            textAlign: 'center',
+            minWidth: '100px'
+          }}>
+            <div style={{ fontSize: '10px', opacity: 0.8 }}>📍 LOCATION</div>
+            <div>{cfgLocation === 'satara' ? 'SATARA' : 'KOREGAON'}</div>
           </div>
         </div>
         <div className="header-strip">
@@ -2058,8 +1928,8 @@ export default function App() {
                     if (cfgLocation === 'koregaon') return r.current_location === 'koregaon' && r.status === 'ready' && (r.transfer_status === 'received_from_satara' || (r.docNum || r.doc_num || '').startsWith('JR-KO-'))
                     // For Satara: show all ready records
                     return r.status === 'ready'
-                  }).map((r: RepairRecord) => (
-                    <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
+                  }).map((r: RepairRecord, _idx: number) => (
+                    <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || r.doc_num}>
                       {r.docNum || r.doc_num} — {r.name || r.customer_name} ({r.jewellery || r.item_type})
                     </option>
                   ))}
@@ -2115,7 +1985,7 @@ export default function App() {
                     <button className="btn btn-primary" onClick={async () => { 
                           printThermalReceipt(deliverRec, 'final', cfgShop || 'Devi Jewellers', cfgAddr || '');
                           // Update local state
-                          setRecords((prev: RepairRecord[]) => prev.map((r: RepairRecord) => (r.docNum || r.doc_num) === (deliverRec?.docNum || deliverRec?.doc_num) ? { ...r, status: 'delivered', deliveryDate: new Date().toISOString() } : r));
+                          setRecords((prev: RepairRecord[]) => prev.map((r: RepairRecord, _idx: number) => (r.docNum || r.doc_num) === (deliverRec?.docNum || deliverRec?.doc_num) ? { ...r, status: 'delivered', deliveryDate: new Date().toISOString() } : r));
                           // Save to database
                           try {
                             const docNum = deliverRec?.docNum || deliverRec?.doc_num;
@@ -2142,7 +2012,7 @@ export default function App() {
                     <button className="btn btn-primary" onClick={async () => { 
                           printThermalReceipt(deliverRec, 'final', cfgShop || 'Devi Jewellers', cfgAddr || '');
                           // Update local state
-                          setRecords((prev: RepairRecord[]) => prev.map((r: RepairRecord) => (r.docNum || r.doc_num) === (deliverRec?.docNum || deliverRec?.doc_num) ? { ...r, status: 'delivered', deliveryDate: new Date().toISOString() } : r));
+                          setRecords((prev: RepairRecord[]) => prev.map((r: RepairRecord, _idx: number) => (r.docNum || r.doc_num) === (deliverRec?.docNum || deliverRec?.doc_num) ? { ...r, status: 'delivered', deliveryDate: new Date().toISOString() } : r));
                           // Save to database
                           try {
                             const docNum = deliverRec?.docNum || deliverRec?.doc_num;
@@ -2194,14 +2064,14 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                   <label>Metal</label>
                   <select value={item.metal} onChange={e => { const newItems = [...repairItems]; newItems[idx].metal = e.target.value; setRepairItems(newItems); }}>
                     <option value="">Select</option>
-                    {metals.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}
+                    {metals.filter(x => x.status === 'active').map((x, _idx) => <option key={x.id || _idx}>{x.name}</option>)}
                   </select>
                 </div>
                 <div className="field" style={{ flex: '1 1 150px', marginBottom: 0 }}>
                   <label>Type</label>
                   <select value={item.type} onChange={e => { const newItems = [...repairItems]; newItems[idx].type = e.target.value; setRepairItems(newItems); }}>
                     <option value="">Select</option>
-                    {jewelleries.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}
+                    {jewelleries.filter(x => x.status === 'active').map((x, _idx) => <option key={x.id || _idx}>{x.name}</option>)}
                   </select>
                 </div>
                 <div className="field" style={{ flex: '1 1 100px', marginBottom: 0 }}>
@@ -2221,7 +2091,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
           <div className="grid3">
             <div className="field"><label>Est. days <span className="req">*</span></label><input type="number" min="1" value={rDays} onChange={e => setRDays(e.target.value)} placeholder="e.g. 7" /></div>
             <div className="field"><label>Est. amount (&#8377;)</label><input type="number" value={rAmount} onChange={e => setRAmount(e.target.value)} placeholder="e.g. 500" /></div>
-            <div className="field"><label>Salesman <span className="req">*</span></label><select value={rSalesman} onChange={e => setRSalesman(e.target.value)}><option value="">Select salesman</option>{salesmen.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
+            <div className="field"><label>Salesman <span className="req">*</span></label><select value={rSalesman} onChange={e => setRSalesman(e.target.value)}><option value="">Select salesman</option>{salesmen.filter(x => x.status === 'active').map((x, _idx) => <option key={x.id || _idx}>{x.name}</option>)}</select></div>
           </div>
           <div className="field"><label>Repair description</label><textarea rows={2} value={rDesc} onChange={e => setRDesc(e.target.value)} placeholder="Describe the repair work..." /></div>
           <div className="btn-row">
@@ -2269,8 +2139,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <select value={koDoc} onChange={e => { setKoDoc(e.target.value); setKoLoaded(false) }}>
                 <option value="">-- Select received order --</option>
                 {koEditing 
-                  ? records.filter(r => r.status === 'with_karagir').map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
-                  : records.filter(r => r.status === 'received').map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  ? records.filter(r => r.status === 'with_karagir').map((r, _idx) => <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  : records.filter(r => r.status === 'received').map((r, _idx) => <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
                 }
               </select>
             </div>
@@ -2284,7 +2154,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <div className="meta-item"><div className="meta-label">Est. delivery</div><div className="meta-val">{fmtDate(koRecord.deliveryDate || addDays(new Date(), 7).toISOString())}</div></div>
               </div>
               <div className="grid2">
-                <div className="field"><label>Karagir <span className="req">*</span></label><select value={koKaragir} onChange={e => setKoKaragir(e.target.value)}><option value="">Select karagir</option>{karagirs.filter(x => x.status === 'active').map(x => <option key={x.id}>{x.name}</option>)}</select></div>
+                <div className="field"><label>Karagir <span className="req">*</span></label><select value={koKaragir} onChange={e => setKoKaragir(e.target.value)}><option value="">Select karagir</option>{karagirs.filter(x => x.status === 'active').map((x, _idx) => <option key={x.id || _idx}>{x.name}</option>)}</select></div>
                 <div className="field"><label>Notes</label><input value={koNotes} onChange={e => setKoNotes(e.target.value)} placeholder="Special instructions" /></div>
               </div>
               <div className="btn-row">
@@ -2318,8 +2188,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <select value={kiDoc} onChange={e => { setKiDoc(e.target.value); setKiLoaded(false); setFinalRec(null) }}>
                 <option value="">-- Select --</option>
                 {kiEditing 
-                  ? records.filter(r => r.status === 'ready').map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
-                  : records.filter(r => r.status === 'with_karagir').map(r => <option key={r.docNum} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  ? records.filter(r => r.status === 'ready').map((r, _idx) => <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
+                  : records.filter(r => r.status === 'with_karagir').map((r, _idx) => <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || ''}>{r.docNum} — {r.name} ({r.jewellery})</option>)
                 }
               </select>
             </div>
@@ -2409,8 +2279,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                   // Find all ready documents at Satara (any prefix)
                   r.current_location === 'satara' && 
                   r.status === 'ready'
-                ).map(r => (
-                  <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
+                ).map((r, _idx) => (
+                  <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || r.doc_num}>
                     {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery})
                   </option>
                 ))}
@@ -2476,8 +2346,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                   // Show items sent to Koregaon OR ready at Satara (from Receive from Karagir)
                   (r.current_location === 'satara' && (r.status === 'ready' || r.status === 'with_karagir') && r.transfer_status === 'sent_to_koregaon') ||
                   (r.current_location === 'satara' && r.status === 'ready')
-                ).map(r => (
-                  <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
+                ).map((r, _idx) => (
+                  <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || r.doc_num}>
                     {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery}) {r.status === 'ready' ? '✓ Ready' : 'In repair'}
                   </option>
                 ))}
@@ -2564,8 +2434,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                   r.location === 'koregaon' && 
                   r.current_location === 'koregaon' && 
                   r.status === 'received'
-                ).map(r => (
-                  <option key={r.docNum || r.doc_num} value={r.docNum || r.doc_num}>
+                ).map((r, _idx) => (
+                  <option key={r.id || r.docNum || r.doc_num || _idx} value={r.docNum || r.doc_num}>
                     {r.docNum || r.doc_num} — {r.name} ({r.metal} {r.jewellery})
                   </option>
                 ))}
@@ -2632,13 +2502,13 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             <button className="btn" onClick={() => { setShowAll(true); setTrackQ(''); setTrackResults([]) }}>All</button>
           </div>
           {!showAll && trackResults.length === 0 && trackQ && <p style={{ color: 'var(--text2)', fontSize: 13, padding: '8px 0' }}>No order found.</p>}
-          {!showAll && trackResults.map(r => <TrackerCard key={r.docNum} r={r} />)}
+          {!showAll && trackResults.map((r, _idx) => <TrackerCard key={r.id || r.docNum || r.doc_num || _idx} r={r} />)}
           {showAll && records.length === 0 && <p style={{ color: 'var(--text2)', fontSize: 13, padding: '8px 0' }}>No orders yet.</p>}
           {showAll && ['overdue', 'ready', 'with_karagir', 'received'/*, 'transferred'*/].map(g => grp[g].length > 0 && (
             <div key={g}>
               <div className="sec-label" style={{ marginTop: 12 }}>{g === 'with_karagir' ? 'With karagir' : g.charAt(0).toUpperCase() + g.slice(1)}</div>
-              {grp[g].map((r: RepairRecord) => (
-                <div key={r.docNum || r.doc_num} className="list-row" onClick={() => { setShowAll(false); setTrackQ(r.docNum || r.doc_num || ''); setTrackResults([r]) }}>
+              {grp[g].map((r: RepairRecord, _idx: number) => (
+                <div key={r.id || r.docNum || r.doc_num || _idx} className="list-row" onClick={() => { setShowAll(false); setTrackQ(r.docNum || r.doc_num || ''); setTrackResults([r]) }}>
                   <div><span style={{ fontWeight: 700 }}>{r.docNum}</span><span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span>{r.name}<span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span><span style={{ color: 'var(--text2)' }}>{r.metal} {r.jewellery}</span></div>
                   <span className={`badge ${bdgCls[effStatus(r)]}`}>{bdgLbl[effStatus(r)]}</span>
                 </div>
@@ -2660,10 +2530,10 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               return r.location === 'koregaon'
             }
             return true
-          }).reverse().map(r => {
+          }).reverse().map((r, _idx) => {
             const es = effStatus(r)
             return (
-              <div key={r.docNum} className="list-row">
+              <div key={r.id || r.docNum || _idx} className="list-row">
                 <div><span style={{ fontWeight: 700 }}>{r.docNum}</span><span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span>{r.name}<span style={{ color: 'var(--text2)', margin: '0 8px' }}>|</span><span style={{ color: 'var(--text2)' }}>{r.metal} {r.jewellery}</span></div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: 11, color: 'var(--text2)' }}>{fmtDate(r.receivedDate || r.received_date || r.created_at || new Date().toISOString())}</span>
@@ -2683,10 +2553,8 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
         <button className="back-btn" onClick={goBack}><IcBack />Dashboard</button>
         <div className="card" style={{ padding: '1rem' }}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {(['salesman', 'jewellery', 'metal', 'karagir', 'location'] as const).map(t => (
-              <button key={t} className="btn" onClick={() => setMasterTab(t)} style={masterTab === t ? { borderColor: 'var(--brand)', color: 'var(--brand)' } : {}}>
-                {t === 'location' ? '📍 Location Master' : t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
+            {(['salesman', 'jewellery', 'metal', 'karagir'] as const).map(t => (
+              <button key={t} className="btn" onClick={() => setMasterTab(t)} style={masterTab === t ? { borderColor: 'var(--brand)', color: 'var(--brand)' } : {}}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
             ))}
           </div>
         </div>
@@ -2724,7 +2592,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             <div className="card-title">Jewellery type master <span className="count-badge">{jewelleries.length}</span></div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
               <div className="field" style={{ flex: 2, minWidth: 130, marginBottom: 0 }}><label>Type name *</label><input value={mjName} onChange={e => setMjName(e.target.value)} placeholder="e.g. Mangalsutra" /></div>
-              <div className="field" style={{ flex: 1, minWidth: 100, marginBottom: 0 }}><label>Category</label><select value={mjCat} onChange={e => setMjCat(e.target.value)}>{['Necklace', 'Ring', 'Bracelet', 'Earring', 'Chain', 'Anklet', 'Bangle', 'Other'].map(c => <option key={c}>{c}</option>)}</select></div>
+              <div className="field" style={{ flex: 1, minWidth: 100, marginBottom: 0 }}><label>Category</label><select value={mjCat} onChange={e => setMjCat(e.target.value)}>{['Necklace', 'Ring', 'Bracelet', 'Earring', 'Chain', 'Anklet', 'Bangle', 'Other'].map((c, _idx) => <option key={c}>{c}</option>)}</select></div>
               {editMasterId ? (
                 <>
                   <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={() => addMaster('jewellery')}>Update</button>
@@ -2811,101 +2679,6 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
             ))}
           </div>
         )}
-        {masterTab === 'location' && (
-          <div className="card">
-            <div className="card-title">📍 Location Master <span className="count-badge">{locations.length}</span></div>
-            <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16, border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>+ Add New Location Branch</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <div className="field" style={{ flex: 2, minWidth: 150, marginBottom: 0 }}>
-                  <label>Location Name *</label>
-                  <input 
-                    placeholder="e.g. Pune Branch, Mumbai Branch" 
-                    value={newLocationName}
-                    onChange={e => setNewLocationName(e.target.value)}
-                  />
-                </div>
-                <div className="field" style={{ flex: 1, minWidth: 100, marginBottom: 0 }}>
-                  <label>Location ID *</label>
-                  <input 
-                    placeholder="e.g. pune" 
-                    value={newLocationId}
-                    onChange={e => setNewLocationId(e.target.value)}
-                  />
-                </div>
-                <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={addLocation}>Add Location</button>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6 }}>
-                💡 Prefix generated will be: <code>JR-&#123;ID&#125;</code> (e.g. <code>JR-PUNE-0001</code>)
-              </div>
-            </div>
-
-            <Msg text={msg['master-location']?.text || ''} ok={msg['master-location']?.ok || false} />
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {locations.map(loc => {
-                const isCurrent = loc.id === cfgLocation
-                const recCount = records.filter(r => (r.location || 'satara') === loc.id).length
-                return (
-                  <div key={loc.id} className="master-item" style={{ 
-                    border: isCurrent ? '1.5px solid var(--brand)' : '1px solid var(--border)',
-                    background: isCurrent ? 'rgba(192, 0, 58, 0.03)' : 'var(--bg)'
-                  }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {editLocationId === loc.id ? (
-                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                            <input 
-                              value={loc.name} 
-                              onChange={e => updateLocationName(loc.id, e.target.value)}
-                              onBlur={() => setEditLocationId(null)}
-                              onKeyDown={e => e.key === 'Enter' && setEditLocationId(null)}
-                              autoFocus
-                              style={{ padding: '4px 8px', fontSize: 13, fontWeight: 600, width: 180 }}
-                            />
-                            <button className="btn btn-sm btn-primary" onClick={() => setEditLocationId(null)}>Done</button>
-                          </div>
-                        ) : (
-                          <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>
-                            {loc.name}
-                          </span>
-                        )}
-                        <span className="badge" style={{ background: '#e0e7ff', color: '#3730a3', fontWeight: 600 }}>
-                          {loc.prefix}
-                        </span>
-                        {isCurrent && (
-                          <span className="badge badge-active" style={{ background: 'var(--brand)', color: 'white' }}>
-                            Active Location
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4 }}>
-                        ID: <code>{loc.id}</code> · Orders: <strong>{recCount}</strong> records
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                      {!isCurrent && (
-                        <button className="btn btn-sm" onClick={() => handleSetLocation(loc.id)}>
-                          Switch Here
-                        </button>
-                      )}
-                      <button className="btn btn-sm" onClick={() => setEditLocationId(loc.id)}>
-                        Edit Name
-                      </button>
-                      <button 
-                        className="btn btn-sm btn-danger" 
-                        onClick={() => promptDeleteLocation(loc.id)}
-                        title="Delete Location from Master & Database"
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── SETTINGS ── */}
@@ -2966,113 +2739,73 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <div className="field"><label>API version</label><select value={rmApiver} onChange={e => setRmApiver(e.target.value)}><option value="v17.0">v17.0 (recommended)</option><option value="v18.0">v18.0</option><option value="v19.0">v19.0</option><option value="v20.0">v20.0</option></select></div>
               </div>
               <div className="divider" />
-              <div className="sec-label">Location Settings &amp; Branches</div>
+              <div className="sec-label">Location Settings</div>
               
-              {/* Add New Location */}
-              <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16, border: '1px solid var(--border)' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>+ Add New Location Branch</div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <div className="field" style={{ flex: 2, minWidth: 150, marginBottom: 0 }}>
-                    <label>Location Name *</label>
-                    <input 
-                      placeholder="e.g. Pune Branch, Mumbai Branch" 
-                      value={newLocationName}
-                      onChange={e => setNewLocationName(e.target.value)}
-                    />
-                  </div>
-                  <div className="field" style={{ flex: 1, minWidth: 100, marginBottom: 0 }}>
-                    <label>Location ID *</label>
-                    <input 
-                      placeholder="e.g. pune" 
-                      value={newLocationId}
-                      onChange={e => setNewLocationId(e.target.value)}
-                    />
-                  </div>
-                  <button className="btn btn-primary" style={{ alignSelf: 'flex-end' }} onClick={addLocation}>Add Location</button>
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6 }}>
-                  💡 Prefix generated will be: <code>JR-&#123;ID&#125;</code> (e.g. <code>JR-PUNE-0001</code>)
-                </div>
-                {msg.location && (
-                  <div className={`msg-box ${msg.location.ok ? 'msg-ok' : 'msg-err'}`} style={{ marginTop: 8 }}>
-                    {msg.location.text}
-                  </div>
-                )}
-              </div>
-
               {/* Location Master List */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>📍 Registered Branches ({locations.length})</span>
-                  <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 400 }}>Active: <strong>{(locations.find(l => l.id === cfgLocation)?.name || cfgLocation)}</strong></span>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>📍 Location Master</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {locations.map(loc => (
+                    <div key={loc.id} style={{ 
+                      background: loc.id === cfgLocation ? 'var(--brand)' : '#e0e0e0',
+                      color: loc.id === cfgLocation ? 'white' : 'var(--text)',
+                      padding: '8px 12px', borderRadius: 6, fontSize: 13,
+                      display: 'flex', alignItems: 'center', gap: 8
+                    }}>
+                      {editLocationId === loc.id ? (
+                        <input 
+                          value={loc.name} 
+                          onChange={e => updateLocationName(loc.id, e.target.value)}
+                          onBlur={() => setEditLocationId(null)}
+                          onKeyDown={e => e.key === 'Enter' && setEditLocationId(null)}
+                          autoFocus
+                          onClick={e => e.stopPropagation()}
+                          style={{ padding: 4, fontSize: 13 }}
+                        />
+                      ) : (
+                        <span onClick={() => setEditLocationId(loc.id)} title="Click to edit" style={{ cursor: 'pointer' }}>
+                          {loc.name}
+                        </span>
+                      )}
+                      <span style={{ fontSize: 10, opacity: 0.7 }}>({loc.prefix})</span>
+                      {loc.id !== 'satara' && (
+                        <button style={{ background: '#dc2626', border: 'none', cursor: 'pointer', color: 'white', padding: '4px 8px', fontSize: 12, borderRadius: 4, marginLeft: 8 }}
+                          onClick={(e) => { e.stopPropagation(); removeLocation(loc.id); }}>Delete</button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {locations.map(loc => {
-                    const isCurrent = loc.id === cfgLocation
-                    const recCount = records.filter(r => (r.location || 'satara') === loc.id).length
-                    return (
-                      <div key={loc.id} style={{ 
-                        background: isCurrent ? 'rgba(192, 0, 58, 0.04)' : 'var(--bg)',
-                        border: isCurrent ? '1.5px solid var(--brand)' : '1px solid var(--border)',
-                        padding: '10px 14px', borderRadius: 8, fontSize: 13,
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          {editLocationId === loc.id ? (
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                              <input 
-                                value={loc.name} 
-                                onChange={e => updateLocationName(loc.id, e.target.value)}
-                                onBlur={() => setEditLocationId(null)}
-                                onKeyDown={e => e.key === 'Enter' && setEditLocationId(null)}
-                                autoFocus
-                                style={{ padding: '4px 8px', fontSize: 13, fontWeight: 600, width: 170 }}
-                              />
-                              <button className="btn btn-sm btn-primary" onClick={() => setEditLocationId(null)}>Done</button>
-                            </div>
-                          ) : (
-                            <span style={{ fontWeight: 600, color: 'var(--text)' }}>
-                              {loc.name}
-                            </span>
-                          )}
-                          <span className="badge" style={{ background: '#e0e7ff', color: '#3730a3', fontSize: 11 }}>{loc.prefix}</span>
-                          <span style={{ fontSize: 11, color: 'var(--text2)' }}>({recCount} records)</span>
-                          {isCurrent && (
-                            <span className="badge badge-active" style={{ background: 'var(--brand)', color: 'white', fontSize: 11 }}>Active</span>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {!isCurrent && (
-                            <button className="btn btn-sm" onClick={() => handleSetLocation(loc.id)}>
-                              Switch
-                            </button>
-                          )}
-                          <button className="btn btn-sm" onClick={() => setEditLocationId(loc.id)}>
-                            Edit
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-danger"
-                            onClick={() => promptDeleteLocation(loc.id)}
-                            title="Delete this location from database"
-                          >
-                            🗑️ Delete
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
+              </div>
+              
+              {/* Add New Location */}
+              <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>+ Add New Location</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input 
+                    placeholder="Location name (e.g., Pune Branch)" 
+                    value={newLocationName}
+                    onChange={e => setNewLocationName(e.target.value)}
+                    style={{ flex: 1, minWidth: 150 }}
+                  />
+                  <input 
+                    placeholder="ID (e.g., pune)" 
+                    value={newLocationId}
+                    onChange={e => setNewLocationId(e.target.value)}
+                    style={{ width: 80 }}
+                  />
+                  <button className="btn btn-primary" onClick={addLocation}>Add</button>
                 </div>
               </div>
               
               {/* Current Location Selector */}
               <div className="grid2">
-                <div className="field"><label>Switch Active Working Location</label>
+                <div className="field"><label>Switch to Location</label>
                   <select value={cfgLocation} onChange={e => handleSetLocation(e.target.value)}>
                     {locations.map(loc => (
-                      <option key={loc.id} value={loc.id}>{loc.name} ({loc.prefix})</option>
+                      <option key={loc.id} value={loc.id}>{loc.name}</option>
                     ))}
                   </select>
-                  <div className="hint">Select which branch receipts and repairs will be created under</div>
+                  <div className="hint">Select which location to work as</div>
                 </div>
               </div>
               <div className="divider" />
@@ -3226,130 +2959,6 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
           )}
         </div>
       </div>
-
-      {/* ── PWA INSTALL MODAL FOR ALL DEVICES ── */}
-      {showPwaGuide && (
-        <div className="modal-backdrop" onClick={() => setShowPwaGuide(false)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
-              <div style={{ fontWeight: 'bold', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>📲</span> Install Devi Jewellers App
-              </div>
-              <button className="btn btn-sm" onClick={() => setShowPwaGuide(false)}>✕</button>
-            </div>
-
-            {installPrompt && (
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px', borderRadius: '8px', marginBottom: '14px', textAlign: 'center' }}>
-                <p style={{ fontWeight: '600', color: '#166534', marginBottom: '8px' }}>Direct Installation Available!</p>
-                <button className="btn btn-primary" onClick={triggerPwaInstall} style={{ width: '100%', justifyContent: 'center' }}>
-                  📥 Click to Install App Now
-                </button>
-              </div>
-            )}
-
-            {/* Tabs for instructions by device */}
-            <div className="stab-row" style={{ marginBottom: '14px' }}>
-              <button 
-                className={`stab ${pwaTab === 'windows' ? 'active' : ''}`} 
-                onClick={() => setPwaTab('windows')}
-              >
-                💻 Windows / PC
-              </button>
-              <button 
-                className={`stab ${pwaTab === 'android' ? 'active' : ''}`} 
-                onClick={() => setPwaTab('android')}
-              >
-                🤖 Android Tab &amp; Phone
-              </button>
-              <button 
-                className={`stab ${pwaTab === 'ios' ? 'active' : ''}`} 
-                onClick={() => setPwaTab('ios')}
-              >
-                📱 iPhone &amp; iPad
-              </button>
-            </div>
-
-            {pwaTab === 'windows' && (
-              <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
-                <div style={{ fontWeight: '600', marginBottom: '6px', color: '#1e40af' }}>Windows Computer / Laptop / Desktop:</div>
-                <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <li>Open this app in <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.</li>
-                  <li>Click the <strong>Install</strong> icon (<strong>⊕</strong> or <strong>⤓</strong>) on the right side of the address bar.</li>
-                  <li>Click <strong>Install</strong> when prompted.</li>
-                  <li>Devi Jewellers will open in its own clean window and be added to your <strong>Desktop</strong>, <strong>Start Menu</strong>, and <strong>Taskbar</strong>.</li>
-                </ol>
-              </div>
-            )}
-
-            {pwaTab === 'android' && (
-              <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
-                <div style={{ fontWeight: '600', marginBottom: '6px', color: '#166534' }}>Android Tablets &amp; Phones:</div>
-                <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <li>Open in <strong>Google Chrome</strong> or <strong>Samsung Internet</strong>.</li>
-                  <li>Tap the browser menu (<strong>⋮</strong> 3 vertical dots in top-right).</li>
-                  <li>Select <strong>&quot;Install app&quot;</strong> or <strong>&quot;Add to Home screen&quot;</strong>.</li>
-                  <li>Tap <strong>Install</strong> to confirm.</li>
-                  <li>The app will be installed on your home screen and app drawer for fast daily access.</li>
-                </ol>
-              </div>
-            )}
-
-            {pwaTab === 'ios' && (
-              <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
-                <div style={{ fontWeight: '600', marginBottom: '6px', color: '#c0003a' }}>iPhone &amp; iPad (Safari):</div>
-                <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <li>Open this application in <strong>Safari</strong>.</li>
-                  <li>Tap the <strong>Share</strong> button (box with upward arrow <span style={{ padding: '1px 5px', background: 'var(--bg2)', borderRadius: '4px', border: '1px solid var(--border)' }}>⎋</span>) in the toolbar.</li>
-                  <li>Scroll down and select <strong>&quot;Add to Home Screen&quot;</strong> (➕).</li>
-                  <li>Tap <strong>&quot;Add&quot;</strong> in the top-right corner.</li>
-                  <li>Devi Jewellers will now launch like a native iOS app with no browser bars!</li>
-                </ol>
-              </div>
-            )}
-
-            <div style={{ marginTop: '1.25rem', paddingTop: '10px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-primary" onClick={() => setShowPwaGuide(false)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── DELETE LOCATION CONFIRMATION MODAL ── */}
-      {locToDelete && (
-        <div className="modal-backdrop" onClick={() => setLocToDelete(null)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
-              <div style={{ fontWeight: 'bold', fontSize: 16, color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>🗑️</span> Delete Location Branch
-              </div>
-              <button className="btn btn-sm" onClick={() => setLocToDelete(null)}>✕</button>
-            </div>
-
-            <div style={{ fontSize: 14, color: 'var(--text)', marginBottom: 14, lineHeight: 1.5 }}>
-              Are you sure you want to delete branch <strong>&quot;{locToDelete.name}&quot;</strong> (ID: <code>{locToDelete.id}</code>)?
-            </div>
-
-            {locToDelete.recordsCount > 0 ? (
-              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '10px 12px', borderRadius: 6, fontSize: 13, marginBottom: 14 }}>
-                ⚠️ <strong>Note:</strong> There are <strong>{locToDelete.recordsCount}</strong> repair order records associated with this branch. Deleting the location from Master will remove it from future selections, while existing repair documents will retain their history.
-              </div>
-            ) : (
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', padding: '10px 12px', borderRadius: 6, fontSize: 13, marginBottom: 14 }}>
-                ✓ No active repair records found for this branch. Safe to remove.
-              </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-              <button className="btn" onClick={() => setLocToDelete(null)}>
-                Cancel
-              </button>
-              <button className="btn btn-danger" onClick={confirmDeleteLocation} style={{ background: '#dc2626', color: 'white', borderColor: '#dc2626' }}>
-                Yes, Delete Location
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
