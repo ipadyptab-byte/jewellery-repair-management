@@ -144,7 +144,7 @@ const convertMasterToDB = (master: Master) => ({
 });
 
 /* ─── Helpers ─── */
-const fmtDate = (iso?: string | Date) => new Date(iso || new Date()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+const fmtDate = (iso?: string | Date) => new Date(iso || new Date()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/Sept/i, 'Sep')
 const fmtFull = (iso: string | Date) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 const addDays = (d: string | Date, n: number) => { const r = new Date(d); r.setDate(r.getDate() + n); return r }
 const randTok = (n: number) => Array.from({ length: n }, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]).join('')
@@ -242,11 +242,11 @@ function buildAndDownloadPDF(rec: RepairRecord, type: 'received' | 'final', base
 
   doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.text('Charges', pad, y); y += 5
   const estAmtValue = rec.amount || rec.estimated_cost
-  const estAmtDisplay = !estAmtValue ? 'Will Inform Later' : `&#8377; ${estAmtValue}`
+  const estAmtDisplay = !estAmtValue ? 'Will Inform Later' : `₹ ${estAmtValue}`
   
   if (type === 'final') {
     doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFont('helvetica', 'normal'); doc.text(estAmtDisplay, pad + 50, y); y += 5
-    doc.setFont('helvetica', 'bold'); doc.text('Final Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(`&#8377; ${rec.finalAmount}`, pad + 50, y); y += 5
+    doc.setFont('helvetica', 'bold'); doc.text('Final Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(`₹ ${rec.finalAmount}`, pad + 50, y); y += 5
   } else {
     doc.setFont('helvetica', 'bold'); doc.text('Estimated Amount:', pad, y); doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text(estAmtDisplay, pad + 50, y); y += 5
     if (estAmtValue) {
@@ -377,11 +377,11 @@ function InvoicePanel({ rec, type, baseUrl, expDays, onMsg, onSendWhatsApp, shop
   
   // Convert amount to number for comparison (DB might return "0" as string)
   const estAmount = Number(rec.amount || rec.estimated_cost) || 0
-  const estChargesDisplay = estAmount === 0 ? 'Will Inform Later' : `&#8377; ${estAmount}`
+  const estChargesDisplay = estAmount === 0 ? 'Will Inform Later' : `₹ ${estAmount}`
   
   const waMsg = type === 'received'
     ? `Dear ${rec.name || rec.customer_name},\n\nYour ${rec.metal} jewellery (${rec.jewellery || rec.item_type}) has been received at *Devi Jewellers*.\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n📅 *Est. Delivery:* ${fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString())}\n💰 *Est. Charges:* ${estChargesDisplay}\n\n📄 *View your invoice:*\n${url}\n_(Link valid ${displayExpiry} — expires ${expDate})_\n\nThank you! *Devi Jewellers* 🌟`
-    : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* &#8377; ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${displayExpiry} — expires ${expDate})_\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
+    : `Dear ${rec.name || rec.customer_name},\n\nYour *${rec.metal}* jewellery is *ready for delivery* at *Devi Jewellers*! 🎉\n\n📋 *Document No:* ${rec.docNum || rec.doc_num}\n💰 *Final Charges:* ₹ ${rec.finalAmount || rec.final_amount}\n\n📄 *View your final invoice:*\n${url}\n_(Link valid ${displayExpiry} — expires ${expDate})_\nPlease visit with your receipt.\nThank you! *Devi Jewellers* 🌟`
 
   const copy = () => navigator.clipboard.writeText(url).then(() => onMsg('Link copied!', true)).catch(() => onMsg('Copy failed', false))
   const download = () => buildAndDownloadPDF(rec, type, baseUrl, expDays, shopName || 'Devi Jewellers', shopAddress || '')
@@ -548,12 +548,18 @@ export default function App() {
       showMessage('location', 'Location ID already exists', false)
       return
     }
-    setLocations(prev => [...prev, { 
+    const newList = [...locations, { 
       id, 
       name: nameSlug, 
       prefix: `JR-${id.toUpperCase()}`, 
       next_seq: 0 
-    }])
+    }]
+    setLocations(newList)
+    fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locationsList: newList })
+    }).catch(console.error);
     setNewLocationName('')
     setNewLocationId('')
     showMessage('location', `Location "${nameSlug}" added!`, true)
@@ -603,7 +609,14 @@ export default function App() {
       }
     }
     
-    setLocations(prev => prev.filter(l => l.id !== id))
+    const newList = locations.filter(l => l.id !== id)
+    setLocations(newList)
+    fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locationsList: newList })
+    }).catch(console.error);
+    
     if (cfgLocation === id) handleSetLocation('satara')
     showMessage('location', `Location "${id}" removed`, true)
   }
@@ -626,16 +639,7 @@ export default function App() {
     { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
   ])
 
-  // Auto-save locations when they change
-  useEffect(() => {
-    if (locations && locations.length > 0) {
-      fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locationsList: locations })
-      }).catch(console.error);
-    }
-  }, [locations]);
+  
 
   
   const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl3Name, setTpl3Name] = useState('2739573333095990'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl3Body, setTpl3Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en'); const [tpl3Lang, setTpl3Lang] = useState('en')
@@ -1712,10 +1716,10 @@ export default function App() {
     const daysLeft = Math.ceil((new Date(r.deliveryDate || addDays(new Date(), 7).toISOString()).getTime() - Date.now()) / 86400000)
     const daysText = es === 'ready' ? 'Completed' : es === 'overdue' ? `${Math.abs(daysLeft)} day(s) overdue` : daysLeft === 0 ? 'Due today' : `${daysLeft} day(s) left`
     const steps = [
-      { label: 'Jewellery received', sub: `${r.jewellery || r.item_type} · ${r.metal} · Est &#8377;${r.amount || r.estimated_cost}`, date: r.receivedDate || r.received_date, done: true },
+      { label: 'Jewellery received', sub: `${r.jewellery || r.item_type} · ${r.metal} · Est ₹${r.amount || r.estimated_cost}`, date: r.receivedDate || r.received_date, done: true },
       { label: r.karagir ? `Issued to karagir — ${r.karagir}` : 'Issued to karagir', sub: r.karagir ? 'In repair' : 'Pending', date: r.karagirDate || r.karagir_date, done: !!r.karagir },
-      { label: 'Received from karagir', sub: r.finalAmount || r.final_amount ? `Final: &#8377;${r.finalAmount || r.final_amount}` : 'Awaiting', date: r.completedDate || r.completed_date, done: !!(r.completedDate || r.completed_date) },
-      { label: 'Ready for delivery', sub: r.finalAmount || r.final_amount ? `Charges: &#8377;${r.finalAmount || r.final_amount}` : 'Pending', date: r.completedDate || r.completed_date, done: r.status === 'ready' },
+      { label: 'Received from karagir', sub: r.finalAmount || r.final_amount ? `Final: ₹${r.finalAmount || r.final_amount}` : 'Awaiting', date: r.completedDate || r.completed_date, done: !!(r.completedDate || r.completed_date) },
+      { label: 'Ready for delivery', sub: r.finalAmount || r.final_amount ? `Charges: ₹${r.finalAmount || r.final_amount}` : 'Pending', date: r.completedDate || r.completed_date, done: r.status === 'ready' },
     ]
     const ai = steps.filter(s => s.done).length
     return (
@@ -1956,7 +1960,7 @@ export default function App() {
                 <div className="detail-row"><span className="detail-label">Item:</span><span className="detail-value">{deliverRec.jewellery || deliverRec.item_type}</span></div>
                 <div className="detail-row"><span className="detail-label">Metal:</span><span className="detail-value">{deliverRec.metal}</span></div>
                 <div className="detail-row"><span className="detail-label">Weight:</span><span className="detail-value">{deliverRec.weight} g</span></div>
-                <div className="detail-row"><span className="detail-label">Final Amount:</span><span className="detail-value">&#8377; {deliverRec.finalAmount || deliverRec.final_amount}</span></div>
+                <div className="detail-row"><span className="detail-label">Final Amount:</span><span className="detail-value">₹ {deliverRec.finalAmount || deliverRec.final_amount}</span></div>
                 <div className="detail-row"><span className="detail-label">Received:</span><span className="detail-value">{deliverRec.receivedDate ? fmtDate(deliverRec.receivedDate) : '-'}</span></div>
                 <div className="detail-row"><span className="detail-label">Ready:</span><span className="detail-value">{deliverRec.completedDate ? fmtDate(deliverRec.completedDate) : '-'}</span></div>
               </div>
@@ -2096,7 +2100,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
           </div>
           <div className="grid3">
             <div className="field"><label>Est. days <span className="req">*</span></label><input type="number" min="1" value={rDays} onChange={e => setRDays(e.target.value)} placeholder="e.g. 7" /></div>
-            <div className="field"><label>Est. amount (&#8377;)</label><input type="number" value={rAmount} onChange={e => setRAmount(e.target.value)} placeholder="e.g. 500" /></div>
+            <div className="field"><label>Est. amount (₹)</label><input type="number" value={rAmount} onChange={e => setRAmount(e.target.value)} placeholder="e.g. 500" /></div>
             <div className="field"><label>Salesman <span className="req">*</span></label><select value={rSalesman} onChange={e => setRSalesman(e.target.value)}><option value="">Select salesman</option>{salesmen.filter(x => x.status === 'active').map((x, _idx) => <option key={x.id || _idx}>{x.name}</option>)}</select></div>
           </div>
           <div className="field"><label>Repair description</label><textarea rows={2} value={rDesc} onChange={e => setRDesc(e.target.value)} placeholder="Describe the repair work..." /></div>
@@ -2209,7 +2213,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <div className="meta-item"><div className="meta-label">Karagir</div><div className="meta-val">{kiRecord.karagir}</div></div>
               </div>
               <div className="grid2">
-                <div className="field"><label>Final repair amount (&#8377;) <span className="req">*</span></label><input type="number" value={kiAmount} onChange={e => setKiAmount(e.target.value)} placeholder="Actual amount" /></div>
+                <div className="field"><label>Final repair amount (₹) <span className="req">*</span></label><input type="number" value={kiAmount} onChange={e => setKiAmount(e.target.value)} placeholder="Actual amount" /></div>
                 <div className="field"><label>Quality</label><select value={kiQuality} onChange={e => setKiQuality(e.target.value)}><option>Good</option><option>Excellent</option><option>Needs touch-up</option></select></div>
               </div>
               <div className="btn-row">
@@ -2297,7 +2301,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
                 <div style={{ fontWeight: 600 }}>{transferRec.name}</div>
                 <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.metal} {transferRec.jewellery}</div>
-                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.weight} g | &#8377; {transferRec.finalAmount || transferRec.final_amount}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.weight} g | ₹ {transferRec.finalAmount || transferRec.final_amount}</div>
               </div>
             )}
             
@@ -2364,7 +2368,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
                 <div style={{ fontWeight: 600 }}>{transferRec.name}</div>
                 <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.metal} {transferRec.jewellery}</div>
-                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.weight} g | &#8377; {transferRec.finalAmount || transferRec.final_amount || transferRec.amount || transferRec.estimated_cost}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.weight} g | ₹ {transferRec.finalAmount || transferRec.final_amount || transferRec.amount || transferRec.estimated_cost}</div>
                 <div style={{ fontSize: 13, color: transferRec.status === 'ready' ? 'green' : 'var(--text2)' }}>
                   Status: {transferRec.status === 'ready' ? '✅ Ready for delivery' : '⏳ With Karagir'}
                 </div>
@@ -2452,7 +2456,7 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
               <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
                 <div style={{ fontWeight: 600 }}>{transferRec.name}</div>
                 <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.metal} {transferRec.jewellery}</div>
-                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.weight} g | &#8377; {transferRec.amount || transferRec.estimated_cost}</div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>{transferRec.weight} g | ₹ {transferRec.amount || transferRec.estimated_cost}</div>
               </div>
             )}
             
@@ -2914,15 +2918,15 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl1Name} onChange={e => setTpl1Name(e.target.value)} /><div className="hint">Exact name as approved in Meta Business Manager</div></div>
                 <div className="field"><label>Language</label><select value={tpl1Lang} onChange={e => setTpl1Lang(e.target.value)}><option value="en_IN">en_IN — English (India)</option><option value="en">en</option><option value="hi">hi — Hindi</option><option value="mr">mr — Marathi</option></select></div>
               </div>
-              <div className="field"><label>Template body</label><textarea rows={3} value={tpl1Body} onChange={e => setTpl1Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: &#8377; {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated)</div></div>
-              <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: &#8377; <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>https://jewellery-repair-management.vercel.app/api/invoice/INV-JR1001-xxx?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
+              <div className="field"><label>Template body</label><textarea rows={3} value={tpl1Body} onChange={e => setTpl1Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: ₹ {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated)</div></div>
+              <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: ₹ <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>https://jewellery-repair-management.vercel.app/api/invoice/INV-JR1001-xxx?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
               <div className="divider" />
               <div className="sec-label">Template 2 — Ready for delivery (with final invoice link)</div>
               <div className="grid2">
                 <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl2Name} onChange={e => setTpl2Name(e.target.value)} /></div>
                 <div className="field"><label>Language</label><select value={tpl2Lang} onChange={e => setTpl2Lang(e.target.value)}><option value="en_IN">en_IN</option><option value="en">en</option><option value="hi">hi</option><option value="mr">mr</option></select></div>
               </div>
-              <div className="field"><label>Template body</label><textarea rows={3} value={tpl2Body} onChange={e => setTpl2Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery is ready at Devi Jewellers. Final charges: &#8377; {{3}}. Please visit with receipt. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Final amount</div></div>
+              <div className="field"><label>Template body</label><textarea rows={3} value={tpl2Body} onChange={e => setTpl2Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery is ready at Devi Jewellers. Final charges: ₹ {{3}}. Please visit with receipt. Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Final amount</div></div>
               <div className="divider" />
               <div className="sec-label">Template 3 — Delivery OTP (4-digit verification)</div>
               <div className="grid2">
