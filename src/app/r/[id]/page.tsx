@@ -52,10 +52,11 @@ export default async function InvoicePage({ params, searchParams }: PageProps) {
     const normalizedExp = expStr.toLowerCase()
     
     // Try parsing "05may2026" format
-    if (/^\d{2}[a-z]+\d{4}$/.test(normalizedExp)) {
-      const day = normalizedExp.slice(0, 2)
-      const monthStr = normalizedExp.slice(2, 5)
-      const year = normalizedExp.slice(5, 9)
+    const match = normalizedExp.match(/^(\d{2})([a-z]+)(\d{4})$/)
+    if (match) {
+      const day = match[1]
+      const monthStr = match[2].slice(0, 3)
+      const year = match[3]
       const monthMap: Record<string, string> = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' }
       const month = monthMap[monthStr] || '01'
       expDate = new Date(`${year}-${month}-${day}`)
