@@ -100,7 +100,12 @@ export async function GET() {
           settings.currency = row.value || 'INR';
           break;
         case 'locations_list':
-          settings.locationsList = row.value ? JSON.parse(row.value) : null;
+          try {
+            settings.locationsList = row.value ? (typeof row.value === 'string' ? JSON.parse(row.value) : row.value) : null;
+          } catch (e) {
+            console.error('Error parsing locations_list:', e);
+            settings.locationsList = null;
+          }
           break;
         case 'tax_rate':
           settings.taxRate = parseFloat(row.value) || 0;
