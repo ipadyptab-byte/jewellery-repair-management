@@ -535,28 +535,74 @@ export default function App() {
     }
     setCfgLocation(loc)
   }
-  
+
+  // Location Master - persistent across reloads and servers
+  const [locations, setLocations] = useState<{id: string, name: string, prefix: string, next_seq: number}[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('devi-jewellers-locations')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        }
+      } catch (e) {}
+    }
+    return [
+      { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
+      { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
+    ]
+  })
+  const [newLocationName, setNewLocationName] = useState('')
+  const [newLocationId, setNewLocationId] = useState('')
+  const [editLocationId, setEditLocationId] = useState<string | null>(null)
+
+  // Direct persistence helper for locations
+  const persistLocations = async (newLocations: {id: string, name: string, prefix: string, next_seq: number}[]) => {
+    setLocations(newLocations)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('devi-jewellers-locations', JSON.stringify(newLocations))
+    }
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locationsList: newLocations })
+      })
+      if (!res.ok) {
+        console.error('Failed to save locations to server:', await res.text())
+      }
+    } catch (err) {
+      console.error('Failed to save locations to server:', err)
+    }
+  }
+
   // Add new location to master
-  const addLocation = () => {
-    if (!newLocationName || !newLocationId) {
+  const addLocation = async () => {
+    const trimmedName = newLocationName.trim()
+    const rawId = newLocationId.trim()
+    if (!trimmedName || !rawId) {
       showMessage('location', 'Please enter location name and ID', false)
       return
     }
-    const id = newLocationId.toLowerCase().replace(/[^a-z0-9]/g, '')
-    const nameSlug = newLocationName.trim()
+    const id = rawId.toLowerCase().replace(/[^a-z0-9]/g, '')
+    if (!id) {
+      showMessage('location', 'Please enter a valid alphanumeric ID (e.g. pune)', false)
+      return
+    }
     if (locations.find(l => l.id === id)) {
       showMessage('location', 'Location ID already exists', false)
       return
     }
-    setLocations(prev => [...prev, { 
+    const newLocs = [...locations, { 
       id, 
-      name: nameSlug, 
+      name: trimmedName, 
       prefix: `JR-${id.toUpperCase()}`, 
       next_seq: 0 
-    }])
+    }]
+    await persistLocations(newLocs)
     setNewLocationName('')
     setNewLocationId('')
-    showMessage('location', `Location "${nameSlug}" added!`, true)
+    showMessage('location', `Location "${trimmedName}" added & saved!`, true)
   }
   
   // Remove location (cannot remove main and cannot remove if records exist for that location)
@@ -603,13 +649,20 @@ export default function App() {
       }
     }
     
-    setLocations(prev => prev.filter(l => l.id !== id))
+    const updatedLocs = locations.filter(l => l.id !== id)
+    await persistLocations(updatedLocs)
     if (cfgLocation === id) handleSetLocation('satara')
     showMessage('location', `Location "${id}" removed`, true)
   }
-    // Check if records exist for this location
-  const updateLocationName = (id: string, newName: string) => {
-    setLocations(prev => prev.map(l => l.id === id ? { ...l, name: newName } : l))
+  
+  const updateLocationName = async (id: string, newName: string) => {
+    const trimmed = newName.trim()
+    if (!trimmed) {
+      setEditLocationId(null)
+      return
+    }
+    const updatedLocs = locations.map(l => l.id === id ? { ...l, name: trimmed } : l)
+    await persistLocations(updatedLocs)
     setEditLocationId(null)
     showMessage('location', 'Location name updated', true)
   }
@@ -617,26 +670,6 @@ export default function App() {
   const [cfgLinkBase, setCfgLinkBase] = useState(''); const [cfgExpiry, setCfgExpiry] = useState(10)
   const [logoBase64, setLogoBase64] = useState<string>('')
   const [koregaonSeq, setKoregaonSeq] = useState(0)
-  
-  // Location Master - can be extended with more locations
-  // Each location has its own document series sequence
-  
-    const [locations, setLocations] = useState<{id: string, name: string, prefix: string, next_seq: number}[]>([
-    { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
-    { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
-  ])
-
-  // Auto-save locations when they change
-  useEffect(() => {
-    if (locations && locations.length > 0) {
-      fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locationsList: locations })
-      }).catch(console.error);
-    }
-  }, [locations]);
-
   
   const [tpl1Name, setTpl1Name] = useState('repair_receive'); const [tpl2Name, setTpl2Name] = useState('padm_sales_final_update'); const [tpl3Name, setTpl3Name] = useState('2739573333095990'); const [tpl1Body, setTpl1Body] = useState(''); const [tpl2Body, setTpl2Body] = useState(''); const [tpl3Body, setTpl3Body] = useState(''); const [tpl1Lang, setTpl1Lang] = useState('en'); const [tpl2Lang, setTpl2Lang] = useState('en'); const [tpl3Lang, setTpl3Lang] = useState('en')
 
@@ -653,9 +686,6 @@ export default function App() {
   }, [])
   const [connStatus, setConnStatus] = useState<'no' | 'ok' | 'checking'>('no')
   const [settingsTab, setSettingsTab] = useState('creds')
-  const [newLocationName, setNewLocationName] = useState('')
-  const [newLocationId, setNewLocationId] = useState('')
-  const [editLocationId, setEditLocationId] = useState<string | null>(null)
   const [trRecv, setTrRecv] = useState(true); const [trReady, setTrReady] = useState(true); const [trKaragir, setTrKaragir] = useState(false)
   const [testWa, setTestWa] = useState(''); const [testTpl, setTestTpl] = useState('received')
   const [printRec, setPrintRec] = useState<{rec: RepairRecord; type: 'received' | 'final'} | null>(null)
@@ -939,6 +969,12 @@ export default function App() {
           
           // Update all state from database directly
           console.log('🔄 Setting state from DB:');
+          if (settings.locationsList && Array.isArray(settings.locationsList) && settings.locationsList.length > 0) {
+            setLocations(settings.locationsList);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('devi-jewellers-locations', JSON.stringify(settings.locationsList));
+            }
+          }
           if (settings.businessName) { console.log('  - setCfgShop:', settings.businessName); setCfgShop(settings.businessName); }
           if (settings.shopOwner) setCfgOwner(settings.shopOwner);
           if (settings.shopPhone) setCfgPhone(settings.shopPhone);
@@ -1004,6 +1040,9 @@ export default function App() {
           // Load all settings from database immediately
           if (settings.locationsList && Array.isArray(settings.locationsList) && settings.locationsList.length > 0) {
             setLocations(settings.locationsList);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('devi-jewellers-locations', JSON.stringify(settings.locationsList));
+            }
           }
           if (settings.businessName) setCfgShop(settings.businessName);
           if (settings.shopOwner) setCfgOwner(settings.shopOwner);
@@ -2785,16 +2824,19 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                     placeholder="Location name (e.g., Pune Branch)" 
                     value={newLocationName}
                     onChange={e => setNewLocationName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addLocation()}
                     style={{ flex: 1, minWidth: 150 }}
                   />
                   <input 
                     placeholder="ID (e.g., pune)" 
                     value={newLocationId}
                     onChange={e => setNewLocationId(e.target.value)}
-                    style={{ width: 80 }}
+                    onKeyDown={e => e.key === 'Enter' && addLocation()}
+                    style={{ width: 100 }}
                   />
-                  <button className="btn btn-primary" onClick={addLocation}>Add</button>
+                  <button className="btn btn-primary" onClick={addLocation}>+ Add</button>
                 </div>
+                <Msg text={msg['location']?.text || ''} ok={msg['location']?.ok || false} />
               </div>
               
               {/* Current Location Selector */}
