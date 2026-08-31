@@ -1,6 +1,6 @@
+```ts
 import pg from 'pg'
 
-<<<<<<< HEAD
 // ── In-Memory Store & Mock Data (Fallback when PostgreSQL is not configured / reachable) ──
 interface MemoryStore {
   repairRecords: any[];
@@ -143,10 +143,10 @@ function handleMockQuery(text: string, values: any[] = []): { rows: any[] } {
   const q = text.trim()
   const qUpper = q.toUpperCase()
 
-  // 1. Health check queries
   if (qUpper.startsWith('SELECT 1')) {
     return { rows: [{ '?column?': 1 }] }
   }
+
   if (qUpper.includes('PG_CATALOG.PG_TABLES')) {
     return {
       rows: [
@@ -158,21 +158,24 @@ function handleMockQuery(text: string, values: any[] = []): { rows: any[] } {
     }
   }
 
-  // 2. Settings queries
   if (qUpper.includes('FROM SETTINGS')) {
     if (qUpper.startsWith('SELECT KEY, VALUE FROM SETTINGS')) {
       const rows = Object.entries(memoryStore.settings).map(([key, value]) => ({ key, value }))
       return { rows }
     }
+
     if (qUpper.includes('WHERE KEY =')) {
       let keyVal = values[0]
+
       if (!keyVal) {
         const match = q.match(/WHERE\s+key\s*=\s*'([^']+)'/i)
         if (match) keyVal = match[1]
       }
+
       if (keyVal && memoryStore.settings[keyVal] !== undefined) {
         return { rows: [{ key: keyVal, value: memoryStore.settings[keyVal] }] }
       }
+
       return { rows: [] }
     }
   }
@@ -183,25 +186,29 @@ function handleMockQuery(text: string, values: any[] = []): { rows: any[] } {
       memoryStore.settings['whatsapp_templates'] = val
       return { rows: [{ key: 'whatsapp_templates', value: val }] }
     }
+
     const key = values[0]
     const val = values[1]
+
     if (key !== undefined) {
       memoryStore.settings[key] = String(val ?? '')
       return { rows: [{ key, value: String(val ?? '') }] }
     }
   }
 
-  // 3. Masters queries
   if (qUpper.includes('FROM MASTERS')) {
     if (qUpper.startsWith('SELECT * FROM MASTERS')) {
-      const sorted = [...memoryStore.masters].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+      const sorted = [...memoryStore.masters].sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '')
+      )
+
       return { rows: sorted }
     }
   }
 
   if (qUpper.startsWith('INSERT INTO MASTERS')) {
-    // VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     const [name, category, type, speciality, mobile, address, karat, status] = values
+
     const newMaster = {
       id: memoryStore.nextMasterId++,
       name: name || '',
@@ -215,16 +222,18 @@ function handleMockQuery(text: string, values: any[] = []): { rows: any[] } {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
+
     memoryStore.masters.push(newMaster)
     return { rows: [newMaster] }
   }
 
   if (qUpper.startsWith('UPDATE MASTERS')) {
-    // Dynamic or fixed update
     const id = values[values.length - 1]
     const master = memoryStore.masters.find(m => m.id === Number(id))
+
     if (master) {
       const [name, category, speciality, mobile, address, karat, status] = values
+
       if (name !== undefined && name !== null) master.name = name
       if (category !== undefined) master.category = category
       if (speciality !== undefined) master.speciality = speciality
@@ -232,28 +241,34 @@ function handleMockQuery(text: string, values: any[] = []): { rows: any[] } {
       if (address !== undefined) master.address = address
       if (karat !== undefined) master.karat = karat
       if (status !== undefined && status !== null) master.status = status
+
       master.updated_at = new Date().toISOString()
+
       return { rows: [master] }
     }
+
     return { rows: [] }
   }
 
-  // 4. Repair Items queries
   if (qUpper.includes('FROM REPAIR_ITEMS')) {
     if (qUpper.startsWith('SELECT * FROM REPAIR_ITEMS WHERE RECORD_ID =')) {
       const recordId = Number(values[0])
       const items = memoryStore.repairItems.filter(i => i.record_id === recordId)
       return { rows: items }
     }
+
     if (qUpper.startsWith('DELETE FROM REPAIR_ITEMS WHERE RECORD_ID =')) {
       const recordId = Number(values[0])
-      memoryStore.repairItems = memoryStore.repairItems.filter(i => i.record_id !== recordId)
+      memoryStore.repairItems = memoryStore.repairItems.filter(
+        i => i.record_id !== recordId
+      )
       return { rows: [] }
     }
   }
 
   if (qUpper.startsWith('INSERT INTO REPAIR_ITEMS')) {
     const [record_id, metal, jewellery, weight, description] = values
+
     const item = {
       id: memoryStore.nextItemId++,
       record_id: Number(record_id),
@@ -263,38 +278,58 @@ function handleMockQuery(text: string, values: any[] = []): { rows: any[] } {
       description: description || '',
       created_at: new Date().toISOString()
     }
+
     memoryStore.repairItems.push(item)
     return { rows: [item] }
   }
 
-  // 5. Repair Records queries
   if (qUpper.includes('FROM REPAIR_RECORDS')) {
     if (qUpper.startsWith('SELECT * FROM REPAIR_RECORDS WHERE DOC_NUM =')) {
       const docNum = String(values[0])
       const rec = memoryStore.repairRecords.find(r => r.doc_num === docNum)
       return { rows: rec ? [rec] : [] }
     }
+
     if (qUpper.startsWith('SELECT * FROM REPAIR_RECORDS')) {
-      const sorted = [...memoryStore.repairRecords].sort((a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      const sorted = [...memoryStore.repairRecords].sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() -
+          new Date(a.created_at).getTime()
       )
+
       return { rows: sorted }
     }
+
     if (qUpper.startsWith('DELETE FROM REPAIR_RECORDS WHERE DOC_NUM =')) {
       const docNum = String(values[0])
       const idx = memoryStore.repairRecords.findIndex(r => r.doc_num === docNum)
+
       if (idx !== -1) {
         const deleted = memoryStore.repairRecords.splice(idx, 1)[0]
         return { rows: [deleted] }
       }
+
       return { rows: [] }
     }
   }
 
   if (qUpper.startsWith('INSERT INTO REPAIR_RECORDS')) {
     const [
-      doc_num, name, mobile, metal, jewellery, weight, amount, salesman,
-      description, received_date, delivery_date, status, location, current_location, transfer_status
+      doc_num,
+      name,
+      mobile,
+      metal,
+      jewellery,
+      weight,
+      amount,
+      salesman,
+      description,
+      received_date,
+      delivery_date,
+      status,
+      location,
+      current_location,
+      transfer_status
     ] = values
 
     const newRecord = {
@@ -309,7 +344,9 @@ function handleMockQuery(text: string, values: any[] = []): { rows: any[] } {
       salesman: salesman || '',
       description: description || '',
       received_date: received_date || new Date().toISOString(),
-      delivery_date: delivery_date || new Date(Date.now() + 7 * 86400000).toISOString(),
+      delivery_date:
+        delivery_date ||
+        new Date(Date.now() + 7 * 86400000).toISOString(),
       status: status || 'received',
       karagir: null,
       karagir_date: null,
@@ -323,6 +360,7 @@ function handleMockQuery(text: string, values: any[] = []): { rows: any[] } {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
+
     memoryStore.repairRecords.unshift(newRecord)
     return { rows: [newRecord] }
   }
@@ -331,8 +369,31 @@ function handleMockQuery(text: string, values: any[] = []): { rows: any[] } {
     if (qUpper.includes('WHERE ID =')) {
       const id = Number(values[20] ?? values[values.length - 1])
       const rec = memoryStore.repairRecords.find(r => r.id === id)
+
       if (rec) {
-        const [doc_num, name, mobile, metal, jewellery, weight, amount, salesman, description, received_date, delivery_date, status, karagir, karagir_date, final_amount, completed_date, quality, location, current_location, transfer_status] = values
+        const [
+          doc_num,
+          name,
+          mobile,
+          metal,
+          jewellery,
+          weight,
+          amount,
+          salesman,
+          description,
+          received_date,
+          delivery_date,
+          status,
+          karagir,
+          karagir_date,
+          final_amount,
+          completed_date,
+          quality,
+          location,
+          current_location,
+          transfer_status
+        ] = values
+
         if (doc_num) rec.doc_num = doc_num
         if (name) rec.name = name
         if (mobile) rec.mobile = mobile
@@ -347,41 +408,64 @@ function handleMockQuery(text: string, values: any[] = []): { rows: any[] } {
         if (status) rec.status = status
         if (karagir !== undefined) rec.karagir = karagir
         if (karagir_date !== undefined) rec.karagir_date = karagir_date
-        if (final_amount !== undefined) rec.final_amount = final_amount !== null ? Number(final_amount) : null
+        if (final_amount !== undefined) {
+          rec.final_amount =
+            final_amount !== null ? Number(final_amount) : null
+        }
         if (completed_date !== undefined) rec.completed_date = completed_date
         if (quality !== undefined) rec.quality = quality
         if (location !== undefined) rec.location = location
-        if (current_location !== undefined) rec.current_location = current_location
-        if (transfer_status !== undefined) rec.transfer_status = transfer_status
+        if (current_location !== undefined) {
+          rec.current_location = current_location
+        }
+        if (transfer_status !== undefined) {
+          rec.transfer_status = transfer_status
+        }
+
         rec.updated_at = new Date().toISOString()
+
         return { rows: [rec] }
       }
+
       return { rows: [] }
     } else if (qUpper.includes('WHERE DOC_NUM =')) {
       const docNum = String(values[values.length - 1])
       const rec = memoryStore.repairRecords.find(r => r.doc_num === docNum)
+
       if (rec) {
-        // Parse the SET clause
-        const setPart = q.substring(qUpper.indexOf('SET') + 3, qUpper.indexOf('WHERE'))
+        const setPart = q.substring(
+          qUpper.indexOf('SET') + 3,
+          qUpper.indexOf('WHERE')
+        )
+
         const assignments = setPart.split(',').map(s => s.trim())
+
         assignments.forEach((assignment) => {
-          const match = assignment.match(/([a-zA-Z0-9_]+)\s*=\s*\$(\d+)/)
+          const match = assignment.match(
+            /([a-zA-Z0-9_]+)\s*=\s*\$(\d+)/
+          )
+
           if (match) {
             const col = match[1].toLowerCase()
             const paramIdx = parseInt(match[2], 10) - 1
             const val = values[paramIdx]
+
             if (val !== undefined) {
               if (col === 'amount' || col === 'final_amount') {
-                (rec as any)[col] = val !== null ? Number(val) : null
+                ;(rec as any)[col] =
+                  val !== null ? Number(val) : null
               } else {
-                (rec as any)[col] = val
+                ;(rec as any)[col] = val
               }
             }
           }
         })
+
         rec.updated_at = new Date().toISOString()
+
         return { rows: [rec] }
       }
+
       return { rows: [] }
     }
   }
@@ -409,9 +493,14 @@ function createClientWrapper() {
   if (dbUrl && !useMemoryFallback) {
     if (!pgPool) {
       let connectionString = dbUrl
+
       if (!connectionString.includes('uselibpqcompat')) {
-        connectionString = connectionString + (connectionString.includes('?') ? '&' : '?') + 'uselibpqcompat=true'
+        connectionString =
+          connectionString +
+          (connectionString.includes('?') ? '&' : '?') +
+          'uselibpqcompat=true'
       }
+
       try {
         pgPool = new pg.Pool({
           connectionString,
@@ -419,27 +508,40 @@ function createClientWrapper() {
           connectionTimeoutMillis: 3000
         })
       } catch (err) {
-        console.warn('[DB] Failed to instantiate pg.Pool, using in-memory store:', err)
+        console.warn(
+          '[DB] Failed to instantiate pg.Pool, using in-memory store:',
+          err
+        )
         useMemoryFallback = true
       }
     }
   }
 
   return {
-    query: async (text: string, values: any[] = []): Promise<{ rows: any[] }> => {
+    query: async (
+      text: string,
+      values: any[] = []
+    ): Promise<{ rows: any[] }> => {
       if (pgPool && !useMemoryFallback) {
         try {
           return await pgPool.query(text, values)
         } catch (err: any) {
-          console.warn('[DB] Live PostgreSQL query failed, switching to in-memory store:', err?.message || err)
+          console.warn(
+            '[DB] Live PostgreSQL query failed, switching to in-memory store:',
+            err?.message || err
+          )
+
           useMemoryFallback = true
           return handleMockQuery(text, values)
         }
       }
+
       return handleMockQuery(text, values)
     },
+
     connect: async () => ({
-      query: async (text: string, values: any[] = []) => handleMockQuery(text, values),
+      query: async (text: string, values: any[] = []) =>
+        handleMockQuery(text, values),
       release: () => {}
     })
   }
@@ -448,38 +550,6 @@ function createClientWrapper() {
 export function sql() {
   return createClientWrapper()
 }
-=======
-let sql: pg.Pool | null = null
-
-// Lazy initialization of database connection
-function getSql() {
-  if (!sql) {
-    const databaseUrl = process.env.DATABASE_URL_repair
-    console.log('DATABASE_URL_repair found:', !!databaseUrl);
-    if (databaseUrl) {
-      console.log('Database URL prefix:', databaseUrl.slice(0, 30) + '...');
-    }
-    if (!databaseUrl) {
-      throw new Error('DATABASE_URL_repair environment variable is not set')
-    }
-    // Add SSL compatibility for Supabase
-    let connectionString = databaseUrl
-    if (!databaseUrl.includes('uselibpqcompat')) {
-      connectionString = databaseUrl + (databaseUrl.includes('?') ? '&' : '?') + 'uselibpqcompat=true'
-    }
-    
-    sql = new pg.Pool({
-      connectionString,
-      ssl: {
-        rejectUnauthorized: false
-      }
-    })
-  }
-  return sql
-}
-
-export { getSql as sql }
->>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
 
 // Database schema types
 export interface RepairRecord {
@@ -524,7 +594,4 @@ export interface Settings {
   created_at?: string
   updated_at?: string
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> f25b23d612c8fe7e60507e6dc9d70da47b144fb3
+```
