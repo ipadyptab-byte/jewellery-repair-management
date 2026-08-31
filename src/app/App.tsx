@@ -776,9 +776,28 @@ export default function App() {
     const invoiceLink = isCustomDomain 
       ? `${invoiceLinkBase}/r/INV-${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
       : `${invoiceLinkBase}/api/invoice/INV-${rec.docNum || rec.doc_num}${suffix}-${token}?exp=${expDate}`
-    const params = type === 'received'
-      ? [rec.name || rec.customer_name, rec.metal, rec.jewellery || rec.item_type, fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), String(rec.amount || rec.estimated_cost), invoiceLink]
-      : [rec.name || rec.customer_name, rec.metal, String(rec.finalAmount || rec.final_amount || rec.amount || rec.estimated_cost)]
+    let params: (string | undefined)[] = []
+    if (type === 'received') {
+      // Default full parameters (6 vars)
+      const fullParams = [
+        rec.name || rec.customer_name, 
+        rec.metal, 
+        rec.jewellery || rec.item_type, 
+        fmtDate(rec.deliveryDate || addDays(new Date(), 7).toISOString()), 
+        String(rec.amount || rec.estimated_cost), 
+        invoiceLink
+      ]
+      
+      if (templateBody && templateBody.includes('{{6}}')) {
+        // Template expects 6 variables (includes estimated amount)
+        params = fullParams
+      } else {
+        // Template expects 5 variables (estimated amount removed, invoice link is 5th)
+        params = [fullParams[0], fullParams[1], fullParams[2], fullParams[3], fullParams[5]]
+      }
+    } else {
+      params = [rec.name || rec.customer_name, rec.metal, String(rec.finalAmount || rec.final_amount || rec.amount || rec.estimated_cost)]
+    }
 
     const toNumber = (rec.mobile || rec.phone_number || '').replace(/^\+/, '')
     
@@ -2918,8 +2937,22 @@ if (existing) { setRName(existing.name || existing.customer_name || ''); showMes
                 <div className="field"><label>Template name <span className="req">*</span></label><input value={tpl1Name} onChange={e => setTpl1Name(e.target.value)} /><div className="hint">Exact name as approved in Meta Business Manager</div></div>
                 <div className="field"><label>Language</label><select value={tpl1Lang} onChange={e => setTpl1Lang(e.target.value)}><option value="en_IN">en_IN — English (India)</option><option value="en">en</option><option value="hi">hi — Hindi</option><option value="mr">mr — Marathi</option></select></div>
               </div>
-              <div className="field"><label>Template body</label><textarea rows={3} value={tpl1Body} onChange={e => setTpl1Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: ₹ {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} /><div className="hint">{'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery {'{{5}}'} Amount {'{{6}}'} Invoice link (auto-generated)</div></div>
-              <div className="tpl-preview">Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: ₹ <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>https://jewellery-repair-management.vercel.app/api/invoice/INV-JR1001-xxx?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</div>
+              <div className="field">
+                <label>Template body</label>
+                <textarea rows={3} value={tpl1Body} onChange={e => setTpl1Body(e.target.value)} placeholder={`Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Est. delivery: {{4}}. Est. charges: ₹ {{5}}. View invoice: {{6}} (valid ${cfgExpiry} days). Thank you!`} />
+                <div className="hint">
+                  {'{{1}}'} Name {'{{2}}'} Metal {'{{3}}'} Item {'{{4}}'} Delivery <br/>
+                  <em>If using 6 variables:</em> {'{{5}}'} Amount {'{{6}}'} Invoice link<br/>
+                  <em>If using 5 variables:</em> {'{{5}}'} Invoice link
+                </div>
+              </div>
+              <div className="tpl-preview">
+                {tpl1Body.includes('{{6}}') ? (
+                  <>Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. Est. charges: ₹ <strong>1200</strong>. View invoice: <span style={{ color: '#25D366' }}>https://jewellery-repair-management.vercel.app/api/invoice/INV-JR1001-xxx?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</>
+                ) : (
+                  <>Dear <strong>Ramesh Patil</strong>, Your <strong>Gold 22K</strong> jewellery (<strong>Gold Necklace</strong>) received at Devi Jewellers. Est. delivery: <strong>20 Apr 2026</strong>. View invoice: <span style={{ color: '#25D366' }}>https://jewellery-repair-management.vercel.app/api/invoice/INV-JR1001-xxx?exp=20Apr2026</span> (valid {cfgExpiry} days). Thank you!</>
+                )}
+              </div>
               <div className="divider" />
               <div className="sec-label">Template 2 — Ready for delivery (with final invoice link)</div>
               <div className="grid2">
