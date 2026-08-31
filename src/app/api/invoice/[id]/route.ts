@@ -27,8 +27,19 @@ export async function GET(
     if (expParam) {
       // Handle formats like 26Apr2026, 26apr2026, 26-04-2026
       const normalizedExp = expParam.toLowerCase().replace(/-/g, '')
-      const expDateStr = normalizedExp.replace(/(\d{2})(\d{2})(\d{4})/, '$3-$2-$1')
-      const expDate = new Date(expDateStr)
+      let expDate;
+      const match = normalizedExp.match(/^(\d{2})([a-z]+)(\d{4})$/)
+      if (match) {
+        const day = match[1]
+        const monthStr = match[2].slice(0, 3)
+        const year = match[3]
+        const monthMap: Record<string, string> = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' }
+        const month = monthMap[monthStr] || '01'
+        expDate = new Date(`${year}-${month}-${day}`)
+      } else {
+        const expDateStr = normalizedExp.replace(/(\d{2})(\d{2})(\d{4})/, '$3-$2-$1')
+        expDate = new Date(expDateStr)
+      }
       const now = new Date()
       if (now > expDate) {
         const expiredHtml = `<!DOCTYPE html><html><head><title>Expired</title></head><body style="font-family:Arial;padding:40px;text-align:center;"><h2>Invoice Link Expired</h2><p>This invoice link has expired. Please contact the shop for a new link.</p></body></html>`
@@ -78,7 +89,7 @@ export async function GET(
     // Check if amount is 0, null, or undefined - show "Will Inform Later" in all cases
     const amountNum = Number(amount) || 0
     const isZeroOrNull = amountNum === 0 || amount === null || amount === undefined
-    const displayAmount = isZeroOrNull ? 'Will Inform Later' : '&#8377;' + amountNum.toLocaleString('en-IN')
+    const displayAmount = isZeroOrNull ? 'Will Inform Later' : '₹' + amountNum.toLocaleString('en-IN')
     
     const html = `<!DOCTYPE html>
 <html>
