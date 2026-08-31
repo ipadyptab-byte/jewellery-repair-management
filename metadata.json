@@ -1,0 +1,6 @@
+{
+  "name": "Devi Jewellers Repair",
+  "description": "Jewellery repair management system with tracking, masters, invoicing, and WhatsApp notifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

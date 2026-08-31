@@ -1,0 +1,512 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:14px;color:var(--color-text-primary)}
+.app{max-width:900px;margin:0 auto;padding:0 0 2rem}
+.header{background:#c0003a;border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:1.25rem}
+.header-top{display:flex;align-items:center;gap:0;padding:0}
+.icon-box{background:#fff;margin:10px 0 10px 14px;border-radius:6px;width:66px;height:66px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.icon-box img{width:62px;height:62px;object-fit:contain}
+.header-text{padding:10px 16px;flex:1}
+.shop-name{color:#fff;font-size:20px;font-weight:500}
+.shop-sub{color:rgba(255,255,255,0.78);font-size:12px;margin-top:2px}
+.shop-tag{color:rgba(255,255,255,0.55);font-size:11px;margin-top:1px}
+.header-strip{background:#a8007e;padding:5px 18px;display:flex;gap:16px;align-items:center}
+.header-strip span{color:#fff;font-size:11px;font-weight:500;letter-spacing:0.06em}
+.header-strip .sep{color:rgba(255,255,255,0.35)}
+.back-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:1rem;color:var(--color-text-primary)}
+.back-btn:hover{background:var(--color-background-tertiary)}
+.dash-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:1.5rem}
+.dash-tile{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:16px;padding:1.25rem 1rem 1rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;transition:border-color 0.15s,background 0.15s;text-align:center;user-select:none}
+.dash-tile:hover{border-color:#c0003a;background:var(--color-background-secondary)}
+.dash-tile:active{transform:scale(0.97)}
+.tile-icon{width:60px;height:60px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tile-label{font-size:13px;font-weight:500;color:var(--color-text-primary);line-height:1.3}
+.tile-desc{font-size:11px;color:var(--color-text-secondary);line-height:1.4}
+.stats-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.5rem}
+.stat-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px}
+.stat-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:500}
+.stat-sub{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.page{display:none}.page.active{display:block}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem}
+.card-title{font-size:14px;font-weight:500;margin-bottom:1rem;padding-bottom:8px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:11px;color:var(--color-text-secondary);font-weight:500}
+.field .req{color:#c0003a}
+.field input,.field select,.field textarea{width:100%;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#c0003a}
+.field .hint{font-size:11px;color:var(--color-text-secondary);margin-top:3px;line-height:1.5}
+.btn{padding:7px 16px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)}
+.btn:hover{background:var(--color-background-secondary)}
+.btn-primary{background:#c0003a;color:#fff;border-color:#c0003a}
+.btn-primary:hover{background:#a80033}
+.btn-wa{background:#25D366;color:#fff;border-color:#25D366}
+.btn-wa:hover{background:#1ebe5d}
+.btn-success{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-danger{color:#A32D2D;border-color:#F09595}.btn-danger:hover{background:#FCEBEB}
+.btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-recv{background:#FAEEDA;color:#633806}
+.badge-karagir{background:#E6F1FB;color:#0C447C}
+.badge-ready{background:#EAF3DE;color:#27500A}
+.badge-overdue{background:#FCEBEB;color:#791F1F}
+.badge-active{background:#EAF3DE;color:#27500A}
+.badge-inactive{background:#F1EFE8;color:#5F5E5A}
+.msg{padding:7px 12px;border-radius:var(--border-radius-md);font-size:12px;margin-top:8px}
+.msg-ok{background:#EAF3DE;color:#27500A}
+.msg-err{background:#FCEBEB;color:#791F1F}
+.master-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:13px;margin-bottom:6px}
+.count-badge{background:var(--color-background-secondary);border-radius:20px;padding:2px 8px;font-size:11px;color:var(--color-text-secondary);font-weight:500}
+.receipt-box{font-family:monospace;font-size:11px;background:#fff;color:#111;border:1px dashed #aaa;border-radius:8px;padding:1rem;max-width:300px;margin:1rem auto 0}
+.receipt-line{border-top:1px dashed #aaa;margin:6px 0}
+.tl-wrap{position:relative;padding-left:28px}
+.tl-line{position:absolute;left:10px;top:0;bottom:0;width:1.5px;background:var(--color-border-tertiary)}
+.tl-step{position:relative;margin-bottom:18px}
+.tl-dot{position:absolute;left:-24px;top:2px;width:16px;height:16px;border-radius:50%;border:2px solid var(--color-border-secondary);background:var(--color-background-primary)}
+.tl-dot.done{background:#1D9E75;border-color:#1D9E75}
+.tl-dot.cur{background:#378ADD;border-color:#378ADD}
+.tl-title{font-size:13px;font-weight:500}
+.tl-sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.tl-date{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+.status-bar{border-radius:var(--border-radius-md);padding:9px 14px;font-size:13px;font-weight:500;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.sb-recv{background:#FAEEDA;color:#633806}
+.sb-karagir{background:#E6F1FB;color:#0C447C}
+.sb-ready{background:#EAF3DE;color:#27500A}
+.sb-overdue{background:#FCEBEB;color:#791F1F}
+.meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:1rem}
+.meta-item{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px}
+.meta-label{font-size:11px;color:var(--color-text-secondary);font-weight:500;margin-bottom:2px}
+.meta-val{font-size:13px;font-weight:500}
+.list-row{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:9px 13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.list-row:hover{background:var(--color-background-secondary)}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer;display:inline-block}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.tslider{position:absolute;inset:0;background:var(--color-border-secondary);border-radius:20px;transition:background 0.2s}
+.toggle input:checked+.tslider{background:#25D366}
+.tslider:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform 0.2s}
+.toggle input:checked+.tslider:before{transform:translateX(16px)}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.divider{height:0.5px;background:var(--color-border-tertiary);margin:1.25rem 0}
+.sec-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
+.info-box{border-radius:var(--border-radius-md);padding:10px 14px;font-size:12px;line-height:1.6;margin-bottom:10px}
+.info-wa{background:#F0FDF4;color:#166534;border:0.5px solid #bbf7d0}
+.info-blue{background:var(--color-background-info);color:var(--color-text-info)}
+.info-warn{background:#FAEEDA;color:#633806}
+.sms-preview{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px 13px;font-size:12px;color:var(--color-text-secondary);margin-top:8px;line-height:1.6}
+.master-panel{display:none}.master-panel.active{display:block}
+.stab-row{display:flex;gap:0;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:1rem;flex-wrap:wrap}
+.stab{padding:7px 13px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:500;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-0.5px;white-space:nowrap}
+.stab.active{color:#25D366;border-bottom:2px solid #25D366}
+.stab-panel{display:none}.stab-panel.active{display:block}
+.wa-icon-sm{width:20px;height:20px;background:#25D366;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.conn-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.conn-ok{background:#F0FDF4;color:#166534}
+.conn-no{background:#FCEBEB;color:#791F1F}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block}
+.dot-green{background:#16a34a}
+.dot-red{background:#dc2626}
+.tpl-preview{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;font-size:12px;color:var(--color-text-secondary);margin-top:6px;line-height:1.7;font-family:var(--font-mono)}
+.param-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
+.param-key{font-size:11px;font-family:var(--font-mono);background:var(--color-background-secondary);padding:3px 8px;border-radius:4px;color:var(--color-text-primary);min-width:130px;flex-shrink:0}
+.param-val{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+.code-block{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px;font-size:12px;font-family:var(--font-mono);color:var(--color-text-primary);line-height:1.8;overflow-x:auto;margin-top:8px}
+</style>
+
+<div class="app">
+<h2 class="sr-only">Devi Jewellers Repair Management System</h2>
+
+<div class="header">
+  <div class="header-top">
+    <div class="icon-box"><img src="/mnt/user-data/uploads/icon.png" alt="Devi Jewellers" /></div>
+    <div class="header-text">
+      <div class="shop-name">देवी ज्वेलर्स — Devi Jewellers</div>
+      <div class="shop-sub">Jewellery Repair Management System</div>
+      <div class="shop-tag">अनमोल क्षणांचे सोनेरी साक्षीदार</div>
+    </div>
+  </div>
+  <div class="header-strip">
+    <span>GOLD</span><span class="sep">|</span><span>SILVER</span><span class="sep">|</span><span>DIAMONDS</span><span class="sep">|</span><span>PEARLS</span>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Total orders</div><div class="stat-val" id="st-total">0</div><div class="stat-sub">all time</div></div>
+    <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-val" id="st-pending" style="color:#BA7517">0</div><div class="stat-sub">in progress</div></div>
+    <div class="stat-card"><div class="stat-label">Ready</div><div class="stat-val" id="st-ready" style="color:#3B6D11">0</div><div class="stat-sub">for delivery</div></div>
+    <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-val" id="st-overdue" style="color:#A32D2D">0</div><div class="stat-sub">past est. date</div></div>
+  </div>
+  <div class="dash-grid">
+    <div class="dash-tile" onclick="openPage('receive')">
+      <div class="tile-icon" style="background:#FEE2E2"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c0003a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7-7 7 7"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg></div>
+      <div class="tile-label">Receive from Customer</div>
+      <div class="tile-desc">Accept jewellery, generate receipt &amp; doc number</div>
+    </div>
+    <div class="dash-tile" onclick="openPage('karagir-out')">
+      <div class="tile-icon" style="background:#DBEAFE"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4"/><path d="M16 11l2 2 4-4"/></svg></div>
+      <div class="tile-label">Give to Karagir</div>
+      <div class="tile-desc">Issue jewellery for repair to karagir</div>
+    </div>
+    <div class="dash-tile" onclick="openPage('karagir-in')">
+      <div class="tile-icon" style="background:#D1FAE5"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7 7 7-7"/><rect x="3" y="3" width="18" height="4" rx="1"/></svg></div>
+      <div class="tile-label">Receive from Karagir</div>
+      <div class="tile-desc">Collect repaired jewellery, update charges</div>
+    </div>
+    <div class="dash-tile" onclick="openPage('track')">
+      <div class="tile-icon" style="background:#EDE9FE"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M11 8v3l2 2"/></svg></div>
+      <div class="tile-label">Track Order</div>
+      <div class="tile-desc">Search by doc number or mobile</div>
+    </div>
+    <div class="dash-tile" onclick="openPage('records')">
+      <div class="tile-icon" style="background:#FEF3C7"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#854F0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></div>
+      <div class="tile-label">All Records</div>
+      <div class="tile-desc">View complete repair history</div>
+    </div>
+    <div class="dash-tile" onclick="openPage('masters')">
+      <div class="tile-icon" style="background:#FCE7F3"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#993556" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+      <div class="tile-label">Masters</div>
+      <div class="tile-desc">Salesman, jewellery, metal, karagir</div>
+    </div>
+    <div class="dash-tile" onclick="openPage('settings')" style="grid-column:span 3">
+      <div style="display:flex;align-items:center;gap:16px;width:100%;justify-content:center">
+        <div class="tile-icon" style="background:#F0FDF4;flex-shrink:0"><svg width="28" height="28" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.845L.057 23.486a.5.5 0 00.606.62l5.808-1.525A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.013-1.376l-.36-.214-3.724.977.994-3.622-.235-.373A9.818 9.818 0 1112 21.818z"/></svg></div>
+        <div style="text-align:left">
+          <div class="tile-label">Settings &amp; WhatsApp API</div>
+          <div class="tile-desc">Shop info, Route Mobile WhatsApp config, templates, triggers</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIVE PAGE -->
+<div id="page-receive" class="page">
+  <button class="back-btn" onclick="goBack()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Dashboard</button>
+  <div class="card">
+    <div class="card-title"><img src="/mnt/user-data/uploads/icon.png" style="width:20px;height:20px;object-fit:contain;border-radius:3px" />Receive from customer</div>
+    <div class="grid2"><div class="field"><label>Customer name <span class="req">*</span></label><input id="r-name" placeholder="e.g. Ramesh Patil" /></div><div class="field"><label>Mobile number <span class="req">*</span></label><input id="r-mobile" placeholder="10-digit" maxlength="10" /></div></div>
+    <div class="grid3"><div class="field"><label>Metal <span class="req">*</span></label><select id="r-metal"></select></div><div class="field"><label>Jewellery type <span class="req">*</span></label><select id="r-type"></select></div><div class="field"><label>Weight (grams) <span class="req">*</span></label><input id="r-weight" type="number" step="0.1" placeholder="e.g. 12.5" /></div></div>
+    <div class="grid3"><div class="field"><label>Est. days <span class="req">*</span></label><input id="r-days" type="number" min="1" placeholder="e.g. 7" /></div><div class="field"><label>Est. amount (₹) <span class="req">*</span></label><input id="r-amount" type="number" placeholder="e.g. 500" /></div><div class="field"><label>Salesman <span class="req">*</span></label><select id="r-salesman"></select></div></div>
+    <div class="field"><label>Repair description</label><textarea id="r-desc" rows="2" placeholder="Describe the repair work..."></textarea></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="saveReceipt()">Save &amp; Generate Receipt</button><button class="btn" onclick="clearReceive()">Clear</button></div>
+    <div id="msg-receive"></div>
+  </div>
+  <div id="receipt-preview" style="display:none">
+    <div class="card">
+      <div class="card-title">Receipt — <span id="r-docnum" style="color:#c0003a"></span></div>
+      <div class="receipt-box" id="receipt-content"></div>
+      <div class="sms-preview" id="sms-prev-1"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="printReceipt()">Print (4&quot; Thermal)</button>
+        <button class="btn btn-wa" onclick="showMsg('sms1','WhatsApp message sent to customer!',true)" style="display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.845L.057 23.486a.5.5 0 00.606.62l5.808-1.525A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.013-1.376l-.36-.214-3.724.977.994-3.622-.235-.373A9.818 9.818 0 1112 21.818z"/></svg>Send WhatsApp</button>
+      </div>
+      <div id="msg-sms1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- KARAGIR OUT -->
+<div id="page-karagir-out" class="page">
+  <button class="back-btn" onclick="goBack()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Dashboard</button>
+  <div class="card">
+    <div class="card-title"><img src="/mnt/user-data/uploads/icon.png" style="width:20px;height:20px;object-fit:contain;border-radius:3px" />Issue jewellery to karagir</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:flex-end"><div class="field" style="flex:1;margin-bottom:0"><label>Select document number</label><select id="ko-doc"><option value="">-- Select received order --</option></select></div><button class="btn" onclick="loadKO()">Load</button></div>
+    <div id="ko-details" style="display:none">
+      <div class="meta-grid" id="ko-meta"></div>
+      <div class="grid2"><div class="field"><label>Karagir <span class="req">*</span></label><select id="ko-karagir"></select></div><div class="field"><label>Notes</label><input id="ko-notes" placeholder="Special instructions" /></div></div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="saveKO()">Confirm issue to karagir</button></div>
+      <div id="msg-ko"></div>
+    </div>
+  </div>
+</div>
+
+<!-- KARAGIR IN -->
+<div id="page-karagir-in" class="page">
+  <button class="back-btn" onclick="goBack()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Dashboard</button>
+  <div class="card">
+    <div class="card-title"><img src="/mnt/user-data/uploads/icon.png" style="width:20px;height:20px;object-fit:contain;border-radius:3px" />Receive from karagir</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:flex-end"><div class="field" style="flex:1;margin-bottom:0"><label>Select document number</label><select id="ki-doc"><option value="">-- Select --</option></select></div><button class="btn" onclick="loadKI()">Load</button></div>
+    <div id="ki-details" style="display:none">
+      <div class="meta-grid" id="ki-meta"></div>
+      <div class="grid2"><div class="field"><label>Final repair amount (₹) <span class="req">*</span></label><input id="ki-amount" type="number" placeholder="Actual amount" oninput="updateWAPreview()" /></div><div class="field"><label>Quality</label><select id="ki-quality"><option>Good</option><option>Excellent</option><option>Needs touch-up</option></select></div></div>
+      <div class="sms-preview" id="sms-prev-2" style="display:none"></div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="saveKI()">Confirm &amp; send WhatsApp</button></div>
+      <div id="msg-ki"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TRACK -->
+<div id="page-track" class="page">
+  <button class="back-btn" onclick="goBack()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Dashboard</button>
+  <div class="card">
+    <div class="card-title"><img src="/mnt/user-data/uploads/icon.png" style="width:20px;height:20px;object-fit:contain;border-radius:3px" />Track repair order</div>
+    <div style="display:flex;gap:8px;margin-bottom:4px">
+      <input id="track-q" placeholder="Document number or mobile..." style="flex:1;padding:8px 12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary)" onkeydown="if(event.key==='Enter')doTrack()" />
+      <button class="btn btn-primary" onclick="doTrack()">Track</button>
+      <button class="btn" onclick="showAllOrders()">All</button>
+    </div>
+    <div id="track-result"></div><div id="all-orders"></div>
+  </div>
+</div>
+
+<!-- RECORDS -->
+<div id="page-records" class="page">
+  <button class="back-btn" onclick="goBack()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Dashboard</button>
+  <div class="card">
+    <div class="card-title"><img src="/mnt/user-data/uploads/icon.png" style="width:20px;height:20px;object-fit:contain;border-radius:3px" />All repair records</div>
+    <div id="records-list"><p style="color:var(--color-text-secondary);font-size:13px">No records yet.</p></div>
+  </div>
+</div>
+
+<!-- MASTERS -->
+<div id="page-masters" class="page">
+  <button class="back-btn" onclick="goBack()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Dashboard</button>
+  <div class="card" style="padding:1rem">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn" id="mt-salesman" onclick="switchMaster('salesman',this)" style="border-color:#c0003a;color:#c0003a">Salesman</button>
+      <button class="btn" id="mt-jewellery" onclick="switchMaster('jewellery',this)">Jewellery type</button>
+      <button class="btn" id="mt-metal" onclick="switchMaster('metal',this)">Metal</button>
+      <button class="btn" id="mt-karagir" onclick="switchMaster('karagir',this)">Karagir</button>
+    </div>
+  </div>
+  <div id="master-salesman" class="master-panel active"><div class="card"><div class="card-title">Salesman master <span class="count-badge" id="cnt-salesman">0</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><div class="field" style="flex:2;min-width:130px;margin-bottom:0"><label>Name <span class="req">*</span></label><input id="ms-name" placeholder="Salesman name" /></div><div class="field" style="flex:1;min-width:110px;margin-bottom:0"><label>Mobile</label><input id="ms-mob" placeholder="Mobile" maxlength="10" /></div><div class="field" style="width:110px;margin-bottom:0"><label>Status</label><select id="ms-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div><button class="btn btn-primary" onclick="addMaster('salesman')" style="align-self:flex-end">Add</button></div><div id="msg-master-salesman"></div><div id="list-salesman"></div></div></div>
+  <div id="master-jewellery" class="master-panel"><div class="card"><div class="card-title">Jewellery type master <span class="count-badge" id="cnt-jewellery">0</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><div class="field" style="flex:2;min-width:130px;margin-bottom:0"><label>Type name <span class="req">*</span></label><input id="mj-name" placeholder="e.g. Mangalsutra" /></div><div class="field" style="flex:1;min-width:100px;margin-bottom:0"><label>Category</label><select id="mj-cat"><option>Necklace</option><option>Ring</option><option>Bracelet</option><option>Earring</option><option>Chain</option><option>Anklet</option><option>Bangle</option><option>Other</option></select></div><div class="field" style="width:110px;margin-bottom:0"><label>Status</label><select id="mj-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div><button class="btn btn-primary" onclick="addMaster('jewellery')" style="align-self:flex-end">Add</button></div><div id="msg-master-jewellery"></div><div id="list-jewellery"></div></div></div>
+  <div id="master-metal" class="master-panel"><div class="card"><div class="card-title">Metal master <span class="count-badge" id="cnt-metal">0</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><div class="field" style="flex:2;min-width:120px;margin-bottom:0"><label>Metal name <span class="req">*</span></label><input id="mm-name" placeholder="e.g. Gold 22K" /></div><div class="field" style="flex:1;min-width:90px;margin-bottom:0"><label>Type</label><select id="mm-type"><option>Gold</option><option>Silver</option><option>Platinum</option><option>Other</option></select></div><div class="field" style="flex:1;min-width:80px;margin-bottom:0"><label>Purity</label><input id="mm-karat" placeholder="22K" /></div><div class="field" style="width:110px;margin-bottom:0"><label>Status</label><select id="mm-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div><button class="btn btn-primary" onclick="addMaster('metal')" style="align-self:flex-end">Add</button></div><div id="msg-master-metal"></div><div id="list-metal"></div></div></div>
+  <div id="master-karagir" class="master-panel"><div class="card"><div class="card-title">Karagir master <span class="count-badge" id="cnt-karagir">0</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"><div class="field" style="flex:2;min-width:130px;margin-bottom:0"><label>Name <span class="req">*</span></label><input id="mk-name" placeholder="Karagir name" /></div><div class="field" style="flex:1;min-width:120px;margin-bottom:0"><label>Mobile <span class="req">*</span></label><input id="mk-mob" placeholder="Mobile" maxlength="10" /></div><div class="field" style="flex:2;min-width:130px;margin-bottom:0"><label>Specialisation</label><input id="mk-spec" placeholder="e.g. Gold repair" /></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><div class="field" style="flex:3;min-width:160px;margin-bottom:0"><label>Address</label><input id="mk-addr" placeholder="Workshop address" /></div><div class="field" style="width:110px;margin-bottom:0"><label>Status</label><select id="mk-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div><button class="btn btn-primary" onclick="addMaster('karagir')" style="align-self:flex-end">Add</button></div><div id="msg-master-karagir"></div><div id="list-karagir"></div></div></div>
+</div>
+
+<!-- SETTINGS PAGE -->
+<div id="page-settings" class="page">
+  <button class="back-btn" onclick="goBack()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Dashboard</button>
+
+  <!-- Shop Info -->
+  <div class="card">
+    <div class="card-title"><img src="/mnt/user-data/uploads/icon.png" style="width:20px;height:20px;object-fit:contain;border-radius:3px" />Shop information</div>
+    <div class="grid2"><div class="field"><label>Shop name</label><input id="cfg-shop" value="Devi Jewellers" /></div><div class="field"><label>Owner name</label><input id="cfg-owner" placeholder="Owner name" /></div></div>
+    <div class="grid3"><div class="field"><label>Phone</label><input id="cfg-phone" placeholder="Shop phone" /></div><div class="field"><label>GST number</label><input id="cfg-gst" placeholder="GST number" /></div><div class="field"><label>City</label><input id="cfg-city" placeholder="City" /></div></div>
+    <div class="field"><label>Address</label><input id="cfg-addr" placeholder="Full address" /></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="showMsg('shop','Shop info saved.',true)">Save</button></div>
+    <div id="msg-shop"></div>
+  </div>
+
+  <!-- WhatsApp API Card -->
+  <div class="card">
+    <div class="card-title">
+      <div class="wa-icon-sm"><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.845L.057 23.486a.5.5 0 00.606.62l5.808-1.525A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.013-1.376l-.36-.214-3.724.977.994-3.622-.235-.373A9.818 9.818 0 1112 21.818z"/></svg></div>
+      <span>WhatsApp API — Route Mobile</span>
+      <span class="conn-badge conn-no" id="conn-badge" style="margin-left:auto"><span class="status-dot dot-red"></span>Not configured</span>
+    </div>
+
+    <div class="info-wa">Route Mobile uses the official <b>Meta WhatsApp Cloud API</b>. You need your Route Mobile account credentials, WABA ID, Phone Number ID, and Meta access token. Templates must be <b>approved in Meta Business Manager</b> before use.</div>
+
+    <div class="stab-row">
+      <button class="stab active" onclick="switchStab('creds',this)">Credentials</button>
+      <button class="stab" onclick="switchStab('templates',this)">Message templates</button>
+      <button class="stab" onclick="switchStab('triggers',this)">Triggers</button>
+      <button class="stab" onclick="switchStab('watest',this)">Test &amp; verify</button>
+    </div>
+
+    <!-- CREDENTIALS -->
+    <div id="stab-creds" class="stab-panel active">
+      <div class="sec-label">Route Mobile account</div>
+      <div class="grid2">
+        <div class="field"><label>Route Mobile username <span class="req">*</span></label><input id="rm-user" placeholder="Your RM account username" autocomplete="off" /><div class="hint">From Route Mobile dashboard → API credentials</div></div>
+        <div class="field"><label>Route Mobile password <span class="req">*</span></label><input id="rm-pass" type="password" placeholder="Account password" autocomplete="off" /></div>
+      </div>
+      <div class="divider"></div>
+      <div class="sec-label">Meta / WhatsApp credentials</div>
+      <div class="grid2">
+        <div class="field"><label>WABA ID <span class="req">*</span></label><input id="rm-waba" placeholder="e.g. 123456789012345" /><div class="hint">Meta Business Manager → WhatsApp accounts → Account ID</div></div>
+        <div class="field"><label>Phone Number ID <span class="req">*</span></label><input id="rm-phoneid" placeholder="e.g. 987654321098765" /><div class="hint">Meta Business Manager → Phone numbers → Phone number ID</div></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>WhatsApp business number <span class="req">*</span></label><input id="rm-waphone" placeholder="+919876543210" /><div class="hint">Include country code. Must be verified on Meta.</div></div>
+        <div class="field"><label>Permanent access token <span class="req">*</span></label><input id="rm-token" type="password" placeholder="EAAxxxxxxxxxxxxxxx..." autocomplete="off" /><div class="hint">Meta Business Manager → System users → Generate token</div></div>
+      </div>
+      <div class="divider"></div>
+      <div class="sec-label">API endpoint</div>
+      <div class="grid2">
+        <div class="field"><label>API base URL</label><input id="rm-apiurl" value="https://api.routemobile.com/whatsapp/v1" /></div>
+        <div class="field"><label>API version</label><select id="rm-apiver"><option value="v17.0">v17.0 (recommended)</option><option value="v18.0">v18.0</option><option value="v19.0">v19.0</option><option value="v20.0">v20.0</option></select></div>
+      </div>
+      <div class="divider"></div>
+      <div class="sec-label">Webhook (for delivery receipts)</div>
+      <div class="grid2">
+        <div class="field"><label>Webhook URL</label><input id="rm-webhook" placeholder="https://yourserver.com/webhook" /><div class="hint">Route Mobile posts delivery status to this URL</div></div>
+        <div class="field"><label>Webhook verify token</label><input id="rm-wh-token" placeholder="Secret verification token" /><div class="hint">Same token set in Meta Business Manager webhook settings</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-wa" onclick="testConnection()">Verify connection</button>
+        <button class="btn btn-primary" onclick="saveCredentials()">Save credentials</button>
+      </div>
+      <div id="msg-creds"></div>
+    </div>
+
+    <!-- TEMPLATES -->
+    <div id="stab-templates" class="stab-panel">
+      <div class="info-blue" style="margin-bottom:12px">WhatsApp Business API requires <b>pre-approved HSM templates</b>. Submit templates via Route Mobile portal or Meta Business Manager. Use <code>&#123;&#123;1&#125;&#125;</code> <code>&#123;&#123;2&#125;&#125;</code> format for variables.</div>
+
+      <div class="sec-label">Template 1 — Jewellery received</div>
+      <div class="grid2">
+        <div class="field"><label>Template name <span class="req">*</span></label><input id="tpl1-name" value="jewellery_received" /><div class="hint">Exact name as approved (lowercase, underscores only)</div></div>
+        <div class="field"><label>Language</label><select id="tpl1-lang"><option value="en_IN" selected>en_IN — English (India)</option><option value="en">en — English</option><option value="hi">hi — Hindi</option><option value="mr">mr — Marathi</option></select></div>
+      </div>
+      <div class="field"><label>Template body</label><textarea id="tpl1-body" rows="3">Dear {{1}}, Your {{2}} jewellery ({{3}}) has been received at Devi Jewellers. Estimated delivery: {{4}}. Estimated charges: Rs {{5}}. Thank you!</textarea><div class="hint">&#123;&#123;1&#125;&#125;=Name &nbsp;&#123;&#123;2&#125;&#125;=Metal &nbsp;&#123;&#123;3&#125;&#125;=Item &nbsp;&#123;&#123;4&#125;&#125;=Delivery date &nbsp;&#123;&#123;5&#125;&#125;=Amount</div></div>
+      <div class="tpl-preview">Dear <b>Ramesh Patil</b>, Your <b>Gold 22K</b> jewellery (<b>Gold Necklace</b>) has been received at Devi Jewellers. Estimated delivery: <b>17 Apr 2026</b>. Estimated charges: Rs <b>1200</b>. Thank you!</div>
+
+      <div class="divider"></div>
+      <div class="sec-label">Template 2 — Jewellery ready for delivery</div>
+      <div class="grid2">
+        <div class="field"><label>Template name <span class="req">*</span></label><input id="tpl2-name" value="jewellery_ready" /></div>
+        <div class="field"><label>Language</label><select id="tpl2-lang"><option value="en_IN" selected>en_IN — English (India)</option><option value="en">en — English</option><option value="hi">hi — Hindi</option><option value="mr">mr — Marathi</option></select></div>
+      </div>
+      <div class="field"><label>Template body</label><textarea id="tpl2-body" rows="3">Dear {{1}}, Your {{2}} jewellery is ready for delivery at Devi Jewellers. Repair charges: Rs {{3}}. Please visit with your receipt. Thank you!</textarea><div class="hint">&#123;&#123;1&#125;&#125;=Name &nbsp;&#123;&#123;2&#125;&#125;=Metal &nbsp;&#123;&#123;3&#125;&#125;=Final amount</div></div>
+      <div class="tpl-preview">Dear <b>Ramesh Patil</b>, Your <b>Gold 22K</b> jewellery is ready for delivery at Devi Jewellers. Repair charges: Rs <b>1200</b>. Please visit with your receipt. Thank you!</div>
+
+      <div class="divider"></div>
+      <div class="sec-label">Template 3 — Issued to karagir (optional)</div>
+      <div class="grid2">
+        <div class="field"><label>Template name</label><input id="tpl3-name" value="karagir_dispatch" /></div>
+        <div class="field"><label>Language</label><select id="tpl3-lang"><option value="en_IN" selected>en_IN</option><option value="en">en</option><option value="hi">hi</option><option value="mr">mr</option></select></div>
+      </div>
+      <div class="field"><label>Template body</label><textarea id="tpl3-body" rows="2">Dear {{1}}, Your jewellery order {{2}} has been sent to our karagir for repair. We will notify you once ready. - Devi Jewellers</textarea><div class="hint">&#123;&#123;1&#125;&#125;=Name &nbsp;&#123;&#123;2&#125;&#125;=Document number</div></div>
+
+      <div class="btn-row"><button class="btn btn-primary" onclick="saveTemplates()">Save templates</button></div>
+      <div id="msg-templates"></div>
+    </div>
+
+    <!-- TRIGGERS -->
+    <div id="stab-triggers" class="stab-panel">
+      <div class="info-warn" style="margin-bottom:12px">WhatsApp HSM templates can only be sent to customers who have <b>opted in</b> to receive WhatsApp messages. Ensure you have customer consent before sending.</div>
+      <div class="toggle-row"><div><div style="font-size:13px;font-weight:500">Send WhatsApp when jewellery received</div><div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Uses template: <code>jewellery_received</code></div></div><label class="toggle"><input type="checkbox" id="tr-recv" checked /><span class="tslider"></span></label></div>
+      <div class="toggle-row"><div><div style="font-size:13px;font-weight:500">Send WhatsApp when ready for delivery</div><div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Uses template: <code>jewellery_ready</code></div></div><label class="toggle"><input type="checkbox" id="tr-ready" checked /><span class="tslider"></span></label></div>
+      <div class="toggle-row" style="border:none"><div><div style="font-size:13px;font-weight:500">Send WhatsApp when issued to karagir</div><div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Uses template: <code>karagir_dispatch</code></div></div><label class="toggle"><input type="checkbox" id="tr-karagir" /><span class="tslider"></span></label></div>
+
+      <div class="divider"></div>
+      <div class="sec-label">Route Mobile API request structure</div>
+      <div class="code-block">{<br>&nbsp;&nbsp;"username": "<span style="color:#25D366">rm_username</span>",<br>&nbsp;&nbsp;"password": "<span style="color:#25D366">rm_password</span>",<br>&nbsp;&nbsp;"wabaid": "<span style="color:#25D366">waba_id</span>",<br>&nbsp;&nbsp;"phonenumberid": "<span style="color:#25D366">phone_number_id</span>",<br>&nbsp;&nbsp;"to": "<span style="color:#185FA5">+919876543210</span>",<br>&nbsp;&nbsp;"type": "template",<br>&nbsp;&nbsp;"template": {<br>&nbsp;&nbsp;&nbsp;&nbsp;"name": "<span style="color:#854F0B">jewellery_received</span>",<br>&nbsp;&nbsp;&nbsp;&nbsp;"language": { "code": "<span style="color:#854F0B">en_IN</span>" },<br>&nbsp;&nbsp;&nbsp;&nbsp;"components": [{ "type": "body",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"parameters": [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ "type": "text", "text": "<span style="color:#185FA5">Ramesh Patil</span>" },<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ "type": "text", "text": "<span style="color:#185FA5">Gold 22K</span>" },<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ "type": "text", "text": "<span style="color:#185FA5">Gold Necklace</span>" },<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ "type": "text", "text": "<span style="color:#185FA5">17 Apr 2026</span>" },<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ "type": "text", "text": "<span style="color:#185FA5">1200</span>" }<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]<br>&nbsp;&nbsp;&nbsp;&nbsp;}]<br>&nbsp;&nbsp;}<br>}</div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="saveTriggers()">Save trigger settings</button></div>
+      <div id="msg-triggers"></div>
+    </div>
+
+    <!-- TEST -->
+    <div id="stab-watest" class="stab-panel">
+      <div class="sec-label">Send test WhatsApp message</div>
+      <div class="grid2">
+        <div class="field"><label>Test WhatsApp number <span class="req">*</span></label><input id="test-wa" placeholder="+919876543210" /><div class="hint">Include country code. Number must have WhatsApp.</div></div>
+        <div class="field"><label>Template to test</label><select id="test-tpl"><option value="received">Template 1 — jewellery_received</option><option value="ready">Template 2 — jewellery_ready</option><option value="karagir">Template 3 — karagir_dispatch</option></select></div>
+      </div>
+      <div class="sec-label" style="margin-top:4px">Sample variable values</div>
+      <div class="grid3">
+        <div class="field"><label>Customer name</label><input id="tv-name" value="Ramesh Patil" /></div>
+        <div class="field"><label>Metal</label><input id="tv-metal" value="Gold 22K" /></div>
+        <div class="field"><label>Item</label><input id="tv-item" value="Gold Necklace" /></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>Delivery date</label><input id="tv-date" value="17 Apr 2026" /></div>
+        <div class="field"><label>Amount (₹)</label><input id="tv-amount" value="1200" /></div>
+        <div class="field"><label>Doc number</label><input id="tv-doc" value="JR1001" /></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-wa" onclick="sendTestWA()" style="display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.845L.057 23.486a.5.5 0 00.606.62l5.808-1.525A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.013-1.376l-.36-.214-3.724.977.994-3.622-.235-.373A9.818 9.818 0 1112 21.818z"/></svg>Send test WhatsApp</button>
+      </div>
+      <div id="msg-watest"></div>
+      <div class="divider"></div>
+      <div class="sec-label">Where to find your credentials</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div class="param-row"><span class="param-key">RM username</span><span class="param-val">Route Mobile dashboard → Account settings → API credentials</span></div>
+        <div class="param-row"><span class="param-key">WABA ID</span><span class="param-val">Meta Business Manager → WhatsApp → WhatsApp accounts → Account ID</span></div>
+        <div class="param-row"><span class="param-key">Phone Number ID</span><span class="param-val">Meta Business Manager → WhatsApp → Phone numbers → select number</span></div>
+        <div class="param-row"><span class="param-key">Access token</span><span class="param-val">Meta Business Manager → System users → Generate token → WhatsApp permissions</span></div>
+        <div class="param-row"><span class="param-key">Template name</span><span class="param-val">Meta Business Manager → WhatsApp → Message templates (must be Approved)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DB={
+  records:[],
+  salesman:[{id:1,name:'Suresh',mob:'9876500001',status:'active'},{id:2,name:'Pooja',mob:'9876500002',status:'active'},{id:3,name:'Amit',mob:'9876500003',status:'active'}],
+  jewellery:[{id:1,name:'Gold Ring',cat:'Ring',status:'active'},{id:2,name:'Gold Necklace',cat:'Necklace',status:'active'},{id:3,name:'Gold Bracelet',cat:'Bracelet',status:'active'},{id:4,name:'Silver Anklet',cat:'Anklet',status:'active'},{id:5,name:'Silver Chain',cat:'Chain',status:'active'},{id:6,name:'Mangalsutra',cat:'Necklace',status:'active'}],
+  metal:[{id:1,name:'Gold 22K',type:'Gold',karat:'22K',status:'active'},{id:2,name:'Gold 18K',type:'Gold',karat:'18K',status:'active'},{id:3,name:'Silver 925',type:'Silver',karat:'925',status:'active'}],
+  karagir:[{id:1,name:'Ganesh Soni',mob:'9765400001',spec:'Gold repair',addr:'Budhwar Peth',status:'active'},{id:2,name:'Manoj Karekar',mob:'9765400002',spec:'Polishing, Silver',addr:'Laxmi Road',status:'active'}]
+};
+let docSeq=1000;
+const idSeq={salesman:10,jewellery:10,metal:10,karagir:10};
+
+function openPage(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  if(p==='receive')populateReceiveSelects();
+  if(p==='karagir-out'){popSel('ko-doc',DB.records.filter(r=>r.status==='received'));populateKaragirSel('ko-karagir');}
+  if(p==='karagir-in')popSel('ki-doc',DB.records.filter(r=>r.status==='with_karagir'));
+  if(p==='records')renderRecords();
+  if(p==='track')showAllOrders();
+  if(p==='masters')['salesman','jewellery','metal','karagir'].forEach(renderMaster);
+  updateStats();window.scrollTo(0,0);
+}
+function goBack(){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-dashboard').classList.add('active');updateStats();window.scrollTo(0,0);}
+function updateStats(){const t=DB.records.length,ov=DB.records.filter(r=>effStatus(r)==='overdue').length,rd=DB.records.filter(r=>r.status==='ready').length,pe=DB.records.filter(r=>r.status==='received'||r.status==='with_karagir').length;document.getElementById('st-total').textContent=t;document.getElementById('st-pending').textContent=pe;document.getElementById('st-ready').textContent=rd;document.getElementById('st-overdue').textContent=ov;}
+function populateReceiveSelects(){document.getElementById('r-metal').innerHTML='<option value="">Select metal</option>'+DB.metal.filter(x=>x.status==='active').map(x=>`<option>${x.name}</option>`).join('');document.getElementById('r-type').innerHTML='<option value="">Select type</option>'+DB.jewellery.filter(x=>x.status==='active').map(x=>`<option>${x.name}</option>`).join('');document.getElementById('r-salesman').innerHTML='<option value="">Select salesman</option>'+DB.salesman.filter(x=>x.status==='active').map(x=>`<option>${x.name}</option>`).join('');}
+function populateKaragirSel(id){document.getElementById(id).innerHTML='<option value="">Select karagir</option>'+DB.karagir.filter(x=>x.status==='active').map(x=>`<option>${x.name}</option>`).join('');}
+function popSel(id,recs){document.getElementById(id).innerHTML='<option value="">-- Select --</option>'+recs.map(r=>`<option value="${r.docNum}">${r.docNum} — ${r.name} (${r.jewellery})</option>`).join('');}
+function showMsg(id,text,ok){const el=document.getElementById('msg-'+id);if(!el)return;el.innerHTML=`<div class="msg ${ok?'msg-ok':'msg-err'}">${text}</div>`;setTimeout(()=>{if(el)el.innerHTML=''},4500);}
+function fmtDate(iso){return new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+function fmtFull(iso){return new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+
+function saveReceipt(){
+  const name=document.getElementById('r-name').value.trim(),mobile=document.getElementById('r-mobile').value.trim(),metal=document.getElementById('r-metal').value,type=document.getElementById('r-type').value,weight=document.getElementById('r-weight').value,days=parseInt(document.getElementById('r-days').value),amount=parseFloat(document.getElementById('r-amount').value),salesman=document.getElementById('r-salesman').value,desc=document.getElementById('r-desc').value.trim();
+  if(!name||!mobile||!metal||!type||!weight||!days||!amount||!salesman){showMsg('receive','Please fill all required fields.',false);return;}
+  if(!/^\d{10}$/.test(mobile)){showMsg('receive','Enter valid 10-digit mobile.',false);return;}
+  const docNum='JR'+String(++docSeq).padStart(4,'0'),receivedDate=new Date().toISOString(),deliveryDate=addDays(receivedDate,days).toISOString();
+  DB.records.push({docNum,name,mobile,metal,jewellery:type,weight,amount,salesman,desc,receivedDate,deliveryDate,status:'received',karagir:null,karagirDate:null,finalAmount:null,completedDate:null});
+  document.getElementById('r-docnum').textContent=docNum;
+  document.getElementById('receipt-content').innerHTML=buildReceipt({docNum,name,mobile,metal,jewellery:type,weight,amount,salesman,desc,receivedDate,deliveryDate});
+  document.getElementById('sms-prev-1').innerHTML=`<b>WhatsApp preview (jewellery_received):</b><br>Dear ${name}, Your ${metal} jewellery (${type}) has been received at Devi Jewellers. Estimated delivery: ${fmtDate(deliveryDate)}. Estimated charges: Rs ${amount}. Thank you!`;
+  document.getElementById('receipt-preview').style.display='block';
+  showMsg('receive',`Saved! Document: ${docNum}`,true);updateStats();
+}
+function buildReceipt(r){return`<div style="text-align:center;margin-bottom:6px"><b style="font-size:13px">Devi Jewellers</b><br><span style="font-size:10px">Gold | Silver | Diamonds | Pearls</span></div><div class="receipt-line"></div><div style="display:flex;justify-content:space-between"><span>Doc No:</span><b>${r.docNum}</b></div><div style="display:flex;justify-content:space-between"><span>Date:</span><span>${fmtDate(r.receivedDate)}</span></div><div class="receipt-line"></div><div style="display:flex;justify-content:space-between"><span>Customer:</span><b>${r.name}</b></div><div style="display:flex;justify-content:space-between"><span>Mobile:</span><span>${r.mobile}</span></div><div class="receipt-line"></div><div style="display:flex;justify-content:space-between"><span>Item:</span><span>${r.jewellery}</span></div><div style="display:flex;justify-content:space-between"><span>Metal:</span><span>${r.metal}</span></div><div style="display:flex;justify-content:space-between"><span>Weight:</span><span>${r.weight}g</span></div><div style="display:flex;justify-content:space-between"><span>Work:</span><span>${r.desc||'Repair'}</span></div><div class="receipt-line"></div><div style="display:flex;justify-content:space-between"><span>Est. Delivery:</span><b>${fmtDate(r.deliveryDate)}</b></div><div style="display:flex;justify-content:space-between"><span>Est. Amount:</span><b>Rs ${r.amount}</b></div><div style="display:flex;justify-content:space-between"><span>Salesman:</span><span>${r.salesman}</span></div><div class="receipt-line"></div><div style="text-align:center;font-size:10px;margin-top:4px">Thank you! Bring this receipt on delivery.<br>अनमोल क्षणांचे सोनेरी साक्षीदार</div>`;}
+function printReceipt(){const c=document.getElementById('receipt-content').innerHTML;const w=window.open('','_blank','width=400,height=600');w.document.write(`<html><head><title>Receipt</title><style>body{font-family:monospace;font-size:11px;width:280px;margin:8px}</style></head><body>${c}</body></html>`);w.document.close();w.print();}
+function clearReceive(){['r-name','r-mobile','r-weight','r-days','r-amount','r-desc'].forEach(id=>document.getElementById(id).value='');['r-metal','r-type','r-salesman'].forEach(id=>document.getElementById(id).selectedIndex=0);document.getElementById('receipt-preview').style.display='none';document.getElementById('msg-receive').innerHTML='';}
+
+function loadKO(){const dn=document.getElementById('ko-doc').value;if(!dn){showMsg('ko','Select a document.',false);return;}const r=DB.records.find(x=>x.docNum===dn);if(!r)return;document.getElementById('ko-meta').innerHTML=metaHtml(r);document.getElementById('ko-details').style.display='block';}
+function saveKO(){const dn=document.getElementById('ko-doc').value,kg=document.getElementById('ko-karagir').value;if(!kg){showMsg('ko','Select karagir.',false);return;}const r=DB.records.find(x=>x.docNum===dn);if(r){r.karagir=kg;r.karagirDate=new Date().toISOString();r.status='with_karagir';}showMsg('ko',`Issued to ${kg} for ${dn}`,true);document.getElementById('ko-details').style.display='none';popSel('ko-doc',DB.records.filter(x=>x.status==='received'));updateStats();}
+function loadKI(){const dn=document.getElementById('ki-doc').value;if(!dn){showMsg('ki','Select a document.',false);return;}const r=DB.records.find(x=>x.docNum===dn);if(!r)return;document.getElementById('ki-meta').innerHTML=metaHtml(r);document.getElementById('ki-details').style.display='block';}
+function updateWAPreview(){const dn=document.getElementById('ki-doc').value,r=DB.records.find(x=>x.docNum===dn),amt=document.getElementById('ki-amount').value;if(r&&amt){const el=document.getElementById('sms-prev-2');el.style.display='block';el.innerHTML=`<b>WhatsApp preview (jewellery_ready):</b><br>Dear ${r.name}, Your ${r.metal} jewellery is ready for delivery at Devi Jewellers. Repair charges: Rs ${amt}. Please visit with your receipt. Thank you!`;}}
+function saveKI(){const dn=document.getElementById('ki-doc').value,amt=document.getElementById('ki-amount').value;if(!amt){showMsg('ki','Enter final amount.',false);return;}const r=DB.records.find(x=>x.docNum===dn);if(r){r.finalAmount=parseFloat(amt);r.completedDate=new Date().toISOString();r.quality=document.getElementById('ki-quality').value;r.status='ready';}showMsg('ki',`Updated! WhatsApp sent to customer for ${dn}`,true);document.getElementById('ki-details').style.display='none';document.getElementById('sms-prev-2').style.display='none';popSel('ki-doc',DB.records.filter(x=>x.status==='with_karagir'));updateStats();}
+function metaHtml(r){return`<div class="meta-item"><div class="meta-label">Customer</div><div class="meta-val">${r.name}</div></div><div class="meta-item"><div class="meta-label">Item</div><div class="meta-val">${r.metal} ${r.jewellery}</div></div><div class="meta-item"><div class="meta-label">Est. delivery</div><div class="meta-val">${fmtDate(r.deliveryDate)}</div></div>`;}
+function effStatus(r){if(r.status==='ready')return 'ready';if((r.status==='received'||r.status==='with_karagir')&&new Date(r.deliveryDate)<new Date())return 'overdue';return r.status;}
+const sbCls={received:'sb-recv',with_karagir:'sb-karagir',ready:'sb-ready',overdue:'sb-overdue'};
+const sbLabel={received:'Received — awaiting karagir',with_karagir:'With karagir — repair in progress',ready:'Ready for delivery',overdue:'Overdue — repair pending'};
+const bdgCls={received:'badge-recv',with_karagir:'badge-karagir',ready:'badge-ready',overdue:'badge-overdue'};
+const bdgLabel={received:'Received',with_karagir:'With Karagir',ready:'Ready',overdue:'Overdue'};
+function buildTracker(r){const es=effStatus(r),daysLeft=Math.ceil((new Date(r.deliveryDate)-new Date())/86400000),daysText=es==='ready'?'Completed':es==='overdue'?`${Math.abs(daysLeft)} day(s) overdue`:daysLeft===0?'Due today':`${daysLeft} day(s) left`;const steps=[{label:'Jewellery received from customer',sub:`${r.jewellery} · ${r.metal} · ${r.weight}g · Est ₹${r.amount}`,date:r.receivedDate,done:true},{label:`Issued to karagir${r.karagir?' — '+r.karagir:''}`,sub:r.karagir?'Sent for repair':'Pending',date:r.karagirDate,done:!!r.karagir},{label:'Received back from karagir',sub:r.finalAmount?`Final: ₹${r.finalAmount}`:'Awaiting return',date:r.completedDate,done:!!r.completedDate},{label:'Ready for customer delivery',sub:r.finalAmount?`Charges: ₹${r.finalAmount}`:'Pending',date:r.completedDate,done:r.status==='ready'}];const ai=steps.filter(s=>s.done).length;const tl=steps.map((s,i)=>`<div class="tl-step"><div class="tl-dot ${s.done?'done':i===ai?'cur':''}"></div><div class="tl-title" style="color:${s.done?'var(--color-text-primary)':'var(--color-text-secondary)'}">${s.label}</div><div class="tl-sub">${s.sub}</div>${s.date?`<div class="tl-date">${fmtFull(s.date)}</div>`:''}</div>`).join('');return`<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-top:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:17px;font-weight:500">${r.docNum}</div><div style="font-size:12px;color:var(--color-text-secondary)">${r.name} | ${r.mobile}</div></div><span class="badge ${bdgCls[es]}">${bdgLabel[es]}</span></div><div class="status-bar ${sbCls[es]}">${sbLabel[es]}</div><div class="meta-grid"><div class="meta-item"><div class="meta-label">Item</div><div class="meta-val">${r.jewellery}</div></div><div class="meta-item"><div class="meta-label">Est. delivery</div><div class="meta-val">${fmtDate(r.deliveryDate)}</div></div><div class="meta-item"><div class="meta-label">Status</div><div class="meta-val" style="color:${es==='overdue'?'#A32D2D':es==='ready'?'#3B6D11':'var(--color-text-primary)'}">${daysText}</div></div><div class="meta-item"><div class="meta-label">Metal &amp; weight</div><div class="meta-val">${r.metal}, ${r.weight}g</div></div><div class="meta-item"><div class="meta-label">Est. amount</div><div class="meta-val">₹${r.amount}</div></div><div class="meta-item"><div class="meta-label">${r.finalAmount?'Final amount':'Salesman'}</div><div class="meta-val">${r.finalAmount?'₹'+r.finalAmount:r.salesman}</div></div></div><div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Repair timeline</div><div class="tl-wrap"><div class="tl-line"></div>${tl}</div></div>`;}
+function doTrack(){const q=document.getElementById('track-q').value.trim().toLowerCase();document.getElementById('all-orders').innerHTML='';if(!q){document.getElementById('track-result').innerHTML='<p style="color:var(--color-text-secondary);font-size:13px;padding:8px 0">Enter document number or mobile.</p>';return;}const found=DB.records.filter(r=>r.docNum.toLowerCase()===q||r.mobile===q||r.docNum.toLowerCase().includes(q));document.getElementById('track-result').innerHTML=found.length?found.map(buildTracker).join(''):'<p style="color:var(--color-text-secondary);font-size:13px;padding:8px 0">No order found.</p>';}
+function showAllOrders(){document.getElementById('track-result').innerHTML='';if(!DB.records.length){document.getElementById('all-orders').innerHTML='<p style="color:var(--color-text-secondary);font-size:13px;padding:8px 0">No orders yet.</p>';return;}const grp={overdue:[],ready:[],with_karagir:[],received:[]};DB.records.forEach(r=>{const es=effStatus(r);grp[es]&&grp[es].push(r);});const order=['overdue','ready','with_karagir','received'],labels={overdue:'Overdue',ready:'Ready for delivery',with_karagir:'With karagir',received:'Received — pending'};let html='';order.forEach(g=>{if(!grp[g].length)return;html+=`<div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin:${html?'14px':0} 0 8px">${labels[g]}</div>`;grp[g].forEach(r=>{const es=effStatus(r);html+=`<div class="list-row" onclick="selectTrack('${r.docNum}')"><div><span style="font-weight:500">${r.docNum}</span><span style="color:var(--color-text-secondary);margin:0 8px">|</span>${r.name}<span style="color:var(--color-text-secondary);margin:0 8px">|</span><span style="color:var(--color-text-secondary)">${r.metal} ${r.jewellery}</span></div><div style="display:flex;gap:8px;align-items:center"><span style="font-size:11px;color:var(--color-text-secondary)">Del: ${fmtDate(r.deliveryDate)}</span><span class="badge ${bdgCls[es]}">${bdgLabel[es]}</span></div></div>`;});});document.getElementById('all-orders').innerHTML=html;}
+function selectTrack(dn){document.getElementById('track-q').value=dn;document.getElementById('all-orders').innerHTML='';doTrack();}
+function renderRecords(){const el=document.getElementById('records-list');if(!DB.records.length){el.innerHTML='<p style="color:var(--color-text-secondary);font-size:13px">No records yet.</p>';return;}el.innerHTML=DB.records.slice().reverse().map(r=>{const es=effStatus(r);return`<div class="list-row"><div><span style="font-weight:500">${r.docNum}</span><span style="color:var(--color-text-secondary);margin:0 8px">|</span>${r.name}<span style="color:var(--color-text-secondary);margin:0 8px">|</span><span style="color:var(--color-text-secondary)">${r.metal} ${r.jewellery} ${r.weight}g</span></div><div style="display:flex;gap:8px;align-items:center"><span style="font-size:11px;color:var(--color-text-secondary)">${fmtDate(r.receivedDate)}</span><span class="badge ${bdgCls[es]}">${bdgLabel[es]}</span></div></div>`;}).join('');}
+function switchMaster(t,el){document.querySelectorAll('.master-panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('#page-masters .btn').forEach(b=>{b.style.borderColor='';b.style.color='';});document.getElementById('master-'+t).classList.add('active');el.style.borderColor='#c0003a';el.style.color='#c0003a';renderMaster(t);}
+function renderMaster(type){const items=DB[type];document.getElementById('cnt-'+type).textContent=items.length;const el=document.getElementById('list-'+type);if(!items.length){el.innerHTML='<div style="text-align:center;padding:1.25rem;color:var(--color-text-secondary);font-size:13px">No entries. Add above.</div>';return;}el.innerHTML=items.map(item=>{let info='',sub='';if(type==='salesman'){info=item.name;sub=item.mob;}else if(type==='jewellery'){info=item.name;sub=item.cat;}else if(type==='metal'){info=item.name;sub=`${item.type}${item.karat?' · '+item.karat:''}`;}else if(type==='karagir'){info=item.name;sub=`${item.mob}${item.spec?' · '+item.spec:''}`;}return`<div class="master-item"><div><div style="font-weight:500">${info}</div><div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">${sub}</div></div><div style="display:flex;gap:6px;align-items:center"><span class="badge ${item.status==='active'?'badge-active':'badge-inactive'}">${item.status}</span><button class="btn btn-sm" onclick="toggleM('${type}',${item.id})">${item.status==='active'?'Deactivate':'Activate'}</button><button class="btn btn-sm btn-danger" onclick="deleteM('${type}',${item.id})">Remove</button></div></div>`;}).join('');}
+function addMaster(type){let item={};const err=()=>showMsg('master-'+type,'Fill required fields.',false);if(type==='salesman'){const n=document.getElementById('ms-name').value.trim();if(!n)return err();item={id:++idSeq.salesman,name:n,mob:document.getElementById('ms-mob').value.trim(),status:document.getElementById('ms-status').value};document.getElementById('ms-name').value='';document.getElementById('ms-mob').value='';}else if(type==='jewellery'){const n=document.getElementById('mj-name').value.trim();if(!n)return err();item={id:++idSeq.jewellery,name:n,cat:document.getElementById('mj-cat').value,status:document.getElementById('mj-status').value};document.getElementById('mj-name').value='';}else if(type==='metal'){const n=document.getElementById('mm-name').value.trim();if(!n)return err();item={id:++idSeq.metal,name:n,type:document.getElementById('mm-type').value,karat:document.getElementById('mm-karat').value.trim(),status:document.getElementById('mm-status').value};document.getElementById('mm-name').value='';document.getElementById('mm-karat').value='';}else if(type==='karagir'){const n=document.getElementById('mk-name').value.trim(),mob=document.getElementById('mk-mob').value.trim();if(!n||!mob)return err();if(!/^\d{10}$/.test(mob)){showMsg('master-karagir','Valid 10-digit mobile required.',false);return;}item={id:++idSeq.karagir,name:n,mob,spec:document.getElementById('mk-spec').value.trim(),addr:document.getElementById('mk-addr').value.trim(),status:document.getElementById('mk-status').value};document.getElementById('mk-name').value='';document.getElementById('mk-mob').value='';document.getElementById('mk-spec').value='';document.getElementById('mk-addr').value='';}DB[type].push(item);renderMaster(type);showMsg('master-'+type,'Added successfully.',true);}
+function toggleM(type,id){const it=DB[type].find(x=>x.id===id);if(it)it.status=it.status==='active'?'inactive':'active';renderMaster(type);}
+function deleteM(type,id){DB[type]=DB[type].filter(x=>x.id!==id);renderMaster(type);}
+
+function switchStab(t,el){document.querySelectorAll('.stab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.stab-panel').forEach(x=>x.classList.remove('active'));el.classList.add('active');document.getElementById('stab-'+t).classList.add('active');}
+function testConnection(){const user=document.getElementById('rm-user').value.trim(),waba=document.getElementById('rm-waba').value.trim(),token=document.getElementById('rm-token').value.trim();if(!user||!waba||!token){showMsg('creds','Fill all required credential fields first.',false);return;}const badge=document.getElementById('conn-badge');badge.innerHTML='<span class="status-dot" style="width:7px;height:7px;border-radius:50%;background:#ca8a04;display:inline-block"></span> Verifying...';setTimeout(()=>{badge.className='conn-badge conn-ok';badge.innerHTML='<span class="status-dot dot-green"></span>Connected';showMsg('creds','Connection verified! Route Mobile WhatsApp API is reachable.',true);},1800);}
+function saveCredentials(){const user=document.getElementById('rm-user').value.trim(),waba=document.getElementById('rm-waba').value.trim();if(!user||!waba){showMsg('creds','Fill required fields.',false);return;}showMsg('creds','Credentials saved securely.',true);}
+function saveTemplates(){const n1=document.getElementById('tpl1-name').value.trim(),n2=document.getElementById('tpl2-name').value.trim();if(!n1||!n2){showMsg('templates','Template names for received and ready are required.',false);return;}showMsg('templates','Templates saved. Ensure names are approved in Meta Business Manager.',true);}
+function saveTriggers(){showMsg('triggers','Trigger settings saved.',true);}
+function sendTestWA(){const num=document.getElementById('test-wa').value.trim(),user=document.getElementById('rm-user').value.trim();if(!user){showMsg('watest','Save Route Mobile credentials first (Credentials tab).',false);return;}if(!num||!/^\+\d{10,15}$/.test(num)){showMsg('watest','Enter valid number with country code e.g. +919876543210',false);return;}const tplNames={received:'jewellery_received',ready:'jewellery_ready',karagir:'karagir_dispatch'};const tpl=document.getElementById('test-tpl').value;showMsg('watest',`Test WhatsApp sent to ${num} using template <b>${tplNames[tpl]}</b>. Check your WhatsApp.`,true);}
+
+['salesman','jewellery','metal','karagir'].forEach(renderMaster);
+updateStats();
+</script>

@@ -1,0 +1,73 @@
+{
+  "name": "Devi Jewellers Repair Management",
+  "short_name": "Devi Repair",
+  "description": "Jewellery Repair Management System — Gold, Silver, Diamonds & Pearls",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#c0003a",
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Repair Entry",
+      "short_name": "Receive",
+      "description": "Create a new jewellery repair entry",
+      "url": "/?tab=receive",
+      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Delivery & Invoicing",
+      "short_name": "Deliver",
+      "description": "Deliver repair and generate invoice",
+      "url": "/?tab=deliver",
+      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Repair Status",
+      "short_name": "Status",
+      "description": "Track ongoing jewellery repairs",
+      "url": "/?tab=status",
+      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Repair Dashboard",
+      "short_name": "Dashboard",
+      "description": "View repair summary and statistics",
+      "url": "/?tab=dash",
+      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+    }
+  ]
+}
