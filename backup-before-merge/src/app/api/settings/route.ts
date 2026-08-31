@@ -1,3 +1,4 @@
+```ts
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
@@ -12,7 +13,15 @@ export async function GET() {
     console.log('Settings query result rows:', result.rows.length);
     console.log('Settings rows:', JSON.stringify(result.rows));
 
+    const defaultLocations = [
+      { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
+      { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
+    ];
+
+<<<<<<< Updated upstream
+=======
     // Convert key-value pairs to structured object - use keys from schema
+>>>>>>> Stashed changes
     const settings: any = {
       businessName: 'Devi Jewellers',
       shopOwner: '',
@@ -26,7 +35,12 @@ export async function GET() {
       taxRate: 0,
       invoiceLinkBase: '',
       invoiceExpiry: 10,
+      location: 'satara',
+      locations: defaultLocations,
+<<<<<<< Updated upstream
+=======
       // WhatsApp Route Mobile credentials
+>>>>>>> Stashed changes
       whatsappRmUser: '',
       whatsappRmPass: '',
       whatsappRmWaba: '',
@@ -34,8 +48,7 @@ export async function GET() {
       whatsappRmWaphone: '',
       whatsappRmToken: '',
       whatsappRmApiUrl: '',
-      whatsappRmApiVersion: 'v17.0',
-      locationsList: null
+      whatsappRmApiVersion: 'v17.0'
     };
 
     result.rows.forEach((row: any) => {
@@ -93,14 +106,21 @@ export async function GET() {
         case 'location':
           settings.location = row.value || 'satara';
           break;
+        case 'locations':
+          try {
+            const parsed = typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              settings.locations = parsed;
+            }
+          } catch (e) {
+            console.error('Error parsing locations JSON:', e);
+          }
+          break;
         case 'koregaon_seq':
           settings.koregaonSeq = parseInt(row.value) || 0;
           break;
         case 'currency':
           settings.currency = row.value || 'INR';
-          break;
-        case 'locations_list':
-          settings.locationsList = row.value ? JSON.parse(row.value) : null;
           break;
         case 'tax_rate':
           settings.taxRate = parseFloat(row.value) || 0;
@@ -111,7 +131,7 @@ export async function GET() {
     return NextResponse.json(settings);
   } catch (error) {
     console.error('Error fetching settings:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       businessName: 'Devi Jewellers',
       shopOwner: '',
       shopPhone: '',
@@ -121,7 +141,12 @@ export async function GET() {
       whatsappApiKey: '',
       whatsappApiUrl: '',
       currency: 'INR',
-      taxRate: 0
+      taxRate: 0,
+      location: 'satara',
+      locations: [
+        { id: 'satara', name: 'Satara (Main - Karagir Center)', prefix: 'JR', next_seq: 0 },
+        { id: 'koregaon', name: 'Koregaon (Branch)', prefix: 'JR-KO', next_seq: 0 }
+      ]
     });
   }
 }
@@ -143,7 +168,11 @@ export async function POST(request: NextRequest) {
       invoiceLinkBase,
       invoiceExpiry,
       location,
+      locations,
+<<<<<<< Updated upstream
+=======
       // WhatsApp Route Mobile credentials
+>>>>>>> Stashed changes
       whatsappRmUser,
       whatsappRmPass,
       whatsappRmWaba,
@@ -152,22 +181,23 @@ export async function POST(request: NextRequest) {
       whatsappRmToken,
       whatsappRmApiUrl,
       whatsappRmApiVersion,
-      // Templates
-      tpl1Name, tpl2Name, tpl3Name,
-      tpl1Body, tpl2Body, tpl3Body,
-      tpl1Lang, tpl2Lang, tpl3Lang,
-      // Doc sequence
+      tpl1Name,
+      tpl2Name,
+      tpl3Name,
+      tpl1Body,
+      tpl2Body,
+      tpl3Body,
+      tpl1Lang,
+      tpl2Lang,
+      tpl3Lang,
       docSeq,
-      koregaonSeq,
-      locationsList
+      koregaonSeq
     } = body;
 
     const pool = sql();
 
-    // Only save fields that are provided (not undefined)
-    // This prevents overwriting existing values with empty strings
     const settingsMap: Record<string, string> = {};
-    
+
     if (businessName !== undefined) settingsMap['shop_name'] = businessName || '';
     if (shopOwner !== undefined) settingsMap['shop_owner'] = shopOwner || '';
     if (shopPhone !== undefined) settingsMap['shop_phone'] = shopPhone || '';
@@ -187,9 +217,17 @@ export async function POST(request: NextRequest) {
     if (invoiceLinkBase !== undefined) settingsMap['invoice_link_base'] = invoiceLinkBase || '';
     if (invoiceExpiry !== undefined) settingsMap['invoice_expiry_days'] = String(invoiceExpiry);
     if (location !== undefined) settingsMap['location'] = location || 'satara';
+<<<<<<< Updated upstream
+    if (locations !== undefined) {
+      settingsMap['locations'] =
+        typeof locations === 'string' ? locations : JSON.stringify(locations);
+    }
+=======
+    if (locations !== undefined) settingsMap['locations'] = typeof locations === 'string' ? locations : JSON.stringify(locations);
+>>>>>>> Stashed changes
     if (currency !== undefined) settingsMap['currency'] = currency || 'INR';
     if (taxRate !== undefined) settingsMap['tax_rate'] = String(taxRate);
-    // Templates
+
     if (tpl1Name !== undefined) settingsMap['tpl1_name'] = tpl1Name || '';
     if (tpl2Name !== undefined) settingsMap['tpl2_name'] = tpl2Name || '';
     if (tpl3Name !== undefined) settingsMap['tpl3_name'] = tpl3Name || '';
@@ -199,12 +237,10 @@ export async function POST(request: NextRequest) {
     if (tpl1Lang !== undefined) settingsMap['tpl1_lang'] = tpl1Lang || 'en';
     if (tpl2Lang !== undefined) settingsMap['tpl2_lang'] = tpl2Lang || 'en';
     if (tpl3Lang !== undefined) settingsMap['tpl3_lang'] = tpl3Lang || 'en';
-    // Doc sequence
+
     if (docSeq !== undefined) settingsMap['doc_seq'] = String(docSeq);
     if (koregaonSeq !== undefined) settingsMap['koregaon_seq'] = String(koregaonSeq);
-    if (locationsList !== undefined) settingsMap['locations_list'] = JSON.stringify(locationsList);
 
-    // Upsert only provided settings
     for (const [key, value] of Object.entries(settingsMap)) {
       await pool.query(
         `INSERT INTO settings (key, value) VALUES ($1, $2)
@@ -213,9 +249,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, message: 'Settings saved', keys: Object.keys(settingsMap) });
+    return NextResponse.json({
+      success: true,
+      message: 'Settings saved',
+      keys: Object.keys(settingsMap)
+    });
   } catch (error) {
     console.error('Error saving settings:', error);
-    return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to save settings' },
+      { status: 500 }
+    );
   }
 }
+```
